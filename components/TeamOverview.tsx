@@ -374,10 +374,10 @@ export const TeamOverview: React.FC = () => {
           <select
             className="border rounded px-2 py-1"
             value={selectedWeek}
-            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedWeek(Number(e.target.value))}
+            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedWeek(e.target.value)}
           >
             {Array.from({ length: 18 }, (_, i) => (
-              <option key={i} value={i}>
+              <option key={i} value={i.toString()}>
                 Week {i}
               </option>
             ))}
