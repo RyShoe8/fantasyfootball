@@ -182,7 +182,11 @@ export default function Home() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <button
             onClick={() => {
-              fetch(`https://api.sleeper.app/v1/league/${currentLeague?.league_id}/rosters`)
+              if (!currentLeague?.league_id) {
+                console.error('No league selected');
+                return;
+              }
+              fetch(`https://api.sleeper.app/v1/league/${currentLeague.league_id}/rosters`)
                 .then(res => res.json())
                 .then(data => {
                   console.log('Rosters API Response:', data);
@@ -208,7 +212,11 @@ export default function Home() {
           </button>
           <button
             onClick={() => {
-              fetch(`https://api.sleeper.app/v1/league/${currentLeague?.league_id}/users`)
+              if (!currentLeague?.league_id) {
+                console.error('No league selected');
+                return;
+              }
+              fetch(`https://api.sleeper.app/v1/league/${currentLeague.league_id}/users`)
                 .then(res => res.json())
                 .then(data => {
                   console.log('Users API Response:', data);
@@ -218,7 +226,8 @@ export default function Home() {
                     username: user.username,
                     display_name: user.display_name,
                     avatar: user.avatar,
-                    metadata: user.metadata || {}
+                    metadata: user.metadata || {},
+                    is_owner: user.is_owner || false
                   }));
                   console.log('Formatted Users:', formattedUsers);
                 })
@@ -245,7 +254,11 @@ export default function Home() {
           </button>
           <button
             onClick={() => {
-              fetch(`https://api.sleeper.app/v1/league/${currentLeague?.league_id}`)
+              if (!currentLeague?.league_id) {
+                console.error('No league selected');
+                return;
+              }
+              fetch(`https://api.sleeper.app/v1/league/${currentLeague.league_id}`)
                 .then(res => res.json())
                 .then(data => {
                   console.log('League API Response:', data);
