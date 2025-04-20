@@ -31,6 +31,7 @@ interface SleeperContextType {
   setUsers: (users: SleeperUser[]) => void;
   setPlayers: (players: Record<string, SleeperPlayer>) => void;
   setDraftPicks: (draftPicks: SleeperDraftPick[]) => void;
+  setLeagues: (leagues: SleeperLeague[]) => void;
 }
 
 const SleeperContext = createContext<SleeperContextType | undefined>(undefined);
@@ -274,7 +275,8 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
         setRosters,
         setUsers,
         setPlayers,
-        setDraftPicks
+        setDraftPicks,
+        setLeagues
       }}
     >
       {children}
