@@ -66,6 +66,11 @@ export interface SleeperRoster {
   metadata?: {
     team_name?: string;
   };
+  draft_picks?: {
+    season: string;
+    round: number;
+    pick: number;
+  }[];
 }
 
 export interface SleeperPlayer {
