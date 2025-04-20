@@ -258,6 +258,37 @@ export default function LeagueInfo() {
         </div>
       </div>
 
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-white shadow rounded-lg p-6">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">Quick Actions</h3>
+          <div className="space-y-4">
+            <button className="w-full bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700">
+              View Roster
+            </button>
+            <button className="w-full bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700">
+              Trade Evaluator
+            </button>
+            <button className="w-full bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700">
+              Player Rankings
+            </button>
+          </div>
+        </div>
+
+        <div className="bg-white shadow rounded-lg p-6">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">League News</h3>
+          <div className="space-y-4">
+            <p className="text-gray-600">No recent news</p>
+          </div>
+        </div>
+
+        <div className="bg-white shadow rounded-lg p-6">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">Upcoming Games</h3>
+          <div className="space-y-4">
+            <p className="text-gray-600">No upcoming games</p>
+          </div>
+        </div>
+      </div>
+
       {/* Debug Section - Now at the bottom */}
       <div className="bg-white shadow rounded-lg p-6">
         <div className="flex justify-between items-center mb-4">
@@ -289,7 +320,7 @@ export default function LeagueInfo() {
             <div className="bg-gray-50 p-4 rounded-lg">
               <h3 className="text-lg font-medium text-gray-900 mb-2">All Leagues Data</h3>
               <pre className="overflow-auto p-4 bg-gray-800 text-gray-100 rounded-md text-sm">
-                {formatJSON(leagues.map(league => formatApiResponse(league, 'league')))}
+                {formatJSON(leagues.map((league: SleeperLeague) => formatApiResponse(league, 'league')))}
               </pre>
             </div>
 
