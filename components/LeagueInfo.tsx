@@ -95,10 +95,10 @@ export default function LeagueInfo() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-900">{currentLeague.name}</h2>
+      <div className="flex flex-col items-center mb-6">
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">{currentLeague.name}</h2>
         <select
-          className="mt-1 block w-64 pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+          className="w-full max-w-md pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
           value={currentLeague.league_id}
           onChange={(e: ChangeEvent<HTMLSelectElement>) => {
             console.log('LeagueInfo - League selection changed:', e.target.value);
