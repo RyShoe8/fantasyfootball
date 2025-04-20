@@ -257,58 +257,6 @@ export default function LeagueInfo() {
           </div>
         </div>
       </div>
-
-      {/* Debug Section */}
-      <div className="bg-white shadow rounded-lg p-6">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-bold text-gray-900">API Debug Data</h2>
-          <button
-            onClick={() => setShowDebug(!showDebug)}
-            className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-          >
-            {showDebug ? 'Hide Debug Data' : 'Show Debug Data'}
-          </button>
-        </div>
-
-        {showDebug && (
-          <div className="space-y-6">
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h3 className="text-lg font-medium text-gray-900 mb-2">User Data</h3>
-              <pre className="overflow-auto p-4 bg-gray-800 text-gray-100 rounded-md text-sm">
-                {formatJSON(formatApiResponse(user, 'user'))}
-              </pre>
-            </div>
-
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Current League Data</h3>
-              <pre className="overflow-auto p-4 bg-gray-800 text-gray-100 rounded-md text-sm">
-                {formatJSON(formatApiResponse(currentLeague, 'league'))}
-              </pre>
-            </div>
-
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h3 className="text-lg font-medium text-gray-900 mb-2">All Leagues Data</h3>
-              <pre className="overflow-auto p-4 bg-gray-800 text-gray-100 rounded-md text-sm">
-                {formatJSON(leagues.map((league: SleeperLeague) => formatApiResponse(league, 'league')))}
-              </pre>
-            </div>
-
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Rosters Data</h3>
-              <pre className="overflow-auto p-4 bg-gray-800 text-gray-100 rounded-md text-sm">
-                {formatJSON(formatApiResponse(rosters, 'rosters'))}
-              </pre>
-            </div>
-
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Players Data</h3>
-              <pre className="overflow-auto p-4 bg-gray-800 text-gray-100 rounded-md text-sm">
-                {formatApiResponse(players, 'players')}
-              </pre>
-            </div>
-          </div>
-        )}
-      </div>
     </div>
   );
 } 

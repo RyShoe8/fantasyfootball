@@ -17,11 +17,54 @@
 import LeagueInfo from '../components/LeagueInfo';
 import { useSleeper } from '../contexts/SleeperContext';
 import { useRouter } from 'next/router';
+import { useState } from 'react';
+import { SleeperLeague } from '../types/sleeper';
+
+// Helper function to format API response data
+const formatApiResponse = (data: any, type: string) => {
+  switch (type) {
+    case 'user':
+      return {
+        username: data.username,
+        display_name: data.display_name,
+        user_id: data.user_id,
+        avatar: data.avatar
+      };
+    case 'league':
+      return {
+        name: data.name,
+        league_id: data.league_id,
+        season: data.season,
+        status: data.status,
+        total_rosters: data.total_rosters,
+        roster_positions: data.roster_positions,
+        settings: {
+          num_teams: data.settings.num_teams,
+          playoff_teams: data.settings.playoff_teams,
+          waiver_type: data.settings.waiver_type,
+          waiver_budget: data.settings.waiver_budget
+        }
+      };
+    case 'rosters':
+      return data.map((roster: any) => ({
+        roster_id: roster.roster_id,
+        owner_id: roster.owner_id,
+        team_name: roster.metadata?.team_name || `Team ${roster.roster_id}`,
+        starters: roster.starters,
+        players: roster.players?.length || 0
+      }));
+    case 'players':
+      return `Total players: ${Object.keys(data).length}`;
+    default:
+      return data;
+  }
+};
 
 export default function Home() {
   // Get league, roster, and player data from the Sleeper context
-  const { currentLeague, rosters, players } = useSleeper();
+  const { currentLeague, leagues, rosters, players, user } = useSleeper();
   const router = useRouter();
+  const [showDebug, setShowDebug] = useState(false);
   
   // Find the current roster (assuming it's the first one for now)
   const currentRoster = rosters.length > 0 ? rosters[0] : null;
@@ -31,6 +74,15 @@ export default function Home() {
     if (typeof value === 'boolean') return value ? 'Yes' : 'No';
     if (typeof value === 'number') return value.toString();
     return value || 'N/A';
+  };
+
+  // Helper function to format JSON for display
+  const formatJSON = (obj: any) => {
+    try {
+      return JSON.stringify(obj, null, 2);
+    } catch (err) {
+      return 'Error formatting JSON';
+    }
   };
 
   console.log('Home - currentLeague:', currentLeague);
@@ -118,6 +170,58 @@ export default function Home() {
             <p className="text-gray-600">Loading player data...</p>
           )}
         </div>
+      </div>
+
+      {/* API Debug Section */}
+      <div className="bg-white shadow rounded-lg p-6">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-2xl font-bold text-gray-900">API Debug Data</h2>
+          <button
+            onClick={() => setShowDebug(!showDebug)}
+            className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          >
+            {showDebug ? 'Hide Debug Data' : 'Show Debug Data'}
+          </button>
+        </div>
+
+        {showDebug && (
+          <div className="space-y-6">
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <h3 className="text-lg font-medium text-gray-900 mb-2">User Data</h3>
+              <pre className="overflow-auto p-4 bg-gray-800 text-gray-100 rounded-md text-sm">
+                {formatJSON(formatApiResponse(user, 'user'))}
+              </pre>
+            </div>
+
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Current League Data</h3>
+              <pre className="overflow-auto p-4 bg-gray-800 text-gray-100 rounded-md text-sm">
+                {formatJSON(formatApiResponse(currentLeague, 'league'))}
+              </pre>
+            </div>
+
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <h3 className="text-lg font-medium text-gray-900 mb-2">All Leagues Data</h3>
+              <pre className="overflow-auto p-4 bg-gray-800 text-gray-100 rounded-md text-sm">
+                {formatJSON(leagues.map((league: SleeperLeague) => formatApiResponse(league, 'league')))}
+              </pre>
+            </div>
+
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Rosters Data</h3>
+              <pre className="overflow-auto p-4 bg-gray-800 text-gray-100 rounded-md text-sm">
+                {formatJSON(formatApiResponse(rosters, 'rosters'))}
+              </pre>
+            </div>
+
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Players Data</h3>
+              <pre className="overflow-auto p-4 bg-gray-800 text-gray-100 rounded-md text-sm">
+                {formatApiResponse(players, 'players')}
+              </pre>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
