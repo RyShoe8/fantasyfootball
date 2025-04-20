@@ -1,129 +1,114 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { SleeperService } from '../services/sleeperService';
-import { SleeperUser, SleeperLeague, SleeperRoster, SleeperPlayer } from '../types/sleeper';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
 
 interface SleeperContextType {
-  service: SleeperService | null;
-  user: SleeperUser | null;
-  leagues: SleeperLeague[];
-  currentLeague: SleeperLeague | null;
-  rosters: SleeperRoster[];
-  players: Record<string, SleeperPlayer>;
+  user: any;
+  leagues: any[];
+  rosters: any[];
+  players: any[];
   isLoading: boolean;
   error: string | null;
-  setCurrentLeague: (league: SleeperLeague) => void;
-  initialize: (username: string) => Promise<void>;
+  login: (username: string) => Promise<void>;
+  logout: () => void;
 }
 
-const SleeperContext = createContext<SleeperContextType>({
-  service: null,
-  user: null,
-  leagues: [],
-  currentLeague: null,
-  rosters: [],
-  players: {},
-  isLoading: false,
-  error: null,
-  setCurrentLeague: () => {},
-  initialize: async () => {},
-});
+const SleeperContext = createContext<SleeperContextType | undefined>(undefined);
 
-export const useSleeper = () => useContext(SleeperContext);
-
-export const SleeperProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [service, setService] = useState<SleeperService | null>(null);
-  const [user, setUser] = useState<SleeperUser | null>(null);
-  const [leagues, setLeagues] = useState<SleeperLeague[]>([]);
-  const [currentLeague, setCurrentLeague] = useState<SleeperLeague | null>(null);
-  const [rosters, setRosters] = useState<SleeperRoster[]>([]);
-  const [players, setPlayers] = useState<Record<string, SleeperPlayer>>({});
-  const [isLoading, setIsLoading] = useState(false);
+export function SleeperProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<any>(null);
+  const [leagues, setLeagues] = useState<any[]>([]);
+  const [rosters, setRosters] = useState<any[]>([]);
+  const [players, setPlayers] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const initialize = async (username: string) => {
+  useEffect(() => {
+    const storedUser = localStorage.getItem('sleeperUser');
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+      fetchUserData(JSON.parse(storedUser).user_id);
+    } else {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const fetchUserData = async (userId: string) => {
     try {
       setIsLoading(true);
       setError(null);
-      
-      console.log('Initializing Sleeper service for username:', username);
-      const sleeperService = new SleeperService(username);
-      await sleeperService.initialize();
-      setService(sleeperService);
 
-      console.log('Fetching user data...');
-      const userData = await sleeperService.getUser();
-      console.log('User data:', userData);
-      setUser(userData);
+      // Fetch user's leagues
+      const leaguesResponse = await axios.get(`https://api.sleeper.app/user/${userId}/leagues/nfl/2023`);
+      setLeagues(leaguesResponse.data);
 
-      console.log('Fetching leagues data...');
-      const leaguesData = await sleeperService.getLeagues();
-      console.log('Leagues data:', leaguesData);
-      setLeagues(leaguesData);
+      // Fetch rosters for each league
+      const rostersPromises = leaguesResponse.data.map((league: any) =>
+        axios.get(`https://api.sleeper.app/league/${league.league_id}/rosters`)
+      );
+      const rostersResponses = await Promise.all(rostersPromises);
+      const allRosters = rostersResponses.flatMap((response) => response.data);
+      setRosters(allRosters);
 
-      console.log('Fetching players data...');
-      const playersData = await sleeperService.getPlayers();
-      console.log('Players data loaded:', Object.keys(playersData).length, 'players');
-      setPlayers(playersData);
+      // Fetch players data
+      const playersResponse = await axios.get('https://api.sleeper.app/players/nfl');
+      setPlayers(playersResponse.data);
 
-      if (leaguesData.length > 0) {
-        console.log('Setting current league:', leaguesData[0]);
-        setCurrentLeague(leaguesData[0]);
-        console.log('Fetching rosters data...');
-        const rostersData = await sleeperService.getRosters(leaguesData[0].league_id);
-        console.log('Rosters data:', rostersData);
-        setRosters(rostersData);
-      }
-    } catch (error: unknown) {
-      console.error('Error initializing Sleeper service:', error);
-      let errorMessage = 'An unexpected error occurred';
-      if (error instanceof Error) {
-        errorMessage = error.message;
-      } else if (axios.isAxiosError(error)) {
-        errorMessage = error.response?.data?.message || 'Network request failed';
-      }
-      setError(errorMessage);
-    } finally {
+      setIsLoading(false);
+    } catch (err) {
+      setError('Failed to fetch user data');
       setIsLoading(false);
     }
   };
 
-  useEffect(() => {
-    if (currentLeague) {
-      const fetchRosters = async () => {
-        try {
-          setIsLoading(true);
-          const rostersData = await service?.getRosters(currentLeague.league_id);
-          if (rostersData) {
-            setRosters(rostersData);
-          }
-        } catch (err) {
-          setError(err instanceof Error ? err.message : 'An error occurred');
-        } finally {
-          setIsLoading(false);
-        }
-      };
+  const login = async (username: string) => {
+    try {
+      setIsLoading(true);
+      setError(null);
 
-      fetchRosters();
+      // Fetch user data
+      const userResponse = await axios.get(`https://api.sleeper.app/user/${username}`);
+      const userData = userResponse.data;
+      setUser(userData);
+      localStorage.setItem('sleeperUser', JSON.stringify(userData));
+
+      // Fetch user's leagues and other data
+      await fetchUserData(userData.user_id);
+    } catch (err) {
+      setError('Failed to login. Please check your username and try again.');
+      setIsLoading(false);
     }
-  }, [currentLeague, service]);
+  };
+
+  const logout = () => {
+    setUser(null);
+    setLeagues([]);
+    setRosters([]);
+    setPlayers([]);
+    localStorage.removeItem('sleeperUser');
+  };
 
   return (
     <SleeperContext.Provider
       value={{
-        service,
         user,
         leagues,
-        currentLeague,
         rosters,
         players,
         isLoading,
         error,
-        setCurrentLeague,
-        initialize,
+        login,
+        logout,
       }}
     >
       {children}
     </SleeperContext.Provider>
   );
-}; 
+}
+
+export function useSleeper() {
+  const context = useContext(SleeperContext);
+  if (context === undefined) {
+    throw new Error('useSleeper must be used within a SleeperProvider');
+  }
+  return context;
+} 
