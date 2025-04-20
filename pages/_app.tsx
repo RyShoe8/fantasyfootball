@@ -19,10 +19,10 @@ function AppContent({ Component, pageProps }: AppProps) {
 
     if (!user && !isPublicRoute) {
       console.log('No user found, redirecting to login');
-      router.push('/login');
+      router.replace('/login');
     } else if (user && isPublicRoute) {
       console.log('User found on public route, redirecting to home');
-      router.push('/');
+      router.replace('/');
     }
   }, [user, isLoading, hasInitialized, router]);
 
@@ -68,6 +68,11 @@ function AppContent({ Component, pageProps }: AppProps) {
       router.events.off('routeChangeError', handleRouteChangeError);
     };
   }, [router]);
+  
+  // Don't wrap login page in Layout
+  if (router.pathname === '/login') {
+    return <Component {...pageProps} />;
+  }
   
   return (
     <Layout>
