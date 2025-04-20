@@ -177,7 +177,7 @@ export const LeagueInfo: React.FC = () => {
         <div className="flex items-center space-x-4">
           <select
             value={selectedYear}
-            onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+            onChange={(e) => setSelectedYear(e.target.value)}
             className="bg-white border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             {years.map((year) => (
