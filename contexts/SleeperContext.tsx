@@ -91,6 +91,16 @@ export function SleeperProvider({ children }: { children: React.ReactNode }) {
           console.error('Invalid roster data received:', response.data);
           return [];
         }
+        // Log each roster's metadata
+        response.data.forEach(roster => {
+          console.log('Roster data:', {
+            rosterId: roster.roster_id,
+            ownerId: roster.owner_id,
+            metadata: roster.metadata,
+            hasMetadata: !!roster.metadata,
+            hasTeamName: !!roster.metadata?.team_name
+          });
+        });
         return response.data;
       });
 

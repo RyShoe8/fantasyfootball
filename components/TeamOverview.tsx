@@ -133,8 +133,18 @@ const TeamOverview: React.FC = () => {
       teamName,
       metadata: userRoster.metadata,
       hasMetadata: !!userRoster.metadata,
-      hasTeamName: !!userRoster.metadata?.team_name
+      hasTeamName: !!userRoster.metadata?.team_name,
+      ownerId: userRoster.owner_id
     });
+
+    // Log all rosters in the league for comparison
+    console.log('All league rosters:', leagueRosters.map(r => ({
+      rosterId: r.roster_id,
+      ownerId: r.owner_id,
+      metadata: r.metadata,
+      hasMetadata: !!r.metadata,
+      hasTeamName: !!r.metadata?.team_name
+    })));
 
     const rosterPlayers = [...(userRoster.starters || []), ...(userRoster.reserves || [])]
       .map(playerId => {
