@@ -46,6 +46,17 @@ if (typeof window === 'undefined') {
   clientPromise = new Promise(() => {});
 }
 
+export async function connectToDatabase() {
+  try {
+    const client = await clientPromise;
+    const db = client.db();
+    return { db, client };
+  } catch (error) {
+    console.error('Error connecting to database:', error);
+    throw error;
+  }
+}
+
 // Export a module-scoped MongoClient promise. By doing this in a
 // separate module, the client can be shared across functions.
 export default clientPromise;
