@@ -203,10 +203,39 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
         }
       }
 
-      const response = await axios.get(`/api/player-stats?season=${season}&week=${week}`);
-      setPlayerStats(response.data);
+      // Add timeout to prevent hanging requests
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+
+      try {
+        const response = await axios.get(`/api/player-stats?season=${season}&week=${week}`, {
+          signal: controller.signal,
+          timeout: 5000,
+          validateStatus: (status) => status < 500 // Only treat 500+ as errors
+        });
+        
+        clearTimeout(timeoutId);
+
+        if (response.status === 200 && response.data) {
+          setPlayerStats(response.data);
+        } else {
+          console.log('No player stats data available for season:', season, 'week:', week);
+          setPlayerStats({});
+        }
+      } catch (error: any) {
+        clearTimeout(timeoutId);
+        
+        if (error.code === 'ECONNABORTED') {
+          console.log('Request timeout for player stats');
+        } else if (error.response) {
+          console.log('Player stats API error:', error.response.status, error.response.data);
+        } else {
+          console.error('Error fetching player stats:', error);
+        }
+        setPlayerStats({});
+      }
     } catch (error) {
-      console.error('Error fetching player stats:', error);
+      console.error('Error in fetchPlayerStats:', error);
       setPlayerStats({});
     }
   }, []);

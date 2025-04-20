@@ -82,22 +82,27 @@ const formatPlayoffType = (type: number) => {
 
 export const LeagueInfo: React.FC = () => {
   const { 
-    currentLeague, 
+    user, 
     leagues, 
+    currentLeague, 
     setCurrentLeague,
     selectedYear,
     setSelectedYear,
+    rosters,
+    users,
+    players,
+    playerStats,
+    fetchPlayerStats,
     isLoading: contextLoading,
-    user,
     setLeagues,
     setRosters,
     setUsers,
-    setPlayers,
-    rosters
+    setPlayers
   } = useSleeper();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedWeek, setSelectedWeek] = useState(1);
 
   const handleLeagueChange = async (leagueId: string) => {
     const league = leagues.find((l: SleeperLeague) => l.league_id === leagueId);
@@ -266,6 +271,28 @@ export const LeagueInfo: React.FC = () => {
               <div>
                 <h4 className="text-sm font-medium text-gray-500">Taxi Slots</h4>
                 <p className="mt-1">{formatRosterPositions(currentLeague.roster_positions).taxiSlots}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-4 p-4 bg-gray-100 rounded-lg">
+            <h3 className="text-lg font-semibold mb-2">Debug Info</h3>
+            <div className="space-y-2 text-sm">
+              <p>User ID: {user?.user_id}</p>
+              <p>League ID: {currentLeague?.league_id}</p>
+              <p>Selected Year: {selectedYear}</p>
+              <p>Selected Week: {selectedWeek}</p>
+              <p>Rosters Count: {rosters?.length}</p>
+              <p>Users Count: {users?.length}</p>
+              <p>Players Count: {Object.keys(players || {}).length}</p>
+              <p>Player Stats Count: {Object.keys(playerStats || {}).length}</p>
+              <div className="mt-2">
+                <button
+                  onClick={() => fetchPlayerStats(selectedYear, selectedWeek.toString())}
+                  className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
+                >
+                  Fetch Player Stats
+                </button>
               </div>
             </div>
           </div>
