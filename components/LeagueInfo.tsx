@@ -189,8 +189,8 @@ export const LeagueInfo: React.FC = () => {
   const years = useMemo(() => {
     const currentYear = new Date().getFullYear();
     const years = [];
-    // Start from current year + 1 and go down to 2023
-    for (let year = currentYear + 1; year >= 2023; year--) {
+    // Start from current year and go down to 2023
+    for (let year = currentYear; year >= 2023; year--) {
       years.push(year.toString());
     }
     return years;
