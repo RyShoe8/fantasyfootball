@@ -3,31 +3,55 @@ import { useSleeper } from '../contexts/SleeperContext';
 import axios from 'axios';
 
 export default function DebugSection() {
-  const { currentLeague, fetchRosters, fetchUsers, fetchPlayers, fetchDraftPicks } = useSleeper();
+  const { currentLeague } = useSleeper();
   const [apiResponse, setApiResponse] = useState<any>(null);
 
   const handleFetchRosters = async () => {
     if (!currentLeague) return;
-    const response = await fetchRosters(currentLeague.league_id);
-    setApiResponse(response);
+    try {
+      const response = await axios.get(`https://api.sleeper.app/v1/league/${currentLeague.league_id}/rosters`);
+      console.log('Rosters API Response:', response.data);
+      setApiResponse(response.data);
+    } catch (error) {
+      console.error('Error fetching rosters:', error);
+      setApiResponse('Error fetching rosters');
+    }
   };
 
   const handleFetchUsers = async () => {
     if (!currentLeague) return;
-    const response = await fetchUsers(currentLeague.league_id);
-    setApiResponse(response);
+    try {
+      const response = await axios.get(`https://api.sleeper.app/v1/league/${currentLeague.league_id}/users`);
+      console.log('Users API Response:', response.data);
+      setApiResponse(response.data);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      setApiResponse('Error fetching users');
+    }
   };
 
   const handleFetchPlayers = async () => {
     if (!currentLeague) return;
-    const response = await fetchPlayers(currentLeague.league_id);
-    setApiResponse(response);
+    try {
+      const response = await axios.get('https://api.sleeper.app/v1/players/nfl');
+      console.log('Players API Response:', response.data);
+      setApiResponse(response.data);
+    } catch (error) {
+      console.error('Error fetching players:', error);
+      setApiResponse('Error fetching players');
+    }
   };
 
   const handleFetchDraftPicks = async () => {
     if (!currentLeague) return;
-    const response = await fetchDraftPicks(currentLeague.league_id);
-    setApiResponse(response);
+    try {
+      const response = await axios.get(`https://api.sleeper.app/v1/draft/${currentLeague.league_id}/picks`);
+      console.log('Draft Picks API Response:', response.data);
+      setApiResponse(response.data);
+    } catch (error) {
+      console.error('Error fetching draft picks:', error);
+      setApiResponse('Error fetching draft picks');
+    }
   };
 
   const handleFetchLeague = async () => {
