@@ -31,7 +31,10 @@ interface TeamStats {
   losses: number;
   ties: number;
   totalPoints: number;
-  positionStats: Record<string, { count: number; points: number; projected: number }>;
+  positionStats: Record<string, {
+    count: number;
+    points: number;
+  }>;
   players: ExtendedPlayer[];
 }
 
@@ -166,80 +169,73 @@ const TeamOverview: React.FC = () => {
     console.log('User roster ID:', userRoster.roster_id);
     console.log('User roster settings:', userRoster.settings);
 
-    // Get team name from roster metadata or use a default
-    const teamName = userRoster.metadata?.team_name || `Team ${userRoster.roster_id}`;
-    console.log('Team name resolved:', {
-      rosterId: userRoster.roster_id,
-      teamName,
-      metadata: userRoster.metadata,
-      hasMetadata: !!userRoster.metadata,
-      hasTeamName: !!userRoster.metadata?.team_name,
-      ownerId: userRoster.owner_id
-    });
+    // Get team name from roster metadata
+    const teamName = userRoster.metadata?.team_name || 'Your Team';
+    console.log('Team name:', teamName);
 
-    // Log all rosters in the league for comparison
-    console.log('All league rosters:', leagueRosters.map(r => ({
-      rosterId: r.roster_id,
-      ownerId: r.owner_id,
-      metadata: r.metadata,
-      hasMetadata: !!r.metadata,
-      hasTeamName: !!r.metadata?.team_name
-    })));
-
-    const rosterPlayers = [...(userRoster.starters || []), ...(userRoster.reserves || [])]
-      .map(playerId => {
-        const player = players[playerId as keyof typeof players] as ExtendedPlayer | undefined;
-        if (!player) {
-          console.log('Player not found:', playerId);
-          return null;
-        }
-        
-        const weekStats = player.stats?.[selectedWeek] || {};
-        console.log('Player stats for week', selectedWeek, ':', { playerId, weekStats });
-        
-        return {
-          ...player,
-          stats: player.stats || {},
-          projected_pts: weekStats.projected_pts || 0,
-          pts_ppr: weekStats.pts_ppr || 0
-        } as ExtendedPlayer;
-      })
-      .filter((p): p is NonNullable<typeof p> => p !== null);
-
-    const totalPoints = rosterPlayers.reduce((sum, player) => 
-      sum + ((player.pts_ppr as number) || 0), 0);
-    console.log('Total points calculated:', totalPoints);
-
-    const positionStats = rosterPlayers.reduce((acc, player) => {
-      const pos = player.position;
-      if (!acc[pos]) {
-        acc[pos] = {
-          count: 0,
-          points: 0,
-          projected: 0
-        };
-      }
-      acc[pos].count++;
-      acc[pos].points += ((player.pts_ppr as number) || 0);
-      acc[pos].projected += ((player.projected_pts as number) || 0);
-      return acc;
-    }, {} as Record<string, { count: number; points: number; projected: number }>);
-    console.log('Position stats calculated:', positionStats);
-
-    const teamStats: TeamStats = {
-      teamId: userRoster.roster_id.toString(),
-      ownerId: userRoster.owner_id,
-      teamName,
-      wins: userRoster.settings.wins || 0,
-      losses: userRoster.settings.losses || 0,
-      ties: userRoster.settings.fpts === userRoster.settings.fpts_against ? 1 : 0,
-      totalPoints,
-      positionStats,
-      players: rosterPlayers
+    // Calculate team stats
+    const stats: TeamStats = {
+      totalPoints: 0,
+      positionStats: {}
     };
 
-    console.log('Final team stats:', teamStats);
-    return teamStats;
+    // Process starters
+    userRoster.starters.forEach((playerId: string) => {
+      const player = players[playerId];
+      if (player) {
+        const position = player.position;
+        if (!stats.positionStats[position]) {
+          stats.positionStats[position] = { count: 0, points: 0 };
+        }
+        stats.positionStats[position].count++;
+        stats.positionStats[position].points += player.stats?.pts_ppr || 0;
+        stats.totalPoints += player.stats?.pts_ppr || 0;
+      }
+    });
+
+    // Process reserves
+    userRoster.reserves?.forEach((playerId: string) => {
+      const player = players[playerId];
+      if (player) {
+        const position = player.position;
+        if (!stats.positionStats[position]) {
+          stats.positionStats[position] = { count: 0, points: 0 };
+        }
+        stats.positionStats[position].count++;
+        stats.positionStats[position].points += player.stats?.pts_ppr || 0;
+        stats.totalPoints += player.stats?.pts_ppr || 0;
+      }
+    });
+
+    // Process taxi squad
+    userRoster.taxi?.forEach((playerId: string) => {
+      const player = players[playerId];
+      if (player) {
+        const position = player.position;
+        if (!stats.positionStats[position]) {
+          stats.positionStats[position] = { count: 0, points: 0 };
+        }
+        stats.positionStats[position].count++;
+        stats.positionStats[position].points += player.stats?.pts_ppr || 0;
+        stats.totalPoints += player.stats?.pts_ppr || 0;
+      }
+    });
+
+    // Process IR spots
+    userRoster.ir?.forEach((playerId: string) => {
+      const player = players[playerId];
+      if (player) {
+        const position = player.position;
+        if (!stats.positionStats[position]) {
+          stats.positionStats[position] = { count: 0, points: 0 };
+        }
+        stats.positionStats[position].count++;
+        stats.positionStats[position].points += player.stats?.pts_ppr || 0;
+        stats.totalPoints += player.stats?.pts_ppr || 0;
+      }
+    });
+
+    return stats;
   }, [user, rosters, players, selectedWeek, currentLeague]);
 
   if (!teamStats || !rosterData) {
@@ -450,6 +446,90 @@ const TeamOverview: React.FC = () => {
             </tbody>
           </table>
         </div>
+      </div>
+
+      <div className="bg-white shadow rounded-lg p-6">
+        <h2 className="text-2xl font-bold mb-4">{teamStats.teamName}</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <h3 className="text-lg font-semibold mb-2">Starters</h3>
+            <div className="space-y-2">
+              {rosterData.roster.starters.map(playerId => {
+                const player = players?.[playerId];
+                return player ? (
+                  <div key={playerId} className="flex justify-between items-center">
+                    <span>{player.name} ({player.position})</span>
+                    <span>{player.stats?.pts_ppr || 0} pts</span>
+                  </div>
+                ) : null;
+              })}
+            </div>
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold mb-2">Reserves</h3>
+            <div className="space-y-2">
+              {rosterData.roster.reserves?.map(playerId => {
+                const player = players?.[playerId];
+                return player ? (
+                  <div key={playerId} className="flex justify-between items-center">
+                    <span>{player.name} ({player.position})</span>
+                    <span>{player.stats?.pts_ppr || 0} pts</span>
+                  </div>
+                ) : null;
+              })}
+            </div>
+          </div>
+          {rosterData.roster.taxi && rosterData.roster.taxi.length > 0 && (
+            <div>
+              <h3 className="text-lg font-semibold mb-2">Taxi Squad</h3>
+              <div className="space-y-2">
+                {rosterData.roster.taxi.map(playerId => {
+                  const player = players?.[playerId];
+                  return player ? (
+                    <div key={playerId} className="flex justify-between items-center">
+                      <span>{player.name} ({player.position})</span>
+                      <span>{player.stats?.pts_ppr || 0} pts</span>
+                    </div>
+                  ) : null;
+                })}
+              </div>
+            </div>
+          )}
+          {rosterData.roster.ir && rosterData.roster.ir.length > 0 && (
+            <div>
+              <h3 className="text-lg font-semibold mb-2">Injured Reserve</h3>
+              <div className="space-y-2">
+                {rosterData.roster.ir.map(playerId => {
+                  const player = players?.[playerId];
+                  return player ? (
+                    <div key={playerId} className="flex justify-between items-center">
+                      <span>{player.name} ({player.position})</span>
+                      <span>{player.stats?.pts_ppr || 0} pts</span>
+                    </div>
+                  ) : null;
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+        {teamStats && (
+          <div className="mt-6">
+            <h3 className="text-lg font-semibold mb-2">Team Stats</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-sm text-gray-600">Total Points</p>
+                <p className="text-xl font-bold">{teamStats.totalPoints.toFixed(2)}</p>
+              </div>
+              {Object.entries(teamStats.positionStats).map(([position, stats]) => (
+                <div key={position}>
+                  <p className="text-sm text-gray-600">{position}</p>
+                  <p className="text-xl font-bold">{stats.count} players</p>
+                  <p className="text-sm text-gray-600">{stats.points.toFixed(2)} pts</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       <LeagueStandings />

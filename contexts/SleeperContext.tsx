@@ -79,7 +79,8 @@ export function SleeperProvider({ children }: { children: React.ReactNode }) {
           username: data.username,
           display_name: data.display_name,
           user_id: data.user_id,
-          avatar: data.avatar
+          avatar: data.avatar,
+          metadata: data.metadata || {}
         };
       case 'league':
         return {
@@ -101,7 +102,10 @@ export function SleeperProvider({ children }: { children: React.ReactNode }) {
           roster_id: roster.roster_id,
           owner_id: roster.owner_id,
           team_name: roster.metadata?.team_name || `Team ${roster.roster_id}`,
-          starters: roster.starters,
+          starters: roster.starters || [],
+          reserves: roster.reserves || [],
+          taxi: roster.taxi || [],
+          ir: roster.ir || [],
           players: roster.players?.length || 0
         }));
       case 'players':
