@@ -18,11 +18,13 @@ interface SleeperContextType {
   players: Record<string, SleeperPlayer>;
   draftPicks: SleeperDraftPick[];
   currentLeague: SleeperLeague | null;
+  selectedWeek: string;
   isLoading: boolean;
   error: string | null;
   login: (username: string) => Promise<void>;
   logout: () => void;
   setCurrentLeague: (league: SleeperLeague) => void;
+  setSelectedWeek: (week: string) => void;
   setRosters: (rosters: SleeperRoster[]) => void;
   setUsers: (users: SleeperUser[]) => void;
   setPlayers: (players: Record<string, SleeperPlayer>) => void;
@@ -39,6 +41,7 @@ export function SleeperProvider({ children }: { children: React.ReactNode }) {
   const [players, setPlayers] = useState<Record<string, SleeperPlayer>>({});
   const [draftPicks, setDraftPicks] = useState<SleeperDraftPick[]>([]);
   const [currentLeague, setCurrentLeague] = useState<SleeperLeague | null>(null);
+  const [selectedWeek, setSelectedWeek] = useState<string>("1");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -295,11 +298,13 @@ export function SleeperProvider({ children }: { children: React.ReactNode }) {
         players,
         draftPicks,
         currentLeague,
+        selectedWeek,
         isLoading,
         error,
         login,
         logout,
         setCurrentLeague,
+        setSelectedWeek,
         setRosters,
         setUsers,
         setPlayers,
