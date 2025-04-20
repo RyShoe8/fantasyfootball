@@ -151,10 +151,13 @@ export const LeagueInfo: React.FC = () => {
           console.log('No leagues found for year:', year);
           setError('No leagues found for this year');
           setLeagues([]);
-          setCurrentLeague(undefined);
           setRosters([]);
           setUsers([]);
           setPlayers({});
+          // Don't clear currentLeague if we have leagues from other years
+          if (leagues.length === 0) {
+            setCurrentLeague(leaguesResponse.data[0]);
+          }
         }
       }
     } catch (error) {
