@@ -82,14 +82,16 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
       console.log('Sleeper API response:', response.data);
       const userData = response.data;
       
-      // Save to database
-      console.log('Saving user data to database');
-      try {
-        await saveUserData(userData);
-        console.log('User data saved successfully');
-      } catch (dbError) {
-        console.error('Error saving user data to database:', dbError);
-        // Continue even if database save fails
+      // Save to database only on server side
+      if (typeof window === 'undefined') {
+        console.log('Saving user data to database');
+        try {
+          await saveUserData(userData);
+          console.log('User data saved successfully');
+        } catch (dbError) {
+          console.error('Error saving user data to database:', dbError);
+          // Continue even if database save fails
+        }
       }
       
       console.log('Setting user state and localStorage');
@@ -278,91 +280,60 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setSelectedYearState(currentSeason.toString());
       localStorage.setItem('sleeperSelectedYear', currentSeason.toString());
       
-      // Check database first
-      console.log('Checking database for cached league data');
-      let leaguesData: SleeperLeague[] = [];
+      // Fetch leagues directly from API
+      console.log('Fetching leagues from API');
       try {
-        const dbLeague = await getLeagueData(userData.user_id, currentSeason.toString());
-        if (dbLeague) {
-          console.log('Using cached league data:', dbLeague);
-          leaguesData = [dbLeague];
-        } else {
-          console.log('No cached league data found, fetching from API');
+        const leaguesResponse = await axios.get(`https://api.sleeper.app/v1/user/${userData.user_id}/leagues/nfl/${currentSeason}`);
+        console.log('Leagues API response:', leaguesResponse.data);
+        const leaguesData = leaguesResponse.data;
+        
+        if (leaguesData.length > 0) {
+          console.log('Setting leagues and fetching additional data');
+          // Set leagues first
+          setLeagues(leaguesData);
+          
+          // Set current league
+          const leagueId = leaguesData[0].league_id;
+          console.log('Setting current league:', leaguesData[0]);
+          setCurrentLeagueState(leaguesData[0]);
+          localStorage.setItem('sleeperCurrentLeague', JSON.stringify(leaguesData[0]));
+          
+          // Fetch additional data with timeout
+          const timeout = 5000; // 5 seconds timeout
           try {
-            const leaguesResponse = await axios.get(`https://api.sleeper.app/v1/user/${userData.user_id}/leagues/nfl/${currentSeason}`);
-            console.log('Leagues API response:', leaguesResponse.data);
-            leaguesData = leaguesResponse.data;
-            
-            // Save leagues to database
-            console.log('Saving leagues to database');
-            try {
-              await Promise.all(leaguesData.map(league => saveLeagueData(league)));
-              console.log('Leagues saved successfully');
-            } catch (dbError) {
-              console.error('Error saving leagues to database:', dbError);
-              // Continue even if database save fails
-            }
-          } catch (apiError) {
-            console.error('Error fetching leagues from API:', apiError);
-            if (axios.isAxiosError(apiError)) {
-              console.error('Axios error details:', {
-                status: apiError.response?.status,
-                statusText: apiError.response?.statusText,
-                data: apiError.response?.data
-              });
-            }
-            throw new Error('Failed to fetch leagues. Please check your internet connection and try again.');
+            console.log('Fetching additional data (rosters, users, players)');
+            await Promise.race([
+              Promise.all([
+                fetchRosters(leagueId),
+                fetchUsers(leagueId),
+                fetchPlayers()
+              ]),
+              new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Request timed out')), timeout)
+              )
+            ]);
+            console.log('Additional data fetched successfully');
+          } catch (err) {
+            console.error('Error fetching additional data:', err);
+            // Don't throw here, we still want to show the basic league data
+            setError('Some data could not be loaded. Please refresh the page to try again.');
           }
+        } else {
+          console.log('No leagues found for user');
+          setError('No leagues found for this user');
+          setLeagues([]);
+          setCurrentLeagueState(null);
         }
-      } catch (dbError) {
-        console.error('Error accessing database:', dbError);
-        // If database fails, try API directly
-        try {
-          const leaguesResponse = await axios.get(`https://api.sleeper.app/v1/user/${userData.user_id}/leagues/nfl/${currentSeason}`);
-          console.log('Leagues API response:', leaguesResponse.data);
-          leaguesData = leaguesResponse.data;
-        } catch (apiError) {
-          console.error('Error fetching leagues from API:', apiError);
-          throw new Error('Failed to fetch leagues. Please check your internet connection and try again.');
+      } catch (apiError) {
+        console.error('Error fetching leagues from API:', apiError);
+        if (axios.isAxiosError(apiError)) {
+          console.error('Axios error details:', {
+            status: apiError.response?.status,
+            statusText: apiError.response?.statusText,
+            data: apiError.response?.data
+          });
         }
-      }
-      
-      if (leaguesData.length > 0) {
-        console.log('Setting leagues and fetching additional data');
-        // Set leagues first
-        setLeagues(leaguesData);
-        
-        // Set current league
-        const leagueId = leaguesData[0].league_id;
-        console.log('Setting current league:', leaguesData[0]);
-        setCurrentLeagueState(leaguesData[0]);
-        localStorage.setItem('sleeperCurrentLeague', JSON.stringify(leaguesData[0]));
-        
-        // Fetch additional data with timeout
-        const timeout = 5000; // 5 seconds timeout
-        try {
-          console.log('Fetching additional data (rosters, users, players)');
-          await Promise.race([
-            Promise.all([
-              fetchRosters(leagueId),
-              fetchUsers(leagueId),
-              fetchPlayers()
-            ]),
-            new Promise((_, reject) => 
-              setTimeout(() => reject(new Error('Request timed out')), timeout)
-            )
-          ]);
-          console.log('Additional data fetched successfully');
-        } catch (err) {
-          console.error('Error fetching additional data:', err);
-          // Don't throw here, we still want to show the basic league data
-          setError('Some data could not be loaded. Please refresh the page to try again.');
-        }
-      } else {
-        console.log('No leagues found for user');
-        setError('No leagues found for this user');
-        setLeagues([]);
-        setCurrentLeagueState(null);
+        throw new Error('Failed to fetch leagues. Please check your internet connection and try again.');
       }
 
       // Set initialization flags
