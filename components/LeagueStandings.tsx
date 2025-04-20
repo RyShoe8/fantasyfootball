@@ -31,13 +31,19 @@ const LeagueStandings: React.FC = () => {
   const { rosters, currentLeague } = useSleeper();
 
   const standings = useMemo(() => {
-    if (!rosters || !currentLeague) return [];
+    if (!rosters || !currentLeague) {
+      console.log('Missing required data:', { rosters, currentLeague });
+      return [];
+    }
 
     // Filter rosters to only include those from the current league
     const leagueRosters = rosters.filter((r: SleeperRoster) => r.league_id === currentLeague.league_id);
+    console.log('League rosters:', leagueRosters);
     
     // Calculate standings for each team
     const teamStandings: TeamStanding[] = leagueRosters.map((roster: SleeperRoster) => {
+      console.log('Processing roster:', roster);
+      
       // Calculate streak (this would come from actual league data in a real app)
       const streak = roster.settings.wins > roster.settings.losses 
         ? `W${roster.settings.wins}`
@@ -45,18 +51,23 @@ const LeagueStandings: React.FC = () => {
           ? `L${roster.settings.losses}`
           : '';
 
+      const teamName = roster.metadata?.team_name || `Team ${roster.roster_id}`;
+      console.log('Team name resolved:', { rosterId: roster.roster_id, teamName });
+
       return {
         teamId: roster.roster_id,
         ownerId: roster.owner_id,
-        teamName: roster.metadata?.team_name || `Team ${roster.roster_id}`,
-        wins: roster.settings.wins,
-        losses: roster.settings.losses,
+        teamName,
+        wins: roster.settings.wins || 0,
+        losses: roster.settings.losses || 0,
         ties: 0, // This would come from actual league data if available
-        totalPoints: roster.settings.fpts + (roster.settings.fpts_decimal || 0),
-        pointsAgainst: roster.settings.fpts_against + (roster.settings.fpts_against_decimal || 0),
+        totalPoints: (roster.settings.fpts || 0) + (roster.settings.fpts_decimal || 0),
+        pointsAgainst: (roster.settings.fpts_against || 0) + (roster.settings.fpts_against_decimal || 0),
         streak
       };
     });
+
+    console.log('Calculated standings:', teamStandings);
 
     // Sort standings by wins, then by total points
     return teamStandings.sort((a, b) => {
@@ -79,56 +90,62 @@ const LeagueStandings: React.FC = () => {
         <p className="text-gray-600">Status: {formatStatus(currentLeague.status)}</p>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Rank
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Team
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Record
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Streak
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                PF
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                PA
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {standings.map((team: TeamStanding, index: number) => (
-              <tr key={team.teamId}>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {index + 1}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                  {team.teamName}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {team.wins}-{team.losses}{team.ties > 0 ? `-${team.ties}` : ''}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {team.streak}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {team.totalPoints.toFixed(2)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {team.pointsAgainst.toFixed(2)}
-                </td>
+      {standings.length === 0 ? (
+        <div className="text-center py-4 text-gray-500">
+          No standings available yet
+        </div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Rank
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Team
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Record
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Streak
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  PF
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  PA
+                </th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {standings.map((team: TeamStanding, index: number) => (
+                <tr key={team.teamId}>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {index + 1}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    {team.teamName}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {team.wins}-{team.losses}{team.ties > 0 ? `-${team.ties}` : ''}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {team.streak}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {team.totalPoints.toFixed(2)}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {team.pointsAgainst.toFixed(2)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 };
