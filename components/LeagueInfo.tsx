@@ -46,7 +46,7 @@ const LeagueInfo: React.FC = () => {
     
     const breakdown: Record<string, number> = {};
     league.roster_positions.forEach(pos => {
-      if (pos !== 'BN' && pos !== 'FLEX' && pos !== 'IDP_FLEX' && pos !== 'SUPER_FLEX') {
+      if (pos !== 'BN' && pos !== 'IR') {
         breakdown[pos] = (breakdown[pos] || 0) + 1;
       }
     });

@@ -298,6 +298,11 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
           setCurrentLeagueState(leaguesData[0]);
           localStorage.setItem('sleeperCurrentLeague', JSON.stringify(leaguesData[0]));
           
+          // Set initialization flags before fetching additional data
+          console.log('Setting initialization flags');
+          setIsInitialized(true);
+          setHasInitialized(true);
+          
           // Fetch additional data with increased timeout
           const timeout = 15000; // 15 seconds timeout
           try {
@@ -346,11 +351,6 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
         }
         throw new Error('Failed to fetch leagues. Please check your internet connection and try again.');
       }
-
-      // Set initialization flags
-      console.log('Setting initialization flags');
-      setIsInitialized(true);
-      setHasInitialized(true);
     } catch (err) {
       console.error('Login error:', err);
       setError(err instanceof Error ? err.message : 'Failed to login');
