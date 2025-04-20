@@ -41,6 +41,10 @@ export interface SleeperLeague {
     best_ball: number;
     auction_start_amount: number;
   };
+  scoring_settings?: {
+    pts_per_reception?: number;
+    [key: string]: any;
+  };
   roster_positions: string[];
   metadata: {
     [key: string]: string;

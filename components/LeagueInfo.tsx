@@ -34,6 +34,14 @@ const LeagueInfo: React.FC = () => {
 
   if (!currentLeague) return null;
 
+  // Helper function to determine scoring type
+  const getScoringType = (league: SleeperLeague) => {
+    if (league.scoring_settings?.pts_per_reception) {
+      return 'PPR';
+    }
+    return 'Standard';
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-md p-6 mb-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
@@ -77,7 +85,7 @@ const LeagueInfo: React.FC = () => {
         <div className="bg-gray-50 p-4 rounded-lg">
           <h3 className="text-sm font-medium text-gray-500">Scoring Settings</h3>
           <p className="mt-1 text-lg font-semibold text-gray-900">
-            {currentLeague.scoring_settings?.pts_per_reception ? 'PPR' : 'Standard'}
+            {getScoringType(currentLeague)}
           </p>
         </div>
         <div className="bg-gray-50 p-4 rounded-lg">
