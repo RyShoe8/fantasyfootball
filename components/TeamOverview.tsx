@@ -1,3 +1,4 @@
+/** @jsxImportSource react */
 import React, { useState, useMemo, ChangeEvent } from 'react';
 import { useSleeper } from '../contexts/SleeperContext';
 import { SleeperRoster, SleeperPlayer } from '../types/sleeper';
@@ -29,7 +30,7 @@ type SortConfig = {
   direction: 'asc' | 'desc';
 };
 
-export default function TeamOverview() {
+const TeamOverview: React.FC = () => {
   const { currentLeague, rosters, players } = useSleeper();
   const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'wins', direction: 'desc' });
   const [selectedWeek, setSelectedWeek] = useState<number>(1);
@@ -199,4 +200,6 @@ export default function TeamOverview() {
       </div>
     </div>
   );
-} 
+}
+
+export default TeamOverview; 
