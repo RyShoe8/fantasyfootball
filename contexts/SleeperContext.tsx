@@ -427,6 +427,9 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
   // Add a function to fetch all data in sequence
   const fetchAllData = useCallback(async (userId: string, leagueId: string) => {
     try {
+      setIsLoading(true);
+      setError(null);
+
       // Fetch leagues first
       const leaguesResponse = await axios.get(`https://api.sleeper.app/v1/user/${userId}/leagues/nfl/${selectedYear}`);
       const leagues = leaguesResponse.data;
@@ -436,6 +439,7 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
       const league = leagues.find((l: SleeperLeague) => l.league_id === leagueId);
       if (!league) {
         console.error('League not found');
+        setError('League not found');
         return;
       }
       setCurrentLeague(league);
@@ -462,6 +466,8 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
     } catch (error) {
       console.error('Error fetching data:', error);
       setError('Failed to load league data');
+    } finally {
+      setIsLoading(false);
     }
   }, [selectedYear, selectedWeek]);
 
