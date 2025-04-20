@@ -120,17 +120,35 @@ export const LeagueInfo: React.FC = () => {
         if (leaguesResponse.data.length > 0) {
           setLeagues(leaguesResponse.data);
           
-          // Try to find a league with the same ID in the new year's leagues
-          let newLeague = leaguesResponse.data[0];
+          // Try to find a league with the same name as the current league
           if (currentLeague) {
-            const sameIdLeague = leaguesResponse.data.find(
-              (l: SleeperLeague) => l.league_id === currentLeague.league_id
+            const sameNameLeague = leaguesResponse.data.find(
+              (l: SleeperLeague) => l.name === currentLeague.name
             );
-            if (sameIdLeague) {
-              newLeague = sameIdLeague;
+            if (sameNameLeague) {
+              // Keep the same league name across years
+              setCurrentLeague(sameNameLeague);
+              
+              // Fetch all necessary data for the new league
+              const [rostersResponse, usersResponse, playersResponse] = await Promise.all([
+                axios.get(`https://api.sleeper.app/v1/league/${sameNameLeague.league_id}/rosters`),
+                axios.get(`https://api.sleeper.app/v1/league/${sameNameLeague.league_id}/users`),
+                axios.get('https://api.sleeper.app/v1/players/nfl')
+              ]);
+
+              // Update all the necessary state
+              setRosters(rostersResponse.data);
+              setUsers(usersResponse.data);
+              setPlayers(playersResponse.data);
+
+              // Only navigate after all data is loaded
+              router.push('/');
+              return;
             }
           }
           
+          // If no matching league found or no current league, use the first one
+          const newLeague = leaguesResponse.data[0];
           setCurrentLeague(newLeague);
 
           // Fetch all necessary data for the new league
@@ -154,7 +172,7 @@ export const LeagueInfo: React.FC = () => {
           setRosters([]);
           setUsers([]);
           setPlayers({});
-          // Don't clear currentLeague if we have leagues from other years
+          // Keep the current league if we have leagues from other years
           if (leagues.length === 0) {
             setCurrentLeague(leaguesResponse.data[0]);
           }
@@ -171,8 +189,8 @@ export const LeagueInfo: React.FC = () => {
   const years = useMemo(() => {
     const currentYear = new Date().getFullYear();
     const years = [];
-    // Start from 2023 (your first year) and go up to current year + 1
-    for (let year = 2023; year <= currentYear + 1; year++) {
+    // Start from current year + 1 and go down to 2023
+    for (let year = currentYear + 1; year >= 2023; year--) {
       years.push(year.toString());
     }
     return years;
