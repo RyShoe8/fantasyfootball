@@ -1,3 +1,10 @@
+/**
+ * SleeperContext
+ * 
+ * Provides global state management for Sleeper fantasy football data.
+ * Handles user authentication, league data, rosters, and player information.
+ */
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
 
