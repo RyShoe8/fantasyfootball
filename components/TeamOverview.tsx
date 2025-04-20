@@ -37,16 +37,24 @@ interface TeamStats {
 type SortableFields = 'teamName' | 'wins' | 'losses' | 'ties' | 'totalPoints';
 
 const TeamOverview: React.FC = () => {
-  const { user, rosters, players } = useSleeper();
+  const { user, rosters, players, currentLeague } = useSleeper();
   const [selectedWeek, setSelectedWeek] = useState('0');
   const [sortField, setSortField] = useState<SortableFields>('totalPoints');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
   const teamStats = useMemo(() => {
-    if (!user || !rosters || !players) return null;
+    if (!user || !rosters || !players || !currentLeague) return null;
 
-    const userRoster = rosters.find((r: SleeperRoster) => r.owner_id === user.user_id);
+    // Filter rosters to only include those from the current league
+    const leagueRosters = rosters.filter((r: SleeperRoster) => r.league_id === currentLeague.league_id);
+    
+    // Find the user's roster in the current league
+    const userRoster = leagueRosters.find((r: SleeperRoster) => r.owner_id === user.user_id);
     if (!userRoster) return null;
+
+    console.log('User roster:', userRoster);
+    console.log('User ID:', user.user_id);
+    console.log('Current league:', currentLeague);
 
     // Get all players from the roster
     const rosterPlayers = [...(userRoster.starters || []), ...(userRoster.reserves || [])]
@@ -99,7 +107,7 @@ const TeamOverview: React.FC = () => {
     };
 
     return teamStats;
-  }, [user, rosters, players, selectedWeek]);
+  }, [user, rosters, players, selectedWeek, currentLeague]);
 
   if (!teamStats) {
     return <div>Loading...</div>;
