@@ -12,7 +12,8 @@ const options: MongoClientOptions = {
   // Disable all browser-incompatible features
   autoEncryption: undefined,
   monitorCommands: false,
-  directConnection: true,
+  // Only use directConnection for non-SRV URIs
+  directConnection: !uri.includes('+srv://'),
   tls: false,
   minHeartbeatFrequencyMS: 5000,
   // Only use authentication if credentials are provided in the URI
