@@ -128,15 +128,7 @@ export default function LeagueInfo() {
               <p className="font-medium">{currentLeague.name}</p>
             </div>
             <div>
-              <p className="text-gray-600">Season</p>
-              <p className="font-medium">{currentLeague.season}</p>
-            </div>
-            <div>
-              <p className="text-gray-600">Status</p>
-              <p className="font-medium capitalize">{currentLeague.status}</p>
-            </div>
-            <div>
-              <p className="text-gray-600">Total Rosters</p>
+              <p className="text-gray-600">Total Teams</p>
               <p className="font-medium">{currentLeague.settings.num_teams}</p>
             </div>
             <div>
@@ -203,7 +195,11 @@ export default function LeagueInfo() {
             </div>
             <div>
               <p className="text-gray-600">Trade Deadline</p>
-              <p className="font-medium">{formatDate(currentLeague.settings.trade_deadline)}</p>
+              <p className="font-medium">
+                {currentLeague.settings.trade_deadline ? 
+                  formatDate(currentLeague.settings.trade_deadline) : 
+                  'Not set'}
+              </p>
             </div>
             <div>
               <p className="text-gray-600">Playoff Teams</p>
