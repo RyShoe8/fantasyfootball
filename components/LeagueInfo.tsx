@@ -114,6 +114,15 @@ const formatApiResponse = (data: any, type: string) => {
       }));
     case 'players':
       return `Total players: ${Object.keys(data).length}`;
+    case 'draft_picks':
+      return data.map((pick: any) => ({
+        round: pick.round,
+        roster_id: pick.roster_id,
+        owner_id: pick.owner_id,
+        player_id: pick.player_id,
+        picked_by: pick.picked_by,
+        metadata: pick.metadata || {}
+      }));
     default:
       return data;
   }
@@ -181,7 +190,7 @@ export default function LeagueInfo() {
       const response = await axios.get(`${SLEEPER_API_BASE}/league/${currentLeague.league_id}/draft_picks`);
       setDebugData(response.data);
       setDebugType('draft_picks');
-      setDraftPicks(response.data);
+      console.log('Draft picks response:', response.data);
     } catch (error) {
       console.error('Error fetching draft picks:', error);
       setDebugData({ error: 'Failed to fetch draft picks' });
