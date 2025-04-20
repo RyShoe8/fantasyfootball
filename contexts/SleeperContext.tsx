@@ -84,8 +84,15 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
       
       // Save to database
       console.log('Saving user data to database');
-      await saveUserData(userData);
+      try {
+        await saveUserData(userData);
+        console.log('User data saved successfully');
+      } catch (dbError) {
+        console.error('Error saving user data to database:', dbError);
+        // Continue even if database save fails
+      }
       
+      console.log('Setting user state and localStorage');
       setUser(userData);
       localStorage.setItem('sleeperUser', JSON.stringify(userData));
       return userData;
@@ -265,11 +272,6 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
       
       console.log('User data fetched successfully:', userData);
       
-      // Set user state and save to localStorage
-      console.log('Setting user state and saving to localStorage');
-      setUser(userData);
-      localStorage.setItem('sleeperUser', JSON.stringify(userData));
-      
       // Fetch league data
       const currentSeason = getCurrentSeason();
       console.log('Fetching leagues for season:', currentSeason);
@@ -278,31 +280,49 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
       
       // Check database first
       console.log('Checking database for cached league data');
-      const dbLeague = await getLeagueData(userData.user_id, currentSeason.toString());
       let leaguesData: SleeperLeague[] = [];
-      
-      if (dbLeague) {
-        console.log('Using cached league data:', dbLeague);
-        leaguesData = [dbLeague];
-      } else {
-        console.log('Fetching fresh league data from API');
+      try {
+        const dbLeague = await getLeagueData(userData.user_id, currentSeason.toString());
+        if (dbLeague) {
+          console.log('Using cached league data:', dbLeague);
+          leaguesData = [dbLeague];
+        } else {
+          console.log('No cached league data found, fetching from API');
+          try {
+            const leaguesResponse = await axios.get(`https://api.sleeper.app/v1/user/${userData.user_id}/leagues/nfl/${currentSeason}`);
+            console.log('Leagues API response:', leaguesResponse.data);
+            leaguesData = leaguesResponse.data;
+            
+            // Save leagues to database
+            console.log('Saving leagues to database');
+            try {
+              await Promise.all(leaguesData.map(league => saveLeagueData(league)));
+              console.log('Leagues saved successfully');
+            } catch (dbError) {
+              console.error('Error saving leagues to database:', dbError);
+              // Continue even if database save fails
+            }
+          } catch (apiError) {
+            console.error('Error fetching leagues from API:', apiError);
+            if (axios.isAxiosError(apiError)) {
+              console.error('Axios error details:', {
+                status: apiError.response?.status,
+                statusText: apiError.response?.statusText,
+                data: apiError.response?.data
+              });
+            }
+            throw new Error('Failed to fetch leagues. Please check your internet connection and try again.');
+          }
+        }
+      } catch (dbError) {
+        console.error('Error accessing database:', dbError);
+        // If database fails, try API directly
         try {
           const leaguesResponse = await axios.get(`https://api.sleeper.app/v1/user/${userData.user_id}/leagues/nfl/${currentSeason}`);
           console.log('Leagues API response:', leaguesResponse.data);
           leaguesData = leaguesResponse.data;
-          
-          // Save leagues to database
-          console.log('Saving leagues to database');
-          await Promise.all(leaguesData.map(league => saveLeagueData(league)));
-        } catch (err) {
-          console.error('Error fetching leagues:', err);
-          if (axios.isAxiosError(err)) {
-            console.error('Axios error details:', {
-              status: err.response?.status,
-              statusText: err.response?.statusText,
-              data: err.response?.data
-            });
-          }
+        } catch (apiError) {
+          console.error('Error fetching leagues from API:', apiError);
           throw new Error('Failed to fetch leagues. Please check your internet connection and try again.');
         }
       }
