@@ -148,7 +148,7 @@ const LeagueInfo: React.FC = () => {
             </div>
             <div>
               <dt className="text-sm font-medium text-gray-500">Status</dt>
-              <dd className="text-sm text-gray-900">{currentLeague.status}</dd>
+              <dd className="text-sm text-gray-900">{formatStatus(currentLeague.status)}</dd>
             </div>
           </dl>
         </div>
@@ -164,7 +164,13 @@ const LeagueInfo: React.FC = () => {
             <div>
               <dt className="text-sm font-medium text-gray-500">Roster Settings</dt>
               <dd className="text-sm text-gray-900">
-                {currentLeague.roster_positions?.join(', ')}
+                {formatRosterPositions(currentLeague.roster_positions || []).positions}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-sm font-medium text-gray-500">Bench Spots</dt>
+              <dd className="text-sm text-gray-900">
+                {formatRosterPositions(currentLeague.roster_positions || []).benchSlots} spots
               </dd>
             </div>
           </dl>
