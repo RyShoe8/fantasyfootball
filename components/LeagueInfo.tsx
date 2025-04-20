@@ -85,7 +85,6 @@ export const LeagueInfo: React.FC = () => {
     currentLeague, 
     leagues, 
     setCurrentLeague,
-    setCurrentLeagueState, 
     selectedYear,
     setSelectedYear,
     isLoading: contextLoading,
