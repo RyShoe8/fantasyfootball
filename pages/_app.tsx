@@ -1,17 +1,34 @@
 import '../styles/globals.css';
 import type { AppProps } from 'next/app';
-import { SleeperProvider } from '../contexts/SleeperContext';
+import { SleeperProvider, useSleeper } from '../contexts/SleeperContext';
 import Layout from '../components/Layout';
 import { useEffect } from 'react';
 import { useRouter } from 'next/router';
 
 // Custom wrapper component to handle initialization
-function AppWrapper({ Component, pageProps }: AppProps) {
+function AppContent({ Component, pageProps }: AppProps) {
   const router = useRouter();
+  const { user, isLoading, hasInitialized } = useSleeper();
   
+  // Handle routing based on authentication state
+  useEffect(() => {
+    if (!hasInitialized || isLoading) return;
+
+    const publicRoutes = ['/login'];
+    const isPublicRoute = publicRoutes.includes(router.pathname);
+
+    if (!user && !isPublicRoute) {
+      console.log('No user found, redirecting to login');
+      router.push('/login');
+    } else if (user && isPublicRoute) {
+      console.log('User found on public route, redirecting to home');
+      router.push('/');
+    }
+  }, [user, isLoading, hasInitialized, router]);
+
   // Log route changes and initialization for debugging
   useEffect(() => {
-    console.log('AppWrapper mounted');
+    console.log('AppContent mounted');
     console.log('Initial route:', router.pathname);
     console.log('Initial query:', router.query);
     
@@ -44,12 +61,8 @@ function AppWrapper({ Component, pageProps }: AppProps) {
     router.events.on('routeChangeComplete', handleRouteChangeComplete);
     router.events.on('routeChangeError', handleRouteChangeError);
     
-    // Check for stored user data
-    const storedUser = localStorage.getItem('sleeperUser');
-    console.log('Initial stored user data:', storedUser ? JSON.parse(storedUser) : null);
-    
     return () => {
-      console.log('AppWrapper unmounting');
+      console.log('AppContent unmounting');
       router.events.off('routeChangeStart', handleRouteChange);
       router.events.off('routeChangeComplete', handleRouteChangeComplete);
       router.events.off('routeChangeError', handleRouteChangeError);
@@ -57,10 +70,16 @@ function AppWrapper({ Component, pageProps }: AppProps) {
   }, [router]);
   
   return (
+    <Layout>
+      <Component {...pageProps} />
+    </Layout>
+  );
+}
+
+function AppWrapper(props: AppProps) {
+  return (
     <SleeperProvider>
-      <Layout>
-        <Component {...pageProps} />
-      </Layout>
+      <AppContent {...props} />
     </SleeperProvider>
   );
 }

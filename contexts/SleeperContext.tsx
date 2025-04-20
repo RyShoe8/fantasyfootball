@@ -325,6 +325,7 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setError(err instanceof Error ? err.message : 'Failed to login');
       setUser(null);
       localStorage.removeItem('sleeperUser');
+      // Don't redirect, just show the error message
     } finally {
       setIsLoading(false);
     }
