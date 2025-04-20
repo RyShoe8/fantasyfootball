@@ -176,53 +176,89 @@ export default function Home() {
       {/* API Debug Section */}
       <div className="bg-white shadow rounded-lg p-6">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-bold text-gray-900">API Debug Data</h2>
-          <button
-            onClick={() => setShowDebug(!showDebug)}
-            className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-          >
-            {showDebug ? 'Hide Debug Data' : 'Show Debug Data'}
-          </button>
+          <h2 className="text-2xl font-bold text-gray-900">API Debug</h2>
         </div>
 
-        {showDebug && (
-          <div className="space-y-6">
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h3 className="text-lg font-medium text-gray-900 mb-2">User Data</h3>
-              <pre className="overflow-auto p-4 bg-gray-800 text-gray-100 rounded-md text-sm">
-                {formatJSON(formatApiResponse(user, 'user'))}
-              </pre>
-            </div>
-
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Current League Data</h3>
-              <pre className="overflow-auto p-4 bg-gray-800 text-gray-100 rounded-md text-sm">
-                {formatJSON(formatApiResponse(currentLeague, 'league'))}
-              </pre>
-            </div>
-
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h3 className="text-lg font-medium text-gray-900 mb-2">All Leagues Data</h3>
-              <pre className="overflow-auto p-4 bg-gray-800 text-gray-100 rounded-md text-sm">
-                {formatJSON(leagues.map((league: SleeperLeague) => formatApiResponse(league, 'league')))}
-              </pre>
-            </div>
-
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Rosters Data</h3>
-              <pre className="overflow-auto p-4 bg-gray-800 text-gray-100 rounded-md text-sm">
-                {formatJSON(formatApiResponse(rosters, 'rosters'))}
-              </pre>
-            </div>
-
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Players Data</h3>
-              <pre className="overflow-auto p-4 bg-gray-800 text-gray-100 rounded-md text-sm">
-                {formatApiResponse(players, 'players')}
-              </pre>
-            </div>
-          </div>
-        )}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <button
+            onClick={() => {
+              fetch(`https://api.sleeper.app/v1/league/${currentLeague?.league_id}/rosters`)
+                .then(res => res.json())
+                .then(data => {
+                  console.log('Rosters API Response:', data);
+                  // Update the rosters in the context
+                  const formattedRosters = data.map((roster: any) => ({
+                    roster_id: roster.roster_id,
+                    owner_id: roster.owner_id,
+                    team_name: roster.metadata?.team_name || `Team ${roster.roster_id}`,
+                    starters: roster.starters || [],
+                    reserves: roster.reserve || [],
+                    taxi: roster.taxi || [],
+                    ir: roster.ir || [],
+                    players: roster.players || [],
+                    settings: roster.settings || {}
+                  }));
+                  console.log('Formatted Rosters:', formattedRosters);
+                })
+                .catch(err => console.error('Error fetching rosters:', err));
+            }}
+            className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+          >
+            Fetch Rosters
+          </button>
+          <button
+            onClick={() => {
+              fetch(`https://api.sleeper.app/v1/league/${currentLeague?.league_id}/users`)
+                .then(res => res.json())
+                .then(data => {
+                  console.log('Users API Response:', data);
+                  // Update the users in the context
+                  const formattedUsers = data.map((user: any) => ({
+                    user_id: user.user_id,
+                    username: user.username,
+                    display_name: user.display_name,
+                    avatar: user.avatar,
+                    metadata: user.metadata || {}
+                  }));
+                  console.log('Formatted Users:', formattedUsers);
+                })
+                .catch(err => console.error('Error fetching users:', err));
+            }}
+            className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600"
+          >
+            Fetch Users
+          </button>
+          <button
+            onClick={() => {
+              fetch('https://api.sleeper.app/v1/players/nfl')
+                .then(res => res.json())
+                .then(data => {
+                  console.log('Players API Response:', data);
+                  // Update the players in the context
+                  console.log('Total Players:', Object.keys(data).length);
+                })
+                .catch(err => console.error('Error fetching players:', err));
+            }}
+            className="px-4 py-2 bg-purple-500 text-white rounded-md hover:bg-purple-600"
+          >
+            Fetch Players
+          </button>
+          <button
+            onClick={() => {
+              fetch(`https://api.sleeper.app/v1/league/${currentLeague?.league_id}`)
+                .then(res => res.json())
+                .then(data => {
+                  console.log('League API Response:', data);
+                  // Update the league in the context
+                  console.log('League Settings:', data.settings);
+                })
+                .catch(err => console.error('Error fetching league:', err));
+            }}
+            className="px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600"
+          >
+            Fetch League
+          </button>
+        </div>
       </div>
     </div>
   );
