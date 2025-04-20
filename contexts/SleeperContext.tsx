@@ -53,12 +53,7 @@ interface SleeperContextType {
 
 const SleeperContext = createContext<SleeperContextType | undefined>(undefined);
 
-export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Get current season
-  const getCurrentSeason = () => {
-    return 2025;
-  };
-
+export function SleeperProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<SleeperUser | null>(null);
   const [users, setUsers] = useState<SleeperUser[]>([]);
   const [leagues, setLeagues] = useState<SleeperLeague[]>([]);
@@ -73,6 +68,11 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [error, setError] = useState<string | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
   const [hasInitialized, setHasInitialized] = useState(false);
+
+  // Get current season
+  const getCurrentSeason = () => {
+    return 2025;
+  };
 
   const fetchUserByUsername = async (username: string) => {
     try {
@@ -645,25 +645,72 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   }, [selectedYear, selectedWeek]);
 
-  // Add initialization effect
+  // Initialize context
   useEffect(() => {
+    let mounted = true;
     const initializeContext = async () => {
       try {
         setIsLoading(true);
         setError(null);
-        
-        // Get user from localStorage
-        const storedUser = localStorage.getItem('sleeperUser');
-        if (!storedUser) {
-          console.log('No stored user found');
-          setIsLoading(false);
-          setHasInitialized(true);
-          return;
+
+        // Check for user in localStorage
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+          const parsedUser = JSON.parse(storedUser);
+          setUser(parsedUser);
+
+          // Fetch user's leagues
+          const response = await axios.get(`/api/leagues?userId=${parsedUser.user_id}`);
+          if (mounted) {
+            setLeagues(response.data);
+          }
+
+          // Fetch rosters for all leagues
+          const rosterPromises = response.data.map((league: SleeperLeague) =>
+            axios.get(`/api/rosters?leagueId=${league.league_id}`)
+          );
+          const rosterResponses = await Promise.all(rosterPromises);
+          if (mounted) {
+            setRosters(rosterResponses.flatMap(res => res.data));
+          }
+
+          // Fetch draft picks for all leagues
+          const draftPickPromises = response.data.map((league: SleeperLeague) =>
+            axios.get(`/api/draft-picks?leagueId=${league.league_id}`)
+          );
+          const draftPickResponses = await Promise.all(draftPickPromises);
+          if (mounted) {
+            setDraftPicks(draftPickResponses.flatMap(res => res.data));
+          }
+
+          // Fetch players
+          const playersResponse = await axios.get('/api/players');
+          if (mounted) {
+            setPlayers(playersResponse.data);
+          }
         }
 
-        const userData = JSON.parse(storedUser);
-        setUser(userData);
+        if (mounted) {
+          setHasInitialized(true);
+          setIsLoading(false);
+        }
+      } catch (err) {
+        console.error('Error initializing context:', err);
+        if (mounted) {
+          setError('Failed to initialize app. Please try again.');
+          setHasInitialized(true);
+          setIsLoading(false);
+          // Clear user data on error
+          setUser(null);
+          localStorage.removeItem('user');
+        }
+      }
+    };
 
+    initializeContext();
+
+    return () => {
+      mounted = false;
         // Set a timeout for the entire initialization process
         const initTimeout = setTimeout(() => {
           if (isLoading) {
