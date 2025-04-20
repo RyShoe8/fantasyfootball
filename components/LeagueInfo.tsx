@@ -129,10 +129,6 @@ export default function LeagueInfo() {
               <p className="font-medium">{currentLeague.settings.num_teams}</p>
             </div>
             <div>
-              <p className="text-gray-600">Draft ID</p>
-              <p className="font-medium">{currentLeague.settings?.draft_id || 'Not set'}</p>
-            </div>
-            <div>
               <p className="text-gray-600">Previous League ID</p>
               <p className="font-medium">{currentLeague.previous_league_id || 'None'}</p>
             </div>
