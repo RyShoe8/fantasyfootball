@@ -215,65 +215,42 @@ export default function LeagueInfo() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <h3 className="text-lg font-medium text-gray-900">League Settings</h3>
-            <dl className="mt-2 space-y-2">
+          <div className="bg-white shadow rounded-lg p-6">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">League Settings</h3>
+            <dl className="space-y-2">
               <div className="flex justify-between">
                 <dt className="text-gray-600">Teams</dt>
                 <dd className="text-gray-900">{currentLeague.settings.num_teams}</dd>
               </div>
               <div className="flex justify-between">
                 <dt className="text-gray-600">Roster Positions</dt>
-                <dd className="text-gray-900 text-sm">{formatRosterPositions(currentLeague.roster_positions).positions}</dd>
-              </div>
-              <div className="flex justify-between">
-                <dt className="text-gray-600">Bench Slots</dt>
-                <dd className="text-gray-900">{formatRosterPositions(currentLeague.roster_positions).benchSlots}</dd>
+                <dd className="text-gray-900">{currentLeague.roster_positions.join(', ')}</dd>
               </div>
               <div className="flex justify-between">
                 <dt className="text-gray-600">Waiver Type</dt>
-                <dd className="text-gray-900">
-                  {currentLeague.settings.waiver_type === 0 ? 'Standard' : 
-                   currentLeague.settings.waiver_type === 1 ? 'FAAB' : 'Custom'}
-                </dd>
+                <dd className="text-gray-900">{currentLeague.settings.waiver_type === 0 ? 'Standard' : 'FAAB'}</dd>
               </div>
               <div className="flex justify-between">
-                <dt className="text-gray-600">Daily Waivers</dt>
-                <dd className="text-gray-900">{currentLeague.settings.daily_waivers === 1 ? 'Yes' : 'No'}</dd>
+                <dt className="text-gray-600">Trade Deadline</dt>
+                <dd className="text-gray-900">Week {currentLeague.settings.trade_deadline}</dd>
               </div>
             </dl>
           </div>
 
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <h3 className="text-lg font-medium text-gray-900">Season Info</h3>
-            <dl className="mt-2 space-y-2">
+          <div className="bg-white shadow rounded-lg p-6">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Season Info</h3>
+            <dl className="space-y-2">
               <div className="flex justify-between">
                 <dt className="text-gray-600">Season</dt>
-                <dd className="text-gray-900">
-                  {currentLeague.season}
-                  <span className="text-xs text-gray-500 ml-1">
-                    {getSeasonNumber(currentLeague.season, leagues)}
-                  </span>
-                </dd>
+                <dd className="text-gray-900">{currentLeague.season}</dd>
               </div>
               <div className="flex justify-between">
                 <dt className="text-gray-600">Status</dt>
-                <dd className="text-gray-900">{formatStatus(currentLeague.status)}</dd>
+                <dd className="text-gray-900">{currentLeague.status}</dd>
               </div>
               <div className="flex justify-between">
                 <dt className="text-gray-600">Start Week</dt>
-                <dd className="text-gray-900">
-                  Week {currentLeague.settings.start_week}
-                  <span className="text-xs text-gray-500 ml-1">
-                    ({getDateForWeek(currentLeague.settings.start_week, currentLeague.season)})
-                  </span>
-                </dd>
-              </div>
-              <div className="flex justify-between">
-                <dt className="text-gray-600">Season Start</dt>
-                <dd className="text-gray-900">
-                  {getDateForWeek(currentLeague.settings.start_week, currentLeague.season)}
-                </dd>
+                <dd className="text-gray-900">{currentLeague.settings.start_week}</dd>
               </div>
               <div className="flex justify-between">
                 <dt className="text-gray-600">Draft Rounds</dt>
@@ -282,37 +259,20 @@ export default function LeagueInfo() {
             </dl>
           </div>
 
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <h3 className="text-lg font-medium text-gray-900">Playoff Info</h3>
-            <dl className="mt-2 space-y-2">
+          <div className="bg-white shadow rounded-lg p-6">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Playoff Info</h3>
+            <dl className="space-y-2">
               <div className="flex justify-between">
                 <dt className="text-gray-600">Playoff Teams</dt>
                 <dd className="text-gray-900">{currentLeague.settings.playoff_teams}</dd>
               </div>
               <div className="flex justify-between">
                 <dt className="text-gray-600">Playoff Week Start</dt>
-                <dd className="text-gray-900">
-                  Week {currentLeague.settings.playoff_week_start} 
-                  <span className="text-xs text-gray-500 ml-1">
-                    ({getDateForWeek(currentLeague.settings.playoff_week_start, currentLeague.season)})
-                  </span>
-                </dd>
-              </div>
-              <div className="flex justify-between">
-                <dt className="text-gray-600">Trade Deadline</dt>
-                <dd className="text-gray-900">
-                  Week {currentLeague.settings.trade_deadline}
-                  <span className="text-xs text-gray-500 ml-1">
-                    ({getDateForWeek(currentLeague.settings.trade_deadline, currentLeague.season)})
-                  </span>
-                </dd>
+                <dd className="text-gray-900">{currentLeague.settings.playoff_week_start}</dd>
               </div>
               <div className="flex justify-between">
                 <dt className="text-gray-600">Playoff Type</dt>
-                <dd className="text-gray-900">
-                  {currentLeague.settings.playoff_type === 0 ? 'Single Elimination' : 
-                   currentLeague.settings.playoff_type === 1 ? 'Two Rounds' : 'Custom'}
-                </dd>
+                <dd className="text-gray-900">{currentLeague.settings.playoff_type === 0 ? 'Single Elimination' : 'Two Rounds'}</dd>
               </div>
             </dl>
           </div>
