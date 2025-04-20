@@ -117,7 +117,7 @@ export function SleeperProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(true);
       setError(null);
 
-      // Fetch user's leagues
+      // 1. Fetch user's leagues
       const currentYear = new Date().getFullYear();
       console.log(`Fetching leagues for user ${userId} and year ${currentYear}`);
       const leaguesResponse: AxiosResponse<SleeperLeague[]> = await axios.get(
@@ -129,76 +129,68 @@ export function SleeperProvider({ children }: { children: React.ReactNode }) {
         throw new Error('Invalid leagues data received from API');
       }
 
-      // Log each league's data structure
-      leaguesResponse.data.forEach((league, index) => {
-        console.log(`League ${index} data:`, {
-          league_id: league.league_id,
-          name: league.name,
-          settings: league.settings ? {
-            num_teams: league.settings.num_teams,
-            has_settings: !!league.settings
-          } : 'No settings found'
-        });
-      });
+      // Sort leagues alphabetically by name
+      const sortedLeagues = [...leaguesResponse.data].sort((a, b) => 
+        a.name.localeCompare(b.name)
+      );
 
-      console.log('Leagues data:', formatApiResponse(leaguesResponse.data, 'league'));
-      setLeagues(leaguesResponse.data);
+      console.log('Sorted leagues:', sortedLeagues.map(l => ({
+        name: l.name,
+        league_id: l.league_id
+      })));
 
-      // Get the first league or use the current league if it exists in the fetched leagues
-      const targetLeague = currentLeague && leaguesResponse.data.some(l => l.league_id === currentLeague.league_id)
-        ? currentLeague
-        : leaguesResponse.data[0];
+      // 2. Get the last visited league from localStorage or default to first alphabetical
+      const lastVisitedLeagueId = localStorage.getItem('lastVisitedLeague');
+      console.log('Last visited league ID:', lastVisitedLeagueId);
 
-      if (targetLeague) {
-        console.log('Target league before setting:', {
-          league_id: targetLeague.league_id,
-          name: targetLeague.name,
-          settings: targetLeague.settings ? {
-            num_teams: targetLeague.settings.num_teams,
-            has_settings: !!targetLeague.settings
-          } : 'No settings found'
-        });
+      const targetLeague = lastVisitedLeagueId && sortedLeagues.some(l => l.league_id === lastVisitedLeagueId)
+        ? sortedLeagues.find(l => l.league_id === lastVisitedLeagueId)
+        : sortedLeagues[0];
 
-        // Validate league data before setting
-        if (!targetLeague.settings || typeof targetLeague.settings.num_teams === 'undefined') {
-          console.error('Invalid league data structure:', targetLeague);
-          throw new Error('Invalid league data structure received from API');
-        }
-
-        console.log('Setting target league:', formatApiResponse(targetLeague, 'league'));
-        setCurrentLeague(targetLeague);
-
-        // Fetch rosters for target league
-        console.log(`Fetching rosters for league ${targetLeague.league_id}`);
-        const rostersResponse = await axios.get<SleeperRoster[]>(
-          `https://api.sleeper.app/v1/league/${targetLeague.league_id}/rosters`
-        );
-        
-        if (!Array.isArray(rostersResponse.data)) {
-          console.error('Invalid roster data received:', rostersResponse.data);
-          throw new Error('Invalid roster data received from API');
-        }
-
-        console.log('Rosters data:', formatApiResponse(rostersResponse.data, 'rosters'));
-        setRosters(rostersResponse.data);
-
-        // Fetch players data
-        console.log('Fetching players data...');
-        const playersResponse: AxiosResponse<Record<string, SleeperPlayer>> = await axios.get(
-          'https://api.sleeper.app/v1/players/nfl'
-        );
-        
-        if (!playersResponse.data || typeof playersResponse.data !== 'object') {
-          console.error('Invalid players data received:', playersResponse.data);
-          throw new Error('Invalid players data received from API');
-        }
-
-        console.log('Players data:', formatApiResponse(playersResponse.data, 'players'));
-        setPlayers(playersResponse.data);
-      } else {
+      if (!targetLeague) {
         console.log('No leagues found for user');
         setError('No leagues found for this user. Please check your Sleeper account.');
+        setIsLoading(false);
+        return;
       }
+
+      console.log('Selected target league:', {
+        name: targetLeague.name,
+        league_id: targetLeague.league_id
+      });
+
+      // 3. Set the leagues and current league
+      setLeagues(sortedLeagues);
+      setCurrentLeague(targetLeague);
+      localStorage.setItem('lastVisitedLeague', targetLeague.league_id);
+
+      // 4. Fetch league-specific data
+      console.log(`Fetching rosters for league ${targetLeague.league_id}`);
+      const rostersResponse = await axios.get<SleeperRoster[]>(
+        `https://api.sleeper.app/v1/league/${targetLeague.league_id}/rosters`
+      );
+      
+      if (!Array.isArray(rostersResponse.data)) {
+        console.error('Invalid roster data received:', rostersResponse.data);
+        throw new Error('Invalid roster data received from API');
+      }
+
+      console.log('Rosters data:', formatApiResponse(rostersResponse.data, 'rosters'));
+      setRosters(rostersResponse.data);
+
+      // Fetch players data
+      console.log('Fetching players data...');
+      const playersResponse: AxiosResponse<Record<string, SleeperPlayer>> = await axios.get(
+        'https://api.sleeper.app/v1/players/nfl'
+      );
+      
+      if (!playersResponse.data || typeof playersResponse.data !== 'object') {
+        console.error('Invalid players data received:', playersResponse.data);
+        throw new Error('Invalid players data received from API');
+      }
+
+      console.log('Players data:', formatApiResponse(playersResponse.data, 'players'));
+      setPlayers(playersResponse.data);
 
       setIsLoading(false);
       console.log('All user data fetched and stored successfully');
@@ -221,7 +213,7 @@ export function SleeperProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(true);
       setError(null);
 
-      // Fetch user data
+      // 1. Fetch user data
       console.log('Fetching user data from API...');
       const userResponse: AxiosResponse<SleeperUser> = await axios.get(
         `https://api.sleeper.app/v1/user/${username}`
@@ -238,7 +230,7 @@ export function SleeperProvider({ children }: { children: React.ReactNode }) {
       setUser(userData);
       localStorage.setItem('sleeperUser', JSON.stringify(userData));
 
-      // Fetch user's leagues and other data
+      // 2. Fetch user's leagues and other data
       console.log('Fetching additional user data...');
       await fetchUserData(userData.user_id);
 
