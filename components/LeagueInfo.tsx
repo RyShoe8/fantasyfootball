@@ -114,75 +114,50 @@ export const LeagueInfo: React.FC = () => {
     try {
       setIsLoading(true);
       setError(null);
+      
+      // Set the year first
       setSelectedYear(year);
-      // Refresh leagues for the selected year
-      if (user) {
-        const leaguesResponse = await axios.get(`https://api.sleeper.app/v1/user/${user.user_id}/leagues/nfl/${year}`);
-        if (leaguesResponse.data.length > 0) {
-          setLeagues(leaguesResponse.data);
-          
-          // Try to find a league with the same name as the current league
-          if (currentLeague) {
-            const sameNameLeague = leaguesResponse.data.find(
-              (l: SleeperLeague) => l.name === currentLeague.name
-            );
-            if (sameNameLeague) {
-              // Keep the same league name across years
-              setCurrentLeague(sameNameLeague);
-              
-              // Fetch all necessary data for the new league
-              const [rostersResponse, usersResponse, playersResponse] = await Promise.all([
-                axios.get(`https://api.sleeper.app/v1/league/${sameNameLeague.league_id}/rosters`),
-                axios.get(`https://api.sleeper.app/v1/league/${sameNameLeague.league_id}/users`),
-                axios.get('https://api.sleeper.app/v1/players/nfl')
-              ]);
-
-              // Update all the necessary state
-              setRosters(rostersResponse.data);
-              setUsers(usersResponse.data);
-              setPlayers(playersResponse.data);
-
-              // Only navigate if we're not already on the league page
-              if (!router.pathname.includes('/league/')) {
-                router.push(`/league/${sameNameLeague.league_id}`);
-              }
-              return;
+      
+      // Fetch leagues for the new year
+      const response = await axios.get(`https://api.sleeper.app/v1/user/${user?.user_id}/leagues/nfl/${year}`);
+      const leagues = response.data;
+      
+      if (leagues.length > 0) {
+        // Update leagues state
+        setLeagues(leagues);
+        
+        // Try to find a league with the same name as current league
+        if (currentLeague) {
+          const sameNameLeague = leagues.find((l: SleeperLeague) => l.name === currentLeague.name);
+          if (sameNameLeague) {
+            setCurrentLeague(sameNameLeague);
+            // Only navigate if we're not already on a league page
+            if (!router.pathname.includes('/league/')) {
+              router.push(`/league/${sameNameLeague.league_id}`);
             }
+            return;
           }
-          
-          // If no matching league found or no current league, use the first one
-          const newLeague = leaguesResponse.data[0];
-          setCurrentLeague(newLeague);
-
-          // Fetch all necessary data for the new league
-          const [rostersResponse, usersResponse, playersResponse] = await Promise.all([
-            axios.get(`https://api.sleeper.app/v1/league/${newLeague.league_id}/rosters`),
-            axios.get(`https://api.sleeper.app/v1/league/${newLeague.league_id}/users`),
-            axios.get('https://api.sleeper.app/v1/players/nfl')
-          ]);
-
-          // Update all the necessary state
-          setRosters(rostersResponse.data);
-          setUsers(usersResponse.data);
-          setPlayers(playersResponse.data);
-
-          // Only navigate if we're not already on the league page
-          if (!router.pathname.includes('/league/')) {
-            router.push(`/league/${newLeague.league_id}`);
-          }
-        } else {
-          console.log('No leagues found for year:', year);
-          setError('No leagues found for this year');
-          setLeagues([]);
-          setRosters([]);
-          setUsers([]);
-          setPlayers({});
-          setCurrentLeague(null);
         }
+        
+        // If no matching league found, use the first one
+        const newLeague = leagues[0];
+        setCurrentLeague(newLeague);
+        // Only navigate if we're not already on a league page
+        if (!router.pathname.includes('/league/')) {
+          router.push(`/league/${newLeague.league_id}`);
+        }
+      } else {
+        setError('No leagues found for this year');
+        setLeagues([]);
+        setCurrentLeague(null);
+        // Clear other states
+        setRosters([]);
+        setUsers([]);
+        setPlayers({});
       }
     } catch (error) {
-      console.error('Error fetching leagues for year:', error);
-      setError('Failed to fetch leagues for this year');
+      console.error('Error changing year:', error);
+      setError('Failed to load leagues for this year');
     } finally {
       setIsLoading(false);
     }
