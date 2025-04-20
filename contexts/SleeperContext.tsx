@@ -9,6 +9,18 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import axios, { AxiosError, AxiosResponse } from 'axios';
 import { SleeperUser, SleeperLeague, SleeperRoster, SleeperPlayer, SleeperDraftPick } from '../types/sleeper';
+import { 
+  getLeagueData, 
+  saveLeagueData, 
+  getRosterData, 
+  saveRosterData, 
+  getPlayerData, 
+  savePlayerData, 
+  getUserData, 
+  saveUserData, 
+  getDraftPicks, 
+  saveDraftPick 
+} from '../lib/db';
 
 interface SleeperContextType {
   user: SleeperUser | null;
@@ -59,8 +71,21 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const fetchUserData = async (userId: string) => {
     try {
+      // Check database first
+      const dbUser = await getUserData(userId);
+      if (dbUser) {
+        setUser(dbUser);
+        localStorage.setItem('sleeperUser', JSON.stringify(dbUser));
+        return dbUser;
+      }
+
+      // If not in database, fetch from API
       const response = await axios.get(`https://api.sleeper.app/v1/user/${userId}`);
       const userData = response.data;
+      
+      // Save to database
+      await saveUserData(userData);
+      
       setUser(userData);
       localStorage.setItem('sleeperUser', JSON.stringify(userData));
       return userData;
@@ -73,8 +98,21 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const fetchRosters = async (leagueId: string) => {
     try {
+      // Check database first
+      const dbRosters = await getRosterData(leagueId, selectedYear);
+      if (dbRosters && dbRosters.length > 0) {
+        setRosters(dbRosters);
+        return;
+      }
+
+      // If not in database, fetch from API
       const response = await axios.get(`https://api.sleeper.app/v1/league/${leagueId}/rosters`);
-      setRosters(response.data);
+      const rosters = response.data;
+      
+      // Save each roster to database
+      await Promise.all(rosters.map((roster: SleeperRoster) => saveRosterData(roster)));
+      
+      setRosters(rosters);
     } catch (err) {
       console.error('Error fetching rosters:', err);
       setError('Failed to fetch rosters');
@@ -83,8 +121,25 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const fetchUsers = async (leagueId: string) => {
     try {
+      // Check database first
+      const dbUsers = await Promise.all(
+        (await getRosterData(leagueId, selectedYear))
+          .map(roster => getUserData(roster.owner_id))
+      );
+      
+      if (dbUsers.every(user => user !== null)) {
+        setUsers(dbUsers.filter((user): user is SleeperUser => user !== null));
+        return;
+      }
+
+      // If not in database, fetch from API
       const response = await axios.get(`https://api.sleeper.app/v1/league/${leagueId}/users`);
-      setUsers(response.data);
+      const users = response.data;
+      
+      // Save each user to database
+      await Promise.all(users.map((user: SleeperUser) => saveUserData(user)));
+      
+      setUsers(users);
     } catch (err) {
       console.error('Error fetching users:', err);
       setError('Failed to fetch users');
@@ -93,8 +148,19 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const fetchPlayers = async () => {
     try {
+      // For players, we'll fetch from API and update database
+      // This is because player data changes frequently
       const response = await axios.get('https://api.sleeper.app/v1/players/nfl');
-      setPlayers(response.data);
+      const players = response.data;
+      
+      // Save each player to database
+      await Promise.all(
+        Object.entries(players).map(([id, player]) => 
+          savePlayerData(player as SleeperPlayer)
+        )
+      );
+      
+      setPlayers(players);
     } catch (err) {
       console.error('Error fetching players:', err);
       setError('Failed to fetch players');
@@ -105,23 +171,37 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setIsLoading(true);
     setError(null);
     try {
-      const response = await axios.get(`https://api.sleeper.app/v1/user/${username}`);
-      const userData = response.data;
-      setUser(userData);
-      localStorage.setItem('sleeperUser', JSON.stringify(userData));
+      const userData = await fetchUserData(username);
+      if (!userData) {
+        throw new Error('Failed to fetch user data');
+      }
       
       // Fetch league data
       const currentSeason = getCurrentSeason();
       setSelectedYearState(currentSeason.toString());
-      const leaguesResponse = await axios.get(`https://api.sleeper.app/v1/user/${userData.user_id}/leagues/nfl/${currentSeason}`);
       
-      if (leaguesResponse.data.length > 0) {
+      // Check database first
+      const dbLeague = await getLeagueData(userData.user_id, currentSeason.toString());
+      let leaguesData: SleeperLeague[] = [];
+      
+      if (dbLeague) {
+        leaguesData = [dbLeague];
+      } else {
+        // If not in database, fetch from API
+        const leaguesResponse = await axios.get(`https://api.sleeper.app/v1/user/${userData.user_id}/leagues/nfl/${currentSeason}`);
+        leaguesData = leaguesResponse.data;
+        
+        // Save leagues to database
+        await Promise.all(leaguesData.map(league => saveLeagueData(league)));
+      }
+      
+      if (leaguesData.length > 0) {
         // Set leagues first
-        setLeagues(leaguesResponse.data);
+        setLeagues(leaguesData);
         
         // Set current league
-        const leagueId = leaguesResponse.data[0].league_id;
-        setCurrentLeagueState(leaguesResponse.data[0]);
+        const leagueId = leaguesData[0].league_id;
+        setCurrentLeagueState(leaguesData[0]);
         
         // Fetch additional data
         await Promise.all([
