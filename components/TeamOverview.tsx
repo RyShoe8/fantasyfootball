@@ -54,7 +54,7 @@ interface RosterData {
 }
 
 const TeamOverview: React.FC = () => {
-  const { user, rosters, players, currentLeague } = useSleeper();
+  const { user, rosters, players, currentLeague, leagues } = useSleeper();
   const [selectedWeek, setSelectedWeek] = useState('0');
   const [sortField, setSortField] = useState<SortableFields>('totalPoints');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
@@ -187,11 +187,32 @@ const TeamOverview: React.FC = () => {
     }
   };
 
+  // Helper function to determine season number
+  const getSeasonNumber = (season: string) => {
+    // Sort leagues by season to determine which season number this is
+    const sortedLeagues = [...leagues].sort((a, b) => parseInt(a.season) - parseInt(b.season));
+    const seasonIndex = sortedLeagues.findIndex(l => l.season === season);
+    
+    if (seasonIndex === -1) return '';
+    
+    // Convert to ordinal (1st, 2nd, 3rd, etc.)
+    const seasonNumber = seasonIndex + 1;
+    const suffix = ['th', 'st', 'nd', 'rd'][seasonNumber % 10] || 'th';
+    return ` (${seasonNumber}${suffix} Season)`;
+  };
+
   return (
     <div className="space-y-6">
       <div className="bg-white shadow rounded-lg p-6">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-bold text-gray-900">My Roster</h2>
+          <h2 className="text-2xl font-bold text-gray-900">
+            My Roster
+            {currentLeague && (
+              <span className="text-sm text-gray-500 ml-2">
+                {getSeasonNumber(currentLeague.season)}
+              </span>
+            )}
+          </h2>
           <select
             className="mt-1 block w-32 pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
             value={selectedWeek}
@@ -238,7 +259,7 @@ const TeamOverview: React.FC = () => {
                     {player.full_name}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {player.position}
+                    {formatPosition(player.position)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {player.team}
@@ -327,10 +348,13 @@ const TeamOverview: React.FC = () => {
                       {Object.entries(team.positionStats).map(([pos, stats]) => (
                         <div key={pos} className="flex justify-between">
                           <span>{formatPosition(pos)}:</span>
-                          <span>{stats.count} players</span>
                           <span>{stats.points.toFixed(2)} pts</span>
                         </div>
                       ))}
+                      <div className="flex justify-between pt-1 border-t border-gray-200">
+                        <span>Bench:</span>
+                        <span>{rosterData.roster.reserves?.length || 0} players</span>
+                      </div>
                     </div>
                   </td>
                 </tr>
