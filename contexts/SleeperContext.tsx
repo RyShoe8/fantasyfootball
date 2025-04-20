@@ -120,17 +120,34 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
         return;
       }
 
-      // If not in database, fetch from API
-      const response = await axios.get(`https://api.sleeper.app/v1/league/${leagueId}/rosters`);
-      const rosters = response.data;
+      // If not in database, fetch from API with timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
       
-      // Save each roster to database
-      await Promise.all(rosters.map((roster: SleeperRoster) => saveRosterData(roster)));
-      
-      setRosters(rosters);
+      try {
+        const response = await axios.get(`https://api.sleeper.app/v1/league/${leagueId}/rosters`, {
+          signal: controller.signal,
+          timeout: 5000
+        });
+        clearTimeout(timeoutId);
+        
+        const rosters = response.data;
+        
+        // Save each roster to database
+        await Promise.all(rosters.map((roster: SleeperRoster) => saveRosterData(roster)));
+        
+        setRosters(rosters);
+      } catch (error) {
+        clearTimeout(timeoutId);
+        console.error('Error fetching rosters from API:', error);
+        // Don't throw, just set empty rosters
+        setRosters([]);
+      }
     } catch (err) {
-      console.error('Error fetching rosters:', err);
+      console.error('Error in fetchRosters:', err);
       setError('Failed to fetch rosters');
+      // Don't throw, just set empty rosters
+      setRosters([]);
     }
   };
 
@@ -147,17 +164,34 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
         return;
       }
 
-      // If not in database, fetch from API
-      const response = await axios.get(`https://api.sleeper.app/v1/league/${leagueId}/users`);
-      const users = response.data;
+      // If not in database, fetch from API with timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
       
-      // Save each user to database
-      await Promise.all(users.map((user: SleeperUser) => saveUserData(user)));
-      
-      setUsers(users);
+      try {
+        const response = await axios.get(`https://api.sleeper.app/v1/league/${leagueId}/users`, {
+          signal: controller.signal,
+          timeout: 5000
+        });
+        clearTimeout(timeoutId);
+        
+        const users = response.data;
+        
+        // Save each user to database
+        await Promise.all(users.map((user: SleeperUser) => saveUserData(user)));
+        
+        setUsers(users);
+      } catch (error) {
+        clearTimeout(timeoutId);
+        console.error('Error fetching users from API:', error);
+        // Don't throw, just set empty users
+        setUsers([]);
+      }
     } catch (err) {
-      console.error('Error fetching users:', err);
+      console.error('Error in fetchUsers:', err);
       setError('Failed to fetch users');
+      // Don't throw, just set empty users
+      setUsers([]);
     }
   };
 
@@ -181,34 +215,57 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
       }
 
       console.log('Fetching fresh player data');
-      const response = await axios.get('/api/players');
-      const playerData = response.data;
       
-      // Validate player data
-      if (!playerData || typeof playerData !== 'object' || Object.keys(playerData).length === 0) {
-        console.error('Invalid player data received:', playerData);
-        throw new Error('Invalid player data received from API');
-      }
-
-      console.log('Player data fetched successfully:', {
-        totalPlayers: Object.keys(playerData).length,
-        samplePlayer: Object.values(playerData)[0]
-      });
+      // Add timeout to prevent hanging requests
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
       
-      // Cache the data
-      localStorage.setItem('sleeperPlayers', JSON.stringify(playerData));
-      localStorage.setItem('sleeperPlayersTimestamp', now.toString());
-      
-      setPlayers(playerData);
-    } catch (error) {
-      console.error('Error fetching players:', error);
-      if (axios.isAxiosError(error)) {
-        console.error('Axios error details:', {
-          status: error.response?.status,
-          statusText: error.response?.statusText,
-          data: error.response?.data
+      try {
+        const response = await axios.get('/api/players', {
+          signal: controller.signal,
+          timeout: 5000
         });
+        clearTimeout(timeoutId);
+        
+        const playerData = response.data;
+        
+        // Validate player data
+        if (!playerData || typeof playerData !== 'object' || Object.keys(playerData).length === 0) {
+          console.error('Invalid player data received:', playerData);
+          throw new Error('Invalid player data received from API');
+        }
+
+        console.log('Player data fetched successfully:', {
+          totalPlayers: Object.keys(playerData).length,
+          samplePlayer: Object.values(playerData)[0]
+        });
+        
+        // Cache the data
+        localStorage.setItem('sleeperPlayers', JSON.stringify(playerData));
+        localStorage.setItem('sleeperPlayersTimestamp', now.toString());
+        
+        setPlayers(playerData);
+      } catch (error) {
+        clearTimeout(timeoutId);
+        console.error('Error fetching players from API:', error);
+        // Try to use cached data as fallback
+        const cachedPlayers = localStorage.getItem('sleeperPlayers');
+        if (cachedPlayers) {
+          try {
+            const parsedPlayers = JSON.parse(cachedPlayers);
+            if (Object.keys(parsedPlayers).length > 0) {
+              console.log('Using cached player data as fallback');
+              setPlayers(parsedPlayers);
+              return;
+            }
+          } catch (e) {
+            console.error('Error parsing cached player data:', e);
+          }
+        }
+        setPlayers({});
       }
+    } catch (error) {
+      console.error('Error in fetchPlayers:', error);
       setError('Failed to fetch player data');
       // Try to use cached data as fallback
       const cachedPlayers = localStorage.getItem('sleeperPlayers');
@@ -600,6 +657,7 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
         if (!storedUser) {
           console.log('No stored user found');
           setIsLoading(false);
+          setHasInitialized(true);
           return;
         }
 
@@ -612,19 +670,13 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
             console.error('Initialization timed out');
             setError('Initialization timed out. Please try refreshing the page.');
             setIsLoading(false);
+            setHasInitialized(true);
           }
         }, 10000); // 10 second timeout
 
         // Fetch leagues with timeout
-        const leaguesPromise = axios.get(`https://api.sleeper.app/v1/user/${userData.user_id}/leagues/nfl/${selectedYear}`);
-        const leaguesTimeout = setTimeout(() => {
-          console.error('Leagues fetch timed out');
-          setError('Failed to fetch leagues. Please try refreshing the page.');
-        }, 5000);
-
         try {
-          const leaguesResponse = await leaguesPromise;
-          clearTimeout(leaguesTimeout);
+          const leaguesResponse = await axios.get(`https://api.sleeper.app/v1/user/${userData.user_id}/leagues/nfl/${selectedYear}`);
           const leaguesData = leaguesResponse.data;
           setLeagues(leaguesData);
 
@@ -633,32 +685,43 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
             setCurrentLeagueState(currentLeagueData);
 
             // Fetch rosters and users in parallel with timeouts
-            const rostersPromise = fetchRosters(currentLeagueData.league_id);
-            const usersPromise = fetchUsers(currentLeagueData.league_id);
-            const playersPromise = fetchPlayers();
-
-            const rostersTimeout = setTimeout(() => {
-              console.error('Rosters fetch timed out');
-              setError('Failed to fetch rosters. Some data may be incomplete.');
-            }, 5000);
-
-            const usersTimeout = setTimeout(() => {
-              console.error('Users fetch timed out');
-              setError('Failed to fetch users. Some data may be incomplete.');
-            }, 5000);
-
-            try {
-              await Promise.all([
-                rostersPromise,
-                usersPromise,
-                playersPromise
-              ]);
-              clearTimeout(rostersTimeout);
-              clearTimeout(usersTimeout);
-            } catch (error) {
-              console.error('Error fetching data:', error);
-              setError('Some data could not be loaded. Please try refreshing the page.');
-            }
+            const fetchPromises = [];
+            
+            // Add roster fetch with timeout
+            const rostersPromise = (async () => {
+              try {
+                await fetchRosters(currentLeagueData.league_id);
+              } catch (err) {
+                console.error('Error fetching rosters:', err);
+                setError('Failed to fetch rosters. Some data may be incomplete.');
+              }
+            })();
+            fetchPromises.push(rostersPromise);
+            
+            // Add users fetch with timeout
+            const usersPromise = (async () => {
+              try {
+                await fetchUsers(currentLeagueData.league_id);
+              } catch (err) {
+                console.error('Error fetching users:', err);
+                setError('Failed to fetch users. Some data may be incomplete.');
+              }
+            })();
+            fetchPromises.push(usersPromise);
+            
+            // Add players fetch with timeout
+            const playersPromise = (async () => {
+              try {
+                await fetchPlayers();
+              } catch (err) {
+                console.error('Error fetching players:', err);
+                setError('Failed to fetch players. Some data may be incomplete.');
+              }
+            })();
+            fetchPromises.push(playersPromise);
+            
+            // Wait for all promises to settle (either resolve or reject)
+            await Promise.allSettled(fetchPromises);
           }
         } catch (error) {
           console.error('Error fetching leagues:', error);
