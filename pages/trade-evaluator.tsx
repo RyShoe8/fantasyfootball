@@ -47,6 +47,11 @@ interface Roster {
   metadata: {
     team_name?: string;
   };
+  draft_picks?: {
+    season: string;
+    round: number;
+    pick: number;
+  }[];
 }
 
 interface TradePlayer extends SleeperPlayer {
@@ -61,17 +66,24 @@ interface TradePlayer extends SleeperPlayer {
 
 interface TradeSide {
   players: TradePlayer[];
+  draftPicks: {
+    season: string;
+    round: number;
+    pick: number;
+  }[];
   totalProjectedPoints: number;
   totalPoints: number;
 }
 
 export default function TradeEvaluator() {
-  const { user, rosters, players } = useSleeper();
+  const { user, rosters, players, currentLeague } = useSleeper();
   const router = useRouter();
   const [selectedWeek, setSelectedWeek] = useState('0');
   const [selectedTeam, setSelectedTeam] = useState<string>('');
   const [mySide, setMySide] = useState<TradePlayer[]>([]);
   const [theirSide, setTheirSide] = useState<TradePlayer[]>([]);
+  const [myDraftPicks, setMyDraftPicks] = useState<{season: string; round: number; pick: number}[]>([]);
+  const [theirDraftPicks, setTheirDraftPicks] = useState<{season: string; round: number; pick: number}[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedTeamRoster, setSelectedTeamRoster] = useState<SleeperRoster | null>(null);
 
@@ -185,18 +197,38 @@ export default function TradeEvaluator() {
   };
 
   const handleTeamChange = (e: ChangeEvent<HTMLSelectElement>) => {
-    const roster = rosters.find((r: SleeperRoster) => r.roster_id === e.target.value);
+    const teamId = e.target.value;
+    setSelectedTeam(teamId);
+    const roster = rosters.find((r: SleeperRoster) => r.roster_id.toString() === teamId);
     setSelectedTeamRoster(roster || null);
+  };
+
+  const handleAddDraftPick = (pick: {season: string; round: number; pick: number}, side: 'my' | 'their') => {
+    if (side === 'my') {
+      setMyDraftPicks([...myDraftPicks, pick]);
+    } else {
+      setTheirDraftPicks([...theirDraftPicks, pick]);
+    }
+  };
+
+  const handleRemoveDraftPick = (pick: {season: string; round: number; pick: number}, side: 'my' | 'their') => {
+    if (side === 'my') {
+      setMyDraftPicks(myDraftPicks.filter(p => p.season !== pick.season || p.round !== pick.round || p.pick !== pick.pick));
+    } else {
+      setTheirDraftPicks(theirDraftPicks.filter(p => p.season !== pick.season || p.round !== pick.round || p.pick !== pick.pick));
+    }
   };
 
   const mySideStats: TradeSide = {
     players: mySide,
+    draftPicks: myDraftPicks,
     totalProjectedPoints: mySide.reduce((sum: number, p: TradePlayer) => sum + p.projected_pts, 0),
     totalPoints: mySide.reduce((sum: number, p: TradePlayer) => sum + p.pts_ppr, 0)
   };
 
   const theirSideStats: TradeSide = {
     players: theirSide,
+    draftPicks: theirDraftPicks,
     totalProjectedPoints: theirSide.reduce((sum: number, p: TradePlayer) => sum + p.projected_pts, 0),
     totalPoints: theirSide.reduce((sum: number, p: TradePlayer) => sum + p.pts_ppr, 0)
   };
@@ -223,61 +255,103 @@ export default function TradeEvaluator() {
         </button>
       </div>
 
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* My Side */}
         <div className="bg-white rounded-lg shadow p-4">
           <h2 className="text-xl font-semibold mb-4">My Side</h2>
-          <div className="space-y-2">
-            {mySide.map((player: TradePlayer) => (
-              <div key={player.player_id} className="flex justify-between items-center">
-                <span>{player.full_name}</span>
-                <button
-                  onClick={() => handleRemovePlayer(player, 'my')}
-                  className="text-red-500"
-                >
-                  Remove
-                </button>
+          <div className="space-y-4">
+            <div>
+              <h3 className="font-medium mb-2">Players</h3>
+              <div className="space-y-2">
+                {mySide.map((player: TradePlayer) => (
+                  <div key={player.player_id} className="flex justify-between items-center">
+                    <span>{player.full_name} ({player.position})</span>
+                    <button
+                      onClick={() => handleRemovePlayer(player, 'my')}
+                      className="text-red-500"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-          <div className="mt-4 pt-4 border-t">
-            <p>Total Projected Points: {mySideStats.totalProjectedPoints.toFixed(2)}</p>
-            <p>Total Points: {mySideStats.totalPoints.toFixed(2)}</p>
+            </div>
+            <div>
+              <h3 className="font-medium mb-2">Draft Picks</h3>
+              <div className="space-y-2">
+                {myDraftPicks.map((pick, index) => (
+                  <div key={index} className="flex justify-between items-center">
+                    <span>{pick.season} Round {pick.round} Pick {pick.pick}</span>
+                    <button
+                      onClick={() => handleRemoveDraftPick(pick, 'my')}
+                      className="text-red-500"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="pt-4 border-t">
+              <p>Total Projected Points: {mySideStats.totalProjectedPoints.toFixed(2)}</p>
+              <p>Total Points: {mySideStats.totalPoints.toFixed(2)}</p>
+            </div>
           </div>
         </div>
 
         {/* Their Side */}
         <div className="bg-white rounded-lg shadow p-4">
           <h2 className="text-xl font-semibold mb-4">Their Side</h2>
-          <div className="space-y-2">
-            {theirSide.map((player: TradePlayer) => (
-              <div key={player.player_id} className="flex justify-between items-center">
-                <span>{player.full_name}</span>
-                <button
-                  onClick={() => handleRemovePlayer(player, 'their')}
-                  className="text-red-500"
-                >
-                  Remove
-                </button>
+          <div className="space-y-4">
+            <div>
+              <h3 className="font-medium mb-2">Players</h3>
+              <div className="space-y-2">
+                {theirSide.map((player: TradePlayer) => (
+                  <div key={player.player_id} className="flex justify-between items-center">
+                    <span>{player.full_name} ({player.position})</span>
+                    <button
+                      onClick={() => handleRemovePlayer(player, 'their')}
+                      className="text-red-500"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-          <div className="mt-4 pt-4 border-t">
-            <p>Total Projected Points: {theirSideStats.totalProjectedPoints.toFixed(2)}</p>
-            <p>Total Points: {theirSideStats.totalPoints.toFixed(2)}</p>
+            </div>
+            <div>
+              <h3 className="font-medium mb-2">Draft Picks</h3>
+              <div className="space-y-2">
+                {theirDraftPicks.map((pick, index) => (
+                  <div key={index} className="flex justify-between items-center">
+                    <span>{pick.season} Round {pick.round} Pick {pick.pick}</span>
+                    <button
+                      onClick={() => handleRemoveDraftPick(pick, 'their')}
+                      className="text-red-500"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="pt-4 border-t">
+              <p>Total Projected Points: {theirSideStats.totalProjectedPoints.toFixed(2)}</p>
+              <p>Total Points: {theirSideStats.totalPoints.toFixed(2)}</p>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Player Selection */}
-      <div className="mt-6 grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
         {/* My Players */}
         <div className="bg-white rounded-lg shadow p-4">
           <h2 className="text-xl font-semibold mb-4">My Players</h2>
           <div className="space-y-2">
             {availablePlayers.map((player: TradePlayer) => (
               <div key={player.player_id} className="flex justify-between items-center">
-                <span>{player.full_name}</span>
+                <span>{player.full_name} ({player.position})</span>
                 <button
                   onClick={() => handleAddPlayer(player, 'my')}
                   className="text-blue-500"
@@ -287,6 +361,24 @@ export default function TradeEvaluator() {
               </div>
             ))}
           </div>
+          {currentRoster?.draft_picks && (
+            <div className="mt-4 pt-4 border-t">
+              <h3 className="font-medium mb-2">My Draft Picks</h3>
+              <div className="space-y-2">
+                {currentRoster.draft_picks.map((pick, index) => (
+                  <div key={index} className="flex justify-between items-center">
+                    <span>{pick.season} Round {pick.round} Pick {pick.pick}</span>
+                    <button
+                      onClick={() => handleAddDraftPick(pick, 'my')}
+                      className="text-blue-500"
+                    >
+                      Add
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Their Players */}
@@ -306,19 +398,41 @@ export default function TradeEvaluator() {
                 </option>
               ))}
           </select>
-          <div className="space-y-2">
-            {selectedTeamPlayers.map((player: TradePlayer) => (
-              <div key={player.player_id} className="flex justify-between items-center">
-                <span>{player.full_name}</span>
-                <button
-                  onClick={() => handleAddPlayer(player, 'their')}
-                  className="text-blue-500"
-                >
-                  Add
-                </button>
+          {selectedTeamRoster && (
+            <>
+              <div className="space-y-2">
+                {selectedTeamPlayers.map((player: TradePlayer) => (
+                  <div key={player.player_id} className="flex justify-between items-center">
+                    <span>{player.full_name} ({player.position})</span>
+                    <button
+                      onClick={() => handleAddPlayer(player, 'their')}
+                      className="text-blue-500"
+                    >
+                      Add
+                    </button>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+              {selectedTeamRoster.draft_picks && (
+                <div className="mt-4 pt-4 border-t">
+                  <h3 className="font-medium mb-2">Their Draft Picks</h3>
+                  <div className="space-y-2">
+                    {selectedTeamRoster.draft_picks.map((pick, index) => (
+                      <div key={index} className="flex justify-between items-center">
+                        <span>{pick.season} Round {pick.round} Pick {pick.pick}</span>
+                        <button
+                          onClick={() => handleAddDraftPick(pick, 'their')}
+                          className="text-blue-500"
+                        >
+                          Add
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
         </div>
       </div>
     </div>
