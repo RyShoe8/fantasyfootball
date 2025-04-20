@@ -1,6 +1,6 @@
 import React, { ChangeEvent, useState, useMemo } from 'react';
 import { useSleeper } from '../contexts/SleeperContext';
-import { SleeperLeague } from '../types/sleeper';
+import { SleeperLeague, SleeperRoster } from '../types/sleeper';
 import axios from 'axios';
 import { useRouter } from 'next/router';
 
@@ -92,7 +92,8 @@ export const LeagueInfo: React.FC = () => {
     setLeagues,
     setRosters,
     setUsers,
-    setPlayers
+    setPlayers,
+    rosters
   } = useSleeper();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
@@ -258,7 +259,7 @@ export const LeagueInfo: React.FC = () => {
               <h3 className="text-sm font-medium text-gray-500">Settings</h3>
               <p className="mt-1">
                 {currentLeague.settings.type === 1 ? 'Keeper League' : 'Redraft League'} •{' '}
-                {currentLeague.settings.total_rosters} Teams
+                {rosters.filter((r: SleeperRoster) => r.league_id === currentLeague.league_id).length} Teams
               </p>
             </div>
           </div>

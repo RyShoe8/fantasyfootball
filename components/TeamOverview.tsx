@@ -371,24 +371,43 @@ export const TeamOverview: React.FC = () => {
       <div className="bg-gray-50 p-4 rounded-lg">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-semibold">Team Overview</h3>
-          <select
-            className="border rounded px-2 py-1"
-            value={selectedWeek}
-            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedWeek(e.target.value)}
-          >
-            {Array.from({ length: 18 }, (_, i) => (
-              <option key={i} value={i.toString()}>
-                Week {i}
-              </option>
-            ))}
-          </select>
         </div>
 
-        <div className="space-y-4">
+        <div>
+          <h4 className="font-medium mb-2">Starters</h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            {rosterData.roster.starters?.map((playerId: string) => {
+              const player = players?.[playerId];
+              return player ? (
+                <div key={playerId} className="flex justify-between items-center bg-white p-2 rounded">
+                  <span>{`${player.first_name} ${player.last_name}`} ({player.position})</span>
+                  <span className="text-gray-600">{getPlayerStats(playerId).projected.toFixed(2)}</span>
+                </div>
+              ) : null;
+            })}
+          </div>
+        </div>
+
+        <div>
+          <h4 className="font-medium mb-2">Bench</h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            {rosterData.roster.players?.filter((id: string) => !rosterData.roster.starters?.includes(id)).map((playerId: string) => {
+              const player = players?.[playerId];
+              return player ? (
+                <div key={playerId} className="flex justify-between items-center bg-white p-2 rounded">
+                  <span>{`${player.first_name} ${player.last_name}`} ({player.position})</span>
+                  <span className="text-gray-600">{getPlayerStats(playerId).projected.toFixed(2)}</span>
+                </div>
+              ) : null;
+            })}
+          </div>
+        </div>
+
+        {rosterData.roster.taxi && rosterData.roster.taxi.length > 0 && (
           <div>
-            <h4 className="font-medium mb-2">Starters</h4>
+            <h4 className="font-medium mb-2">Taxi Squad</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-              {rosterData.roster.starters?.map((playerId: string) => {
+              {rosterData.roster.taxi.map((playerId: string) => {
                 const player = players?.[playerId];
                 return player ? (
                   <div key={playerId} className="flex justify-between items-center bg-white p-2 rounded">
@@ -399,11 +418,13 @@ export const TeamOverview: React.FC = () => {
               })}
             </div>
           </div>
+        )}
 
+        {rosterData.roster.ir && rosterData.roster.ir.length > 0 && (
           <div>
-            <h4 className="font-medium mb-2">Bench</h4>
+            <h4 className="font-medium mb-2">IR</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-              {rosterData.roster.players?.filter((id: string) => !rosterData.roster.starters?.includes(id)).map((playerId: string) => {
+              {rosterData.roster.ir.map((playerId: string) => {
                 const player = players?.[playerId];
                 return player ? (
                   <div key={playerId} className="flex justify-between items-center bg-white p-2 rounded">
@@ -414,41 +435,7 @@ export const TeamOverview: React.FC = () => {
               })}
             </div>
           </div>
-
-          {rosterData.roster.taxi && rosterData.roster.taxi.length > 0 && (
-            <div>
-              <h4 className="font-medium mb-2">Taxi Squad</h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                {rosterData.roster.taxi.map((playerId: string) => {
-                  const player = players?.[playerId];
-                  return player ? (
-                    <div key={playerId} className="flex justify-between items-center bg-white p-2 rounded">
-                      <span>{`${player.first_name} ${player.last_name}`} ({player.position})</span>
-                      <span className="text-gray-600">{getPlayerStats(playerId).projected.toFixed(2)}</span>
-                    </div>
-                  ) : null;
-                })}
-              </div>
-            </div>
-          )}
-
-          {rosterData.roster.ir && rosterData.roster.ir.length > 0 && (
-            <div>
-              <h4 className="font-medium mb-2">IR</h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                {rosterData.roster.ir.map((playerId: string) => {
-                  const player = players?.[playerId];
-                  return player ? (
-                    <div key={playerId} className="flex justify-between items-center bg-white p-2 rounded">
-                      <span>{`${player.first_name} ${player.last_name}`} ({player.position})</span>
-                      <span className="text-gray-600">{getPlayerStats(playerId).projected.toFixed(2)}</span>
-                    </div>
-                  ) : null;
-                })}
-              </div>
-            </div>
-          )}
-        </div>
+        )}
       </div>
     </div>
   );
