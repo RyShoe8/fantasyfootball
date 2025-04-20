@@ -153,8 +153,19 @@ const Roster: React.FC = () => {
       });
     });
 
-    // Sort players
+    // Sort players by roster slot (starters first, then bench, then others)
     const sortedPlayers = [...rosterPlayers].sort((a, b) => {
+      // First sort by roster slot
+      const slotOrder = { starter: 0, bench: 1, taxi: 2, ir: 3 };
+      const slotDiff = (slotOrder[a.roster_slot || 'bench'] || 0) - (slotOrder[b.roster_slot || 'bench'] || 0);
+      if (slotDiff !== 0) return slotDiff;
+
+      // Then sort by position
+      const posOrder = { QB: 0, RB: 1, WR: 2, TE: 3, K: 4, DEF: 5 };
+      const posDiff = (posOrder[a.position as keyof typeof posOrder] || 99) - (posOrder[b.position as keyof typeof posOrder] || 99);
+      if (posDiff !== 0) return posDiff;
+
+      // Finally sort by points
       const aValue = a.stats?.[sortField] || 0;
       const bValue = b.stats?.[sortField] || 0;
       return sortDirection === 'asc' ? 
@@ -299,11 +310,12 @@ const Roster: React.FC = () => {
                 <tr key={player.player_id} className={player.isStarter ? 'bg-green-50' : ''}>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
-                      <div className="flex-shrink-0 h-10 w-10 bg-gray-200 rounded-full flex items-center justify-center">
+                      <div className="flex-shrink-0 h-10 w-10 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden">
                         <img
                           className="h-10 w-10 rounded-full object-cover"
                           src={`https://sleepercdn.com/avatars/${player.player_id}`}
                           alt={player.full_name}
+                          loading="lazy"
                           onError={(e) => {
                             const target = e.target as HTMLImageElement;
                             target.style.display = 'none';
@@ -315,6 +327,11 @@ const Roster: React.FC = () => {
                               parent.appendChild(fallback);
                             }
                           }}
+                          onLoad={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.style.opacity = '1';
+                          }}
+                          style={{ opacity: 0, transition: 'opacity 0.2s ease-in-out' }}
                         />
                       </div>
                       <div className="ml-4">
@@ -436,6 +453,144 @@ const Roster: React.FC = () => {
           </table>
         </div>
       </div>
+
+      {/* IR Players Section */}
+      {rosterData.players.some(p => p.roster_slot === 'ir') && (
+        <div className="bg-white shadow rounded-lg p-6 mt-6">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Injured Reserve</h2>
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Player</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Position</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Team</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Injury Notes</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {rosterData.players
+                  .filter(player => player.roster_slot === 'ir')
+                  .map((player: RosterPlayer) => (
+                    <tr key={player.player_id}>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div className="flex-shrink-0 h-10 w-10 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden">
+                            <img
+                              className="h-10 w-10 rounded-full object-cover"
+                              src={`https://sleepercdn.com/avatars/${player.player_id}`}
+                              alt={player.full_name}
+                              loading="lazy"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.style.display = 'none';
+                                const parent = target.parentElement;
+                                if (parent) {
+                                  const fallback = document.createElement('div');
+                                  fallback.className = 'h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center text-gray-500 text-sm font-medium';
+                                  fallback.textContent = player.position;
+                                  parent.appendChild(fallback);
+                                }
+                              }}
+                              onLoad={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.style.opacity = '1';
+                              }}
+                              style={{ opacity: 0, transition: 'opacity 0.2s ease-in-out' }}
+                            />
+                          </div>
+                          <div className="ml-4">
+                            <div className="text-sm font-medium text-gray-900">{player.full_name}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{player.position}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{player.team}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {player.injury_status ? (
+                          <span className="text-red-600">{player.injury_status}</span>
+                        ) : (
+                          <span className="text-gray-500">IR</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{player.injury_notes || '-'}</td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Taxi Squad Section */}
+      {rosterData.players.some(p => p.roster_slot === 'taxi') && (
+        <div className="bg-white shadow rounded-lg p-6 mt-6">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Taxi Squad</h2>
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Player</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Position</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Team</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Injury Notes</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {rosterData.players
+                  .filter(player => player.roster_slot === 'taxi')
+                  .map((player: RosterPlayer) => (
+                    <tr key={player.player_id}>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div className="flex-shrink-0 h-10 w-10 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden">
+                            <img
+                              className="h-10 w-10 rounded-full object-cover"
+                              src={`https://sleepercdn.com/avatars/${player.player_id}`}
+                              alt={player.full_name}
+                              loading="lazy"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.style.display = 'none';
+                                const parent = target.parentElement;
+                                if (parent) {
+                                  const fallback = document.createElement('div');
+                                  fallback.className = 'h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center text-gray-500 text-sm font-medium';
+                                  fallback.textContent = player.position;
+                                  parent.appendChild(fallback);
+                                }
+                              }}
+                              onLoad={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.style.opacity = '1';
+                              }}
+                              style={{ opacity: 0, transition: 'opacity 0.2s ease-in-out' }}
+                            />
+                          </div>
+                          <div className="ml-4">
+                            <div className="text-sm font-medium text-gray-900">{player.full_name}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{player.position}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{player.team}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {player.injury_status ? (
+                          <span className="text-red-600">{player.injury_status}</span>
+                        ) : (
+                          <span className="text-gray-500">Active</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{player.injury_notes || '-'}</td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

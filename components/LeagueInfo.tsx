@@ -2,6 +2,7 @@ import React, { ChangeEvent } from 'react';
 import { useSleeper } from '../contexts/SleeperContext';
 import { SleeperLeague } from '../types/sleeper';
 import axios from 'axios';
+import { useRouter } from 'next/router';
 
 // Helper function to format dates
 const formatDate = (timestamp: number): string => {
@@ -18,10 +19,16 @@ const formatDate = (timestamp: number): string => {
 const formatRosterPositions = (positions: string[]) => {
   const positionCounts: Record<string, number> = {};
   let benchSlots = 0;
+  let irSlots = 0;
+  let taxiSlots = 0;
   
   positions.forEach(pos => {
     if (pos === 'BN') {
       benchSlots++;
+    } else if (pos === 'IR') {
+      irSlots++;
+    } else if (pos === 'TAXI') {
+      taxiSlots++;
     } else if (pos === 'IDP_FLEX') {
       positionCounts['IDP Flex'] = (positionCounts['IDP Flex'] || 0) + 1;
     } else if (pos === 'SUPER_FLEX') {
@@ -39,7 +46,9 @@ const formatRosterPositions = (positions: string[]) => {
 
   return {
     positions: formattedPositions,
-    benchSlots
+    benchSlots,
+    irSlots,
+    taxiSlots
   };
 };
 
@@ -83,99 +92,120 @@ const getSeasonNumber = (season: string, leagues: SleeperLeague[]) => {
   return ` (${seasonNumber}${suffix} Season)`;
 };
 
-const LeagueInfo: React.FC = () => {
-  const { currentLeague, leagues, setCurrentLeague, setRosters, setUsers } = useSleeper();
+export const LeagueInfo: React.FC = () => {
+  const { 
+    currentLeague, 
+    leagues, 
+    setCurrentLeague, 
+    selectedWeek, 
+    setSelectedWeek, 
+    selectedYear,
+    setSelectedYear,
+    isLoading,
+    user,
+    setLeagues
+  } = useSleeper();
+  const router = useRouter();
 
-  const handleLeagueChange = async (event: React.ChangeEvent<HTMLSelectElement>) => {
-    const selectedLeague = leagues.find(league => league.league_id === event.target.value);
-    if (selectedLeague) {
-      setCurrentLeague(selectedLeague);
-      
-      // Fetch new league data
+  const handleLeagueChange = async (leagueId: string) => {
+    const league = leagues.find((l: SleeperLeague) => l.league_id === leagueId);
+    if (league) {
+      setCurrentLeague(league);
+      router.push(`/league/${league.league_id}`);
+    }
+  };
+
+  const handleYearChange = async (year: string) => {
+    setSelectedYear(year);
+    // Refresh leagues for the selected year
+    if (user) {
       try {
-        const [rostersResponse, usersResponse] = await Promise.all([
-          axios.get(`https://api.sleeper.app/v1/league/${selectedLeague.league_id}/rosters`),
-          axios.get(`https://api.sleeper.app/v1/league/${selectedLeague.league_id}/users`)
-        ]);
-        
-        setRosters(rostersResponse.data);
-        setUsers(usersResponse.data);
-      } catch (err) {
-        console.error('Error fetching league data:', err);
+        const leaguesResponse = await axios.get(`https://api.sleeper.app/v1/user/${user.user_id}/leagues/nfl/${year}`);
+        if (leaguesResponse.data.length > 0) {
+          setLeagues(leaguesResponse.data);
+          setCurrentLeague(leaguesResponse.data[0]);
+          router.push(`/league/${leaguesResponse.data[0].league_id}`);
+        }
+      } catch (error) {
+        console.error('Error fetching leagues for year:', error);
       }
     }
   };
 
-  if (!currentLeague) {
-    return (
-      <div className="text-center py-4">
-        <p className="text-gray-600">No league selected</p>
-      </div>
-    );
+  if (isLoading) {
+    return <div>Loading...</div>;
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col items-center space-y-2">
-        <label htmlFor="league-select" className="text-sm font-medium text-gray-700">
-          Select League
-        </label>
-        <select
-          id="league-select"
-          value={currentLeague.league_id}
-          onChange={handleLeagueChange}
-          className="mt-1 block w-64 pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
-        >
-          {leagues.map((league: SleeperLeague) => (
-            <option key={league.league_id} value={league.league_id}>
-              {league.name}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <h3 className="text-lg font-medium text-gray-900">League Details</h3>
-          <dl className="mt-2 space-y-2">
-            <div>
-              <dt className="text-sm font-medium text-gray-500">League Name</dt>
-              <dd className="text-sm text-gray-900">{currentLeague.name}</dd>
-            </div>
-            <div>
-              <dt className="text-sm font-medium text-gray-500">Season</dt>
-              <dd className="text-sm text-gray-900">{currentLeague.season}</dd>
-            </div>
-            <div>
-              <dt className="text-sm font-medium text-gray-500">Status</dt>
-              <dd className="text-sm text-gray-900">{formatStatus(currentLeague.status)}</dd>
-            </div>
-          </dl>
+    <div className="bg-white shadow rounded-lg p-4 mb-4">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="flex-1">
+          <label className="block text-sm font-medium text-gray-700 mb-1">Select League</label>
+          <select
+            className="w-full p-2 border rounded"
+            value={currentLeague?.league_id || ''}
+            onChange={(e: ChangeEvent<HTMLSelectElement>) => handleLeagueChange(e.target.value)}
+          >
+            <option value="">Select a league</option>
+            {leagues.map((league: SleeperLeague) => (
+              <option key={league.league_id} value={league.league_id}>
+                {league.name}
+              </option>
+            ))}
+          </select>
         </div>
-        <div>
-          <h3 className="text-lg font-medium text-gray-900">Settings</h3>
-          <dl className="mt-2 space-y-2">
-            <div>
-              <dt className="text-sm font-medium text-gray-500">League Type</dt>
-              <dd className="text-sm text-gray-900">
-                {currentLeague.settings?.type === 1 ? 'Redraft' : 'Dynasty'}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-sm font-medium text-gray-500">Roster Settings</dt>
-              <dd className="text-sm text-gray-900">
-                {formatRosterPositions(currentLeague.roster_positions || []).positions}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-sm font-medium text-gray-500">Bench Spots</dt>
-              <dd className="text-sm text-gray-900">
-                {formatRosterPositions(currentLeague.roster_positions || []).benchSlots} spots
-              </dd>
-            </div>
-          </dl>
+        <div className="flex-1">
+          <label className="block text-sm font-medium text-gray-700 mb-1">Select Year</label>
+          <select
+            className="w-full p-2 border rounded"
+            value={selectedYear}
+            onChange={(e: ChangeEvent<HTMLSelectElement>) => handleYearChange(e.target.value)}
+          >
+            <option value="2025">2025</option>
+            <option value="2024">2024</option>
+            <option value="2023">2023</option>
+            <option value="2022">2022</option>
+            <option value="2021">2021</option>
+          </select>
+        </div>
+        <div className="flex-1">
+          <label className="block text-sm font-medium text-gray-700 mb-1">Select Week</label>
+          <select
+            className="w-full p-2 border rounded"
+            value={selectedWeek}
+            onChange={(e: ChangeEvent<HTMLSelectElement>) => setSelectedWeek(e.target.value)}
+          >
+            {Array.from({ length: 18 }, (_, i) => i + 1).map((week) => (
+              <option key={week} value={week.toString()}>
+                Week {week}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
+      {currentLeague && (
+        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div>
+            <h3 className="text-sm font-medium text-gray-500">League Name</h3>
+            <p className="mt-1">{currentLeague.name}</p>
+          </div>
+          <div>
+            <h3 className="text-sm font-medium text-gray-500">Season</h3>
+            <p className="mt-1">{currentLeague.season}</p>
+          </div>
+          <div>
+            <h3 className="text-sm font-medium text-gray-500">Status</h3>
+            <p className="mt-1">{formatStatus(currentLeague.status)}</p>
+          </div>
+          <div>
+            <h3 className="text-sm font-medium text-gray-500">Settings</h3>
+            <p className="mt-1">
+              {currentLeague.settings.type === 'keeper' ? 'Keeper League' : 'Redraft League'} •{' '}
+              {currentLeague.settings.playoff_week_start} Teams
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -19,12 +19,14 @@ interface SleeperContextType {
   draftPicks: SleeperDraftPick[];
   currentLeague: SleeperLeague | null;
   selectedWeek: string;
+  selectedYear: string;
   isLoading: boolean;
   error: string | null;
   login: (username: string) => Promise<void>;
   logout: () => void;
   setCurrentLeague: (league: SleeperLeague) => void;
   setSelectedWeek: (week: string) => void;
+  setSelectedYear: (year: string) => void;
   setRosters: (rosters: SleeperRoster[]) => void;
   setUsers: (users: SleeperUser[]) => void;
   setPlayers: (players: Record<string, SleeperPlayer>) => void;
@@ -42,6 +44,7 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [draftPicks, setDraftPicks] = useState<SleeperDraftPick[]>([]);
   const [currentLeague, setCurrentLeague] = useState<SleeperLeague | null>(null);
   const [selectedWeek, setSelectedWeek] = useState<string>("1");
+  const [selectedYear, setSelectedYear] = useState<string>(getCurrentSeason().toString());
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -106,6 +109,7 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
       
       // Fetch league data
       const currentSeason = getCurrentSeason();
+      setSelectedYear(currentSeason.toString());
       const leaguesResponse = await axios.get(`https://api.sleeper.app/v1/user/${userData.user_id}/leagues/nfl/${currentSeason}`);
       
       if (leaguesResponse.data.length > 0) {
@@ -179,6 +183,7 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
             // Fetch league data
             console.log('Fetching leagues...');
             const currentSeason = getCurrentSeason();
+            setSelectedYear(currentSeason.toString());
             const leaguesResponse = await axios.get(`https://api.sleeper.app/v1/user/${userData.user_id}/leagues/nfl/${currentSeason}`);
             console.log('Leagues response:', leaguesResponse.data);
             
@@ -258,12 +263,14 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
         draftPicks,
         currentLeague,
         selectedWeek,
+        selectedYear,
         isLoading,
         error,
         login,
         logout,
         setCurrentLeague,
         setSelectedWeek,
+        setSelectedYear,
         setRosters,
         setUsers,
         setPlayers,
