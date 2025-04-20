@@ -1,21 +1,34 @@
-import React from 'react';
+import React, { ChangeEvent } from 'react';
 import { useSleeper } from '../contexts/SleeperContext';
+import { SleeperLeague } from '../types/sleeper';
 
 // Helper function to format roster positions
 const formatRosterPositions = (positions: string[]) => {
   const positionCounts: Record<string, number> = {};
+  let benchSlots = 0;
   
   positions.forEach(pos => {
     if (pos === 'BN') {
-      positionCounts['Bench'] = (positionCounts['Bench'] || 0) + 1;
+      benchSlots++;
+    } else if (pos === 'IDP_FLEX') {
+      positionCounts['IDP Flex'] = (positionCounts['IDP Flex'] || 0) + 1;
+    } else if (pos === 'SUPER_FLEX') {
+      positionCounts['Super Flex'] = (positionCounts['Super Flex'] || 0) + 1;
+    } else if (pos === 'FLEX') {
+      positionCounts['Flex'] = (positionCounts['Flex'] || 0) + 1;
     } else {
       positionCounts[pos] = (positionCounts[pos] || 0) + 1;
     }
   });
   
-  return Object.entries(positionCounts)
+  const formattedPositions = Object.entries(positionCounts)
     .map(([pos, count]) => `${pos}${count > 1 ? ` (${count})` : ''}`)
     .join(', ');
+
+  return {
+    positions: formattedPositions,
+    benchSlots
+  };
 };
 
 // Helper function to format status
@@ -40,6 +53,20 @@ const getDateForWeek = (week: number, season: string) => {
   return weekDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 };
 
+// Helper function to determine season number
+const getSeasonNumber = (season: string, leagues: any[]) => {
+  // Sort leagues by season to determine which season number this is
+  const sortedLeagues = [...leagues].sort((a, b) => parseInt(a.season) - parseInt(b.season));
+  const seasonIndex = sortedLeagues.findIndex(l => l.season === season);
+  
+  if (seasonIndex === -1) return '';
+  
+  // Convert to ordinal (1st, 2nd, 3rd, etc.)
+  const seasonNumber = seasonIndex + 1;
+  const suffix = ['th', 'st', 'nd', 'rd'][seasonNumber % 10] || 'th';
+  return ` (${seasonNumber}${suffix} Season)`;
+};
+
 export default function LeagueInfo() {
   const { currentLeague, leagues, setCurrentLeague } = useSleeper();
 
@@ -58,16 +85,16 @@ export default function LeagueInfo() {
         <select
           className="mt-1 block w-64 pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
           value={currentLeague.league_id}
-          onChange={(e) => {
+          onChange={(e: ChangeEvent<HTMLSelectElement>) => {
             console.log('LeagueInfo - League selection changed:', e.target.value);
-            const league = leagues.find(l => l.league_id === e.target.value);
+            const league = leagues.find((l: SleeperLeague) => l.league_id === e.target.value);
             if (league) {
               console.log('LeagueInfo - Setting new current league:', league);
               setCurrentLeague(league);
             }
           }}
         >
-          {leagues.map((league) => (
+          {leagues.map((league: SleeperLeague) => (
             <option key={league.league_id} value={league.league_id}>
               {league.name} ({league.season})
             </option>
@@ -85,11 +112,11 @@ export default function LeagueInfo() {
             </div>
             <div className="flex justify-between">
               <dt className="text-gray-600">Roster Positions</dt>
-              <dd className="text-gray-900 text-sm">{formatRosterPositions(currentLeague.roster_positions)}</dd>
+              <dd className="text-gray-900 text-sm">{formatRosterPositions(currentLeague.roster_positions).positions}</dd>
             </div>
             <div className="flex justify-between">
               <dt className="text-gray-600">Bench Slots</dt>
-              <dd className="text-gray-900">{currentLeague.settings.bench_slots}</dd>
+              <dd className="text-gray-900">{formatRosterPositions(currentLeague.roster_positions).benchSlots}</dd>
             </div>
             <div className="flex justify-between">
               <dt className="text-gray-600">Waiver Type</dt>
@@ -110,7 +137,12 @@ export default function LeagueInfo() {
           <dl className="mt-2 space-y-2">
             <div className="flex justify-between">
               <dt className="text-gray-600">Season</dt>
-              <dd className="text-gray-900">{currentLeague.season}</dd>
+              <dd className="text-gray-900">
+                {currentLeague.season}
+                <span className="text-xs text-gray-500 ml-1">
+                  {getSeasonNumber(currentLeague.season, leagues)}
+                </span>
+              </dd>
             </div>
             <div className="flex justify-between">
               <dt className="text-gray-600">Status</dt>
@@ -118,11 +150,18 @@ export default function LeagueInfo() {
             </div>
             <div className="flex justify-between">
               <dt className="text-gray-600">Start Week</dt>
-              <dd className="text-gray-900">Week {currentLeague.settings.start_week}</dd>
+              <dd className="text-gray-900">
+                Week {currentLeague.settings.start_week}
+                <span className="text-xs text-gray-500 ml-1">
+                  ({getDateForWeek(currentLeague.settings.start_week, currentLeague.season)})
+                </span>
+              </dd>
             </div>
             <div className="flex justify-between">
               <dt className="text-gray-600">Season Start</dt>
-              <dd className="text-gray-900">{getDateForWeek(currentLeague.settings.start_week, currentLeague.season)}</dd>
+              <dd className="text-gray-900">
+                {getDateForWeek(currentLeague.settings.start_week, currentLeague.season)}
+              </dd>
             </div>
             <div className="flex justify-between">
               <dt className="text-gray-600">Draft Rounds</dt>
