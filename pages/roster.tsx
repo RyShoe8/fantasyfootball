@@ -11,156 +11,211 @@
  * - Provides a back button to return to the dashboard
  */
 
+import React, { useState, useMemo } from 'react';
 import { useSleeper } from '../contexts/SleeperContext';
-import { useRouter } from 'next/router';
-import { useState, useMemo, useEffect } from 'react';
-import { SleeperPlayer } from '../types/sleeper';
+import { SleeperRoster, SleeperPlayer } from '../types/sleeper';
 
-// Interface for player statistics with projected and historical points
 interface PlayerStats {
-  player: SleeperPlayer;
-  projectedPoints: number;
-  totalPoints: number;
-  position: string;
+  pts_ppr?: number;
+  pts_half_ppr?: number;
+  pts_std?: number;
+  projected_pts?: number;
+  [key: string]: any;
 }
 
+interface Player {
+  player_id: string;
+  full_name: string;
+  position: string;
+  team: string;
+  injury_status?: string;
+  stats?: PlayerStats;
+  projected_pts?: number;
+  pts_ppr?: number;
+}
+
+interface Roster {
+  roster_id: number;
+  owner_id: string;
+  starters: string[];
+  reserves: string[];
+  players: string[];
+  metadata: {
+    team_name?: string;
+  };
+}
+
+interface TeamStats {
+  teamId: string;
+  ownerId: string;
+  teamName: string;
+  wins: number;
+  losses: number;
+  ties: number;
+  totalPoints: number;
+  positionStats: Record<string, { count: number; points: number; projected: number }>;
+  players: Player[];
+}
+
+type SortableFields = 'teamName' | 'wins' | 'losses' | 'ties' | 'totalPoints';
+
 export default function Roster() {
-  // Get roster and player data from the Sleeper context
-  const { rosters, players, currentLeague } = useSleeper();
-  const router = useRouter();
-  const [selectedWeek, setSelectedWeek] = useState(1);
-  const [isLoading, setIsLoading] = useState(true);
+  const { user, rosters, players } = useSleeper();
+  const [selectedWeek, setSelectedWeek] = useState('0');
+  const [sortField, setSortField] = useState<SortableFields>('totalPoints');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
-  // Check if we have the necessary data, redirect if not
-  useEffect(() => {
-    // If we don't have rosters or players data, redirect to home
-    if ((!rosters || rosters.length === 0) || !players || Object.keys(players).length === 0) {
-      console.log('Roster page: Missing data, redirecting to home');
-      router.push('/');
-      return;
-    }
-    
-    // If we have the data, we're no longer loading
-    setIsLoading(false);
-  }, [rosters, players, router]);
+  const teamStats = useMemo(() => {
+    if (!user || !rosters) return null;
 
-  // Get the current user's roster (currently just using the first roster)
-  const currentRoster = useMemo(() => {
-    if (!rosters || rosters.length === 0) return null;
-    return rosters[0]; // For now, just show first roster
-  }, [rosters]);
+    const userRoster = rosters.find((r: Roster) => r.owner_id === user.user_id);
+    if (!userRoster) return null;
 
-  // Process and organize player statistics
-  const playerStats = useMemo(() => {
-    if (!currentRoster || !players) return [];
+    const rosterPlayers = [...(userRoster.starters || []), ...(userRoster.reserves || [])]
+      .map(playerId => {
+        const player = players[playerId as keyof typeof players] as Player | undefined;
+        return player ? {
+          ...player,
+          stats: player.stats || {},
+          projected_pts: player.stats?.[selectedWeek]?.projected_pts || 0,
+          pts_ppr: player.stats?.[selectedWeek]?.pts_ppr || 0
+        } : null;
+      })
+      .filter((p): p is NonNullable<typeof p> => p !== null);
 
-    const stats: PlayerStats[] = [];
-    
-    // Process starters
-    currentRoster.starters.forEach((playerId: string) => {
-      const player = players[playerId];
-      if (player) {
-        stats.push({
-          player,
-          projectedPoints: player.stats?.['2024_projected_pts'] || 0,
-          totalPoints: player.stats?.['2023_total_pts'] || 0,
-          position: player.position
-        });
+    const totalPoints = rosterPlayers.reduce((sum, player) => 
+      sum + ((player.pts_ppr as number) || 0), 0);
+
+    const positionStats = rosterPlayers.reduce((acc, player) => {
+      const pos = player.position;
+      if (!acc[pos]) {
+        acc[pos] = {
+          count: 0,
+          points: 0,
+          projected: 0
+        };
       }
-    });
+      acc[pos].count++;
+      acc[pos].points += ((player.pts_ppr as number) || 0);
+      acc[pos].projected += ((player.projected_pts as number) || 0);
+      return acc;
+    }, {} as Record<string, { count: number; points: number; projected: number }>);
 
-    // Process reserves
-    currentRoster.reserves.forEach((playerId: string) => {
-      const player = players[playerId];
-      if (player) {
-        stats.push({
-          player,
-          projectedPoints: player.stats?.['2024_projected_pts'] || 0,
-          totalPoints: player.stats?.['2023_total_pts'] || 0,
-          position: player.position
-        });
-      }
-    });
+    const teamStats: TeamStats = {
+      teamId: userRoster.roster_id.toString(),
+      ownerId: userRoster.owner_id,
+      teamName: userRoster.metadata?.team_name || `Team ${userRoster.roster_id}`,
+      wins: 0, // These would come from actual league data
+      losses: 0,
+      ties: 0,
+      totalPoints,
+      positionStats,
+      players: rosterPlayers
+    };
 
-    // Sort players by position and then by projected points
-    return stats.sort((a, b) => {
-      // Sort by position first
-      const positionOrder = ['QB', 'RB', 'WR', 'TE', 'K', 'IDP'];
-      const posA = positionOrder.indexOf(a.position);
-      const posB = positionOrder.indexOf(b.position);
-      if (posA !== posB) return posA - posB;
-      
-      // Then by projected points
-      return b.projectedPoints - a.projectedPoints;
-    });
-  }, [currentRoster, players]);
+    return teamStats;
+  }, [user, rosters, players, selectedWeek]);
 
-  // Show loading state if data is not available
-  if (isLoading || !currentRoster) {
-    return (
-      <div className="p-6 flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-      </div>
-    );
+  if (!teamStats) {
+    return <div>Loading...</div>;
   }
 
+  const handleSort = (field: SortableFields) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('desc');
+    }
+  };
+
+  const sortedTeams = [teamStats].sort((a, b) => {
+    const aValue = a[sortField];
+    const bValue = b[sortField];
+    return sortDirection === 'asc' ? 
+      (aValue < bValue ? -1 : 1) : 
+      (aValue > bValue ? -1 : 1);
+  });
+
   return (
-    <div className="p-6">
-      {/* Header with back button */}
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Team Roster</h1>
-        <button
-          onClick={() => router.push('/')}
-          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+    <div className="bg-white shadow rounded-lg p-6">
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-2xl font-bold text-gray-900">Team Overview</h2>
+        <select
+          className="mt-1 block w-32 pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+          value={selectedWeek}
+          onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedWeek(e.target.value)}
         >
-          Back to Dashboard
-        </button>
+          {Array.from({ length: 18 }, (_, i) => (
+            <option key={i} value={i.toString()}>
+              Week {i}
+            </option>
+          ))}
+        </select>
       </div>
 
-      {/* Position-based player tables */}
-      <div className="grid grid-cols-1 gap-4">
-        {['QB', 'RB', 'WR', 'TE', 'K', 'IDP'].map(position => {
-          const positionPlayers = playerStats.filter(p => p.position === position);
-          if (positionPlayers.length === 0) return null;
-
-          return (
-            <div key={position} className="bg-white rounded-lg shadow p-4">
-              <h2 className="text-xl font-semibold mb-4">{position}</h2>
-              <div className="overflow-x-auto">
-                <table className="min-w-full">
-                  <thead>
-                    <tr className="bg-gray-50">
-                      <th className="px-4 py-2 text-left">Player</th>
-                      <th className="px-4 py-2 text-left">Team</th>
-                      <th className="px-4 py-2 text-right">2023 Points</th>
-                      <th className="px-4 py-2 text-right">2024 Projected</th>
-                      <th className="px-4 py-2 text-left">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {positionPlayers.map(({ player, totalPoints, projectedPoints }) => (
-                      <tr key={player.player_id} className="border-t">
-                        <td className="px-4 py-2">
-                          {player.first_name} {player.last_name}
-                        </td>
-                        <td className="px-4 py-2">{player.team}</td>
-                        <td className="px-4 py-2 text-right">{totalPoints.toFixed(2)}</td>
-                        <td className="px-4 py-2 text-right">{projectedPoints.toFixed(2)}</td>
-                        <td className="px-4 py-2">
-                          {player.injury_status ? (
-                            <span className="text-red-500">{player.injury_status}</span>
-                          ) : (
-                            <span className="text-green-500">Active</span>
-                          )}
-                        </td>
-                      </tr>
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                  onClick={() => handleSort('teamName')}>
+                Team Name
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                  onClick={() => handleSort('wins')}>
+                W
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                  onClick={() => handleSort('losses')}>
+                L
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                  onClick={() => handleSort('ties')}>
+                T
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                  onClick={() => handleSort('totalPoints')}>
+                Total Points
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Position Breakdown
+              </th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {sortedTeams.map((team: TeamStats) => (
+              <tr key={team.teamId}>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  {team.teamName}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {team.wins}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {team.losses}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {team.ties}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {team.totalPoints.toFixed(2)}
+                </td>
+                <td className="px-6 py-4 text-sm text-gray-500">
+                  <div className="space-y-1">
+                    {Object.entries(team.positionStats).map(([pos, stats]) => (
+                      <div key={pos} className="flex justify-between">
+                        <span>{pos}:</span>
+                        <span>{stats.count} players</span>
+                        <span>{stats.points.toFixed(2)} pts</span>
+                      </div>
                     ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          );
-        })}
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );
