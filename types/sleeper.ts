@@ -73,7 +73,7 @@ export interface SleeperRoster {
   draft_picks?: {
     season: string;
     round: number;
-    pick?: number;
+    pick: number;
     roster_id?: string;
     owner_id?: string;
     previous_owner_id?: string;
