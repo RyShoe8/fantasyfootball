@@ -8,7 +8,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import axios, { AxiosError, AxiosResponse } from 'axios';
-import { SleeperUser, SleeperLeague, SleeperRoster, SleeperPlayer } from '../types/sleeper';
+import { SleeperUser, SleeperLeague, SleeperRoster, SleeperPlayer, SleeperDraftPick } from '../types/sleeper';
 
 interface SleeperContextType {
   user: SleeperUser | null;
@@ -16,6 +16,7 @@ interface SleeperContextType {
   leagues: SleeperLeague[];
   rosters: SleeperRoster[];
   players: Record<string, SleeperPlayer>;
+  draftPicks: SleeperDraftPick[];
   currentLeague: SleeperLeague | null;
   isLoading: boolean;
   error: string | null;
@@ -25,6 +26,7 @@ interface SleeperContextType {
   setRosters: (rosters: SleeperRoster[]) => void;
   setUsers: (users: SleeperUser[]) => void;
   setPlayers: (players: Record<string, SleeperPlayer>) => void;
+  setDraftPicks: (draftPicks: SleeperDraftPick[]) => void;
 }
 
 const SleeperContext = createContext<SleeperContextType | undefined>(undefined);
@@ -35,6 +37,7 @@ export function SleeperProvider({ children }: { children: React.ReactNode }) {
   const [leagues, setLeagues] = useState<SleeperLeague[]>([]);
   const [rosters, setRosters] = useState<SleeperRoster[]>([]);
   const [players, setPlayers] = useState<Record<string, SleeperPlayer>>({});
+  const [draftPicks, setDraftPicks] = useState<SleeperDraftPick[]>([]);
   const [currentLeague, setCurrentLeague] = useState<SleeperLeague | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -116,6 +119,16 @@ export function SleeperProvider({ children }: { children: React.ReactNode }) {
         }));
       case 'players':
         return `Total players: ${Object.keys(data).length}`;
+      case 'draft_picks':
+        return data.map((pick: SleeperDraftPick) => ({
+          player: `${pick.metadata.first_name} ${pick.metadata.last_name}`,
+          position: pick.metadata.position,
+          team: pick.metadata.team,
+          round: pick.round,
+          pick_no: pick.pick_no,
+          roster_id: pick.roster_id,
+          picked_by: pick.picked_by
+        }));
       default:
         return data;
     }
@@ -280,6 +293,7 @@ export function SleeperProvider({ children }: { children: React.ReactNode }) {
         leagues,
         rosters,
         players,
+        draftPicks,
         currentLeague,
         isLoading,
         error,
@@ -288,7 +302,8 @@ export function SleeperProvider({ children }: { children: React.ReactNode }) {
         setCurrentLeague,
         setRosters,
         setUsers,
-        setPlayers
+        setPlayers,
+        setDraftPicks
       }}
     >
       {children}

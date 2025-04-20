@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { SleeperUser, SleeperLeague, SleeperRoster, SleeperPlayer } from '../types/sleeper';
+import { SleeperUser, SleeperLeague, SleeperRoster, SleeperPlayer, SleeperDraftPick } from '../types/sleeper';
 
 const SLEEPER_API_BASE = 'https://api.sleeper.app/v1';
 
@@ -61,6 +61,11 @@ export class SleeperService {
 
   async getPlayoffBracket(leagueId: string): Promise<any> {
     const response = await axios.get(`${SLEEPER_API_BASE}/league/${leagueId}/winners_bracket`);
+    return response.data;
+  }
+
+  async getDraftPicks(leagueId: string): Promise<SleeperDraftPick[]> {
+    const response = await axios.get(`${SLEEPER_API_BASE}/league/${leagueId}/draft_picks`);
     return response.data;
   }
 } 

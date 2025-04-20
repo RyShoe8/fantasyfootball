@@ -1,6 +1,9 @@
-import React, { ChangeEvent } from 'react';
+import React, { ChangeEvent, useState } from 'react';
 import { useSleeper } from '../contexts/SleeperContext';
 import { SleeperLeague } from '../types/sleeper';
+import axios from 'axios';
+
+const SLEEPER_API_BASE = 'https://api.sleeper.app/v1';
 
 // Helper function to format roster positions
 const formatRosterPositions = (positions: string[]) => {
@@ -117,7 +120,10 @@ const formatApiResponse = (data: any, type: string) => {
 };
 
 export default function LeagueInfo() {
-  const { currentLeague, leagues, setCurrentLeague } = useSleeper();
+  const { currentLeague, leagues, setCurrentLeague, setRosters, setUsers, setPlayers, setDraftPicks } = useSleeper();
+  const [showDebug, setShowDebug] = useState(false);
+  const [debugData, setDebugData] = useState<any>(null);
+  const [debugType, setDebugType] = useState<string>('');
 
   console.log('LeagueInfo - currentLeague:', currentLeague);
   console.log('LeagueInfo - leagues:', leagues);
@@ -126,6 +132,62 @@ export default function LeagueInfo() {
     console.log('LeagueInfo - No current league selected');
     return null;
   }
+
+  const handleFetchRosters = async () => {
+    if (!currentLeague) return;
+    try {
+      const response = await axios.get(`${SLEEPER_API_BASE}/league/${currentLeague.league_id}/rosters`);
+      setDebugData(response.data);
+      setDebugType('rosters');
+      setRosters(response.data);
+    } catch (error) {
+      console.error('Error fetching rosters:', error);
+      setDebugData({ error: 'Failed to fetch rosters' });
+      setDebugType('error');
+    }
+  };
+
+  const handleFetchUsers = async () => {
+    if (!currentLeague) return;
+    try {
+      const response = await axios.get(`${SLEEPER_API_BASE}/league/${currentLeague.league_id}/users`);
+      setDebugData(response.data);
+      setDebugType('users');
+      setUsers(response.data);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      setDebugData({ error: 'Failed to fetch users' });
+      setDebugType('error');
+    }
+  };
+
+  const handleFetchPlayers = async () => {
+    if (!currentLeague) return;
+    try {
+      const response = await axios.get(`${SLEEPER_API_BASE}/league/${currentLeague.league_id}/players`);
+      setDebugData(response.data);
+      setDebugType('players');
+      setPlayers(response.data);
+    } catch (error) {
+      console.error('Error fetching players:', error);
+      setDebugData({ error: 'Failed to fetch players' });
+      setDebugType('error');
+    }
+  };
+
+  const handleFetchDraftPicks = async () => {
+    if (!currentLeague) return;
+    try {
+      const response = await axios.get(`${SLEEPER_API_BASE}/league/${currentLeague.league_id}/draft_picks`);
+      setDebugData(response.data);
+      setDebugType('draft_picks');
+      setDraftPicks(response.data);
+    } catch (error) {
+      console.error('Error fetching draft picks:', error);
+      setDebugData({ error: 'Failed to fetch draft picks' });
+      setDebugType('error');
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -255,6 +317,49 @@ export default function LeagueInfo() {
             </dl>
           </div>
         </div>
+      </div>
+
+      {/* API Debug Section */}
+      <div className="mt-8">
+        <button
+          onClick={() => setShowDebug(!showDebug)}
+          className="mb-4 px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
+        >
+          {showDebug ? 'Hide Debug Data' : 'Show Debug Data'}
+        </button>
+
+        {showDebug && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <button
+                onClick={handleFetchRosters}
+                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+              >
+                Fetch Rosters
+              </button>
+              <button
+                onClick={handleFetchUsers}
+                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+              >
+                Fetch Users
+              </button>
+              <button
+                onClick={handleFetchPlayers}
+                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+              >
+                Fetch Players
+              </button>
+              <button
+                onClick={handleFetchDraftPicks}
+                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+              >
+                Fetch Draft Picks
+              </button>
+            </div>
+
+            {/* ... existing debug data display ... */}
+          </div>
+        )}
       </div>
     </div>
   );

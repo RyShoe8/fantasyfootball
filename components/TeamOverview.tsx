@@ -60,7 +60,7 @@ interface RosterData {
 }
 
 const TeamOverview: React.FC = () => {
-  const { user, rosters, players, currentLeague, leagues } = useSleeper();
+  const { user, rosters, players, currentLeague, leagues, users } = useSleeper();
   const [selectedWeek, setSelectedWeek] = useState('0');
   const [sortField, setSortField] = useState<SortableFields>('totalPoints');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
@@ -107,11 +107,19 @@ const TeamOverview: React.FC = () => {
       return null;
     }
 
-    // Get team name from user metadata
-    const teamName = user.metadata?.team_name || 'Your Team';
-    console.log('Team name from user metadata:', teamName);
+    // Get team name from users array
+    const userData = users.find(u => u.user_id === user.user_id);
+    const teamName = userData?.metadata?.team_name || userData?.display_name || 'Your Team';
+    console.log('Team name from users array:', teamName);
 
-    const rosterPlayers = [...(userRoster.starters || []), ...(userRoster.reserves || [])]
+    // Get all players from the roster
+    const allPlayers = userRoster.players || [];
+    
+    // Get starters and bench players
+    const starters = userRoster.starters || [];
+    const benchPlayers = allPlayers.filter(playerId => !starters.includes(playerId));
+
+    const rosterPlayers = [...starters, ...benchPlayers]
       .map(playerId => {
         const player = players[playerId as keyof typeof players];
         if (!player) return null;
@@ -137,7 +145,7 @@ const TeamOverview: React.FC = () => {
           position: player.position || '',
           team: player.team || '',
           player_id: player.player_id || '',
-          isStarter: userRoster.starters?.includes(playerId) || false,
+          isStarter: starters.includes(playerId),
           owner_id: userRoster.owner_id
         } as RosterPlayer;
       })
@@ -148,7 +156,7 @@ const TeamOverview: React.FC = () => {
       players: rosterPlayers,
       teamName: teamName
     };
-  }, [user, rosters, players, selectedWeek, currentLeague]);
+  }, [user, rosters, players, selectedWeek, currentLeague, users]);
 
   const teamStats = useMemo(() => {
     if (!user || !rosters || !currentLeague) {
@@ -175,9 +183,10 @@ const TeamOverview: React.FC = () => {
     console.log('User roster ID:', userRoster.roster_id);
     console.log('User roster settings:', userRoster.settings);
 
-    // Get team name from user metadata
-    const teamName = user.metadata?.team_name || 'Your Team';
-    console.log('Team name from user metadata:', teamName);
+    // Get team name from users array
+    const userData = users.find(u => u.user_id === user.user_id);
+    const teamName = userData?.metadata?.team_name || 'Your Team';
+    console.log('Team name from users array:', teamName);
 
     // Calculate team stats
     const stats: TeamStats = {
@@ -264,7 +273,7 @@ const TeamOverview: React.FC = () => {
     }
 
     return stats;
-  }, [user, rosters, players, selectedWeek, currentLeague]);
+  }, [user, rosters, players, selectedWeek, currentLeague, users]);
 
   if (!teamStats || !rosterData) {
     return <div>Loading...</div>;
@@ -465,7 +474,7 @@ const TeamOverview: React.FC = () => {
                       ))}
                       <div className="flex justify-between pt-1 border-t border-gray-200">
                         <span>Bench:</span>
-                        <span>{rosterData.roster.reserves?.length || 0} players</span>
+                        <span>{rosterData.roster.players?.filter(id => !rosterData.roster.starters?.includes(id)).length || 0} players</span>
                       </div>
                     </div>
                   </td>
@@ -482,7 +491,7 @@ const TeamOverview: React.FC = () => {
           <div>
             <h3 className="text-lg font-semibold mb-2">Starters</h3>
             <div className="space-y-2">
-              {rosterData.roster.starters.map(playerId => {
+              {rosterData.roster.starters?.map(playerId => {
                 const player = players?.[playerId];
                 return player ? (
                   <div key={playerId} className="flex justify-between items-center">
@@ -494,9 +503,9 @@ const TeamOverview: React.FC = () => {
             </div>
           </div>
           <div>
-            <h3 className="text-lg font-semibold mb-2">Reserves</h3>
+            <h3 className="text-lg font-semibold mb-2">Bench</h3>
             <div className="space-y-2">
-              {rosterData.roster.reserves?.map(playerId => {
+              {rosterData.roster.players?.filter(id => !rosterData.roster.starters?.includes(id)).map(playerId => {
                 const player = players?.[playerId];
                 return player ? (
                   <div key={playerId} className="flex justify-between items-center">
