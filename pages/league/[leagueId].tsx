@@ -1,5 +1,5 @@
 import { useRouter } from 'next/router';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useSleeper } from '../../contexts/SleeperContext';
 import LeagueInfo from '../../components/LeagueInfo';
 import TeamOverview from '../../components/TeamOverview';
@@ -9,13 +9,15 @@ import PlayerRankings from '../../components/PlayerRankings';
 export default function LeaguePage() {
   const router = useRouter();
   const { leagueId } = router.query;
-  const { currentLeague, setCurrentLeague, leagues } = useSleeper();
+  const { currentLeague, setCurrentLeague, leagues, isLoading } = useSleeper();
+  const [isLoadingPage, setIsLoadingPage] = useState(true);
 
   useEffect(() => {
     if (leagueId && leagues) {
       const league = leagues.find(l => l.league_id === leagueId);
       if (league) {
         setCurrentLeague(league);
+        setIsLoadingPage(false);
       } else {
         // If league not found, redirect to home
         router.push('/');
@@ -23,7 +25,7 @@ export default function LeaguePage() {
     }
   }, [leagueId, leagues, setCurrentLeague, router]);
 
-  if (!currentLeague) {
+  if (isLoading || isLoadingPage) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
         <div className="text-center">
@@ -34,8 +36,32 @@ export default function LeaguePage() {
     );
   }
 
+  if (!currentLeague) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+        <div className="text-center">
+          <p className="text-gray-600">League not found</p>
+          <button
+            onClick={() => router.push('/')}
+            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Return to Dashboard
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto px-4 py-8 space-y-6">
+      {/* Back Button */}
+      <button
+        onClick={() => router.push('/')}
+        className="mb-4 px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+      >
+        ← Back to Dashboard
+      </button>
+
       {/* League Info */}
       <div className="bg-white rounded-lg shadow p-6">
         <LeagueInfo />

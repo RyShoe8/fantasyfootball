@@ -17,35 +17,13 @@ const formatDate = (timestamp: number): string => {
 
 // Helper function to format roster positions
 const formatRosterPositions = (positions: string[]) => {
-  const positionCounts: Record<string, number> = {};
-  let benchSlots = 0;
-  let irSlots = 0;
-  let taxiSlots = 0;
-  
-  positions.forEach(pos => {
-    if (pos === 'BN') {
-      benchSlots++;
-    } else if (pos === 'IR') {
-      irSlots++;
-    } else if (pos === 'TAXI') {
-      taxiSlots++;
-    } else if (pos === 'IDP_FLEX') {
-      positionCounts['IDP Flex'] = (positionCounts['IDP Flex'] || 0) + 1;
-    } else if (pos === 'SUPER_FLEX') {
-      positionCounts['Super Flex'] = (positionCounts['Super Flex'] || 0) + 1;
-    } else if (pos === 'FLEX') {
-      positionCounts['Flex'] = (positionCounts['Flex'] || 0) + 1;
-    } else {
-      positionCounts[pos] = (positionCounts[pos] || 0) + 1;
-    }
-  });
-  
-  const formattedPositions = Object.entries(positionCounts)
-    .map(([pos, count]) => `${pos}${count > 1 ? ` (${count})` : ''}`)
-    .join(', ');
+  const starters = positions.filter(pos => !pos.startsWith('BN') && !pos.startsWith('IR') && !pos.startsWith('TAXI'));
+  const benchSlots = positions.filter(pos => pos.startsWith('BN')).length;
+  const irSlots = positions.filter(pos => pos.startsWith('IR')).length;
+  const taxiSlots = positions.filter(pos => pos.startsWith('TAXI')).length;
 
   return {
-    positions: formattedPositions,
+    positions: starters.join(', '),
     benchSlots,
     irSlots,
     taxiSlots
@@ -94,15 +72,12 @@ const getSeasonNumber = (season: string, leagues: SleeperLeague[]) => {
 
 // Helper function to format playoff type
 const formatPlayoffType = (type: number) => {
-  const typeMap: Record<number, string> = {
-    0: 'Bracket',
-    1: 'Round Robin',
-    2: 'Consolation',
-    3: 'Double Elimination',
-    4: 'Single Elimination'
+  const types: Record<number, string> = {
+    1: 'Single Elimination',
+    2: 'Double Elimination',
+    3: 'Round Robin'
   };
-
-  return typeMap[type] || 'Unknown';
+  return types[type] || 'Unknown';
 };
 
 export const LeagueInfo: React.FC = () => {
@@ -124,7 +99,10 @@ export const LeagueInfo: React.FC = () => {
     const league = leagues.find((l: SleeperLeague) => l.league_id === leagueId);
     if (league) {
       setCurrentLeague(league);
-      router.push(`/league/${league.league_id}`);
+      // Only navigate if we're not already on the league page
+      if (!router.pathname.includes('/league/')) {
+        router.push(`/league/${league.league_id}`);
+      }
     }
   };
 
@@ -197,74 +175,73 @@ export const LeagueInfo: React.FC = () => {
           </select>
         </div>
       </div>
+      
       {currentLeague && (
-        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div>
-            <h3 className="text-sm font-medium text-gray-500">League Name</h3>
-            <p className="mt-1">{currentLeague.name}</p>
+        <>
+          <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div>
+              <h3 className="text-sm font-medium text-gray-500">League Name</h3>
+              <p className="mt-1">{currentLeague.name}</p>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium text-gray-500">Season</h3>
+              <p className="mt-1">{currentLeague.season}</p>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium text-gray-500">Status</h3>
+              <p className="mt-1">{formatStatus(currentLeague.status)}</p>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium text-gray-500">Settings</h3>
+              <p className="mt-1">
+                {currentLeague.settings.type === 1 ? 'Keeper League' : 'Redraft League'} •{' '}
+                {currentLeague.settings.playoff_teams} Teams
+              </p>
+            </div>
           </div>
-          <div>
-            <h3 className="text-sm font-medium text-gray-500">Season</h3>
-            <p className="mt-1">{currentLeague.season}</p>
-          </div>
-          <div>
-            <h3 className="text-sm font-medium text-gray-500">Status</h3>
-            <p className="mt-1">{formatStatus(currentLeague.status)}</p>
-          </div>
-          <div>
-            <h3 className="text-sm font-medium text-gray-500">Settings</h3>
-            <p className="mt-1">
-              {currentLeague.settings.type === 1 ? 'Keeper League' : 'Redraft League'} •{' '}
-              {currentLeague.settings.playoff_week_start} Teams
-            </p>
-          </div>
-        </div>
-      )}
 
-      {currentLeague && (
-        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div>
-            <h3 className="text-sm font-medium text-gray-500">League Start</h3>
-            <p className="mt-1">{formatDate(currentLeague.settings.start_week)}</p>
+          <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div>
+              <h3 className="text-sm font-medium text-gray-500">League Start</h3>
+              <p className="mt-1">{formatDate(currentLeague.settings.start_week)}</p>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium text-gray-500">Trade Deadline</h3>
+              <p className="mt-1">{formatDate(currentLeague.settings.trade_deadline)}</p>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium text-gray-500">Playoff Teams</h3>
+              <p className="mt-1">{currentLeague.settings.playoff_teams} Teams</p>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium text-gray-500">Playoff Format</h3>
+              <p className="mt-1">
+                {formatPlayoffType(currentLeague.settings.playoff_type)} • Weeks {currentLeague.settings.playoff_week_start}-{currentLeague.settings.playoff_week_start + currentLeague.settings.playoff_teams - 1}
+              </p>
+            </div>
           </div>
-          <div>
-            <h3 className="text-sm font-medium text-gray-500">Trade Deadline</h3>
-            <p className="mt-1">{formatDate(currentLeague.settings.trade_deadline)}</p>
-          </div>
-          <div>
-            <h3 className="text-sm font-medium text-gray-500">Playoff Teams</h3>
-            <p className="mt-1">{currentLeague.settings.playoff_teams} Teams</p>
-          </div>
-          <div>
-            <h3 className="text-sm font-medium text-gray-500">Playoff Format</h3>
-            <p className="mt-1">
-              {formatPlayoffType(currentLeague.settings.playoff_type)} • Weeks {currentLeague.settings.playoff_week_start}-{currentLeague.settings.playoff_week_start + currentLeague.settings.playoff_teams - 1}
-            </p>
-          </div>
-        </div>
-      )}
 
-      {currentLeague && (
-        <div className="mt-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div>
-              <h4 className="text-sm font-medium text-gray-500">Starting Positions</h4>
-              <p className="mt-1">{formatRosterPositions(currentLeague.roster_positions).positions}</p>
-            </div>
-            <div>
-              <h4 className="text-sm font-medium text-gray-500">Bench Slots</h4>
-              <p className="mt-1">{formatRosterPositions(currentLeague.roster_positions).benchSlots}</p>
-            </div>
-            <div>
-              <h4 className="text-sm font-medium text-gray-500">IR Slots</h4>
-              <p className="mt-1">{formatRosterPositions(currentLeague.roster_positions).irSlots}</p>
-            </div>
-            <div>
-              <h4 className="text-sm font-medium text-gray-500">Taxi Slots</h4>
-              <p className="mt-1">{formatRosterPositions(currentLeague.roster_positions).taxiSlots}</p>
+          <div className="mt-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div>
+                <h4 className="text-sm font-medium text-gray-500">Starting Positions</h4>
+                <p className="mt-1">{formatRosterPositions(currentLeague.roster_positions).positions}</p>
+              </div>
+              <div>
+                <h4 className="text-sm font-medium text-gray-500">Bench Slots</h4>
+                <p className="mt-1">{formatRosterPositions(currentLeague.roster_positions).benchSlots}</p>
+              </div>
+              <div>
+                <h4 className="text-sm font-medium text-gray-500">IR Slots</h4>
+                <p className="mt-1">{formatRosterPositions(currentLeague.roster_positions).irSlots}</p>
+              </div>
+              <div>
+                <h4 className="text-sm font-medium text-gray-500">Taxi Slots</h4>
+                <p className="mt-1">{formatRosterPositions(currentLeague.roster_positions).taxiSlots}</p>
+              </div>
             </div>
           </div>
-        </div>
+        </>
       )}
     </div>
   );
