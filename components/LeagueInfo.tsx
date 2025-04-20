@@ -320,7 +320,7 @@ export default function LeagueInfo() {
       </div>
 
       {/* API Debug Section */}
-      <div className="mt-8">
+      <div className="bg-white shadow rounded-lg p-6">
         <button
           onClick={() => setShowDebug(!showDebug)}
           className="mb-4 px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
@@ -357,7 +357,14 @@ export default function LeagueInfo() {
               </button>
             </div>
 
-            {/* ... existing debug data display ... */}
+            {debugData && (
+              <div className="mt-4">
+                <h3 className="text-lg font-medium text-gray-900 mb-2">API Response:</h3>
+                <pre className="bg-gray-100 p-4 rounded whitespace-pre-wrap">
+                  {JSON.stringify(formatApiResponse(debugData, debugType), null, 2)}
+                </pre>
+              </div>
+            )}
           </div>
         )}
       </div>
