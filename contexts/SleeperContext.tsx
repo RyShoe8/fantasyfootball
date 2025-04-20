@@ -48,11 +48,7 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   // Get current season
   const getCurrentSeason = () => {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = now.getMonth() + 1; // 0-based month
-    // If we're in the first 8 months, use previous year as the season
-    return month < 8 ? year - 1 : year;
+    return 2025;
   };
 
   const fetchUserData = async (userId: string) => {
