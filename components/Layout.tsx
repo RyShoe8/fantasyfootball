@@ -1,12 +1,12 @@
 import React from 'react';
-import { SleeperProvider, useSleeper } from '../contexts/SleeperContext';
+import { useSleeper } from '../contexts/SleeperContext';
 import Login from './Login';
 
 interface LayoutProps {
   children: React.ReactNode;
 }
 
-function LayoutContent({ children }: LayoutProps) {
+export default function Layout({ children }: LayoutProps) {
   const { user, isLoading } = useSleeper();
 
   if (isLoading) {
@@ -48,13 +48,5 @@ function LayoutContent({ children }: LayoutProps) {
         {children}
       </main>
     </div>
-  );
-}
-
-export default function Layout({ children }: LayoutProps) {
-  return (
-    <SleeperProvider>
-      <LayoutContent>{children}</LayoutContent>
-    </SleeperProvider>
   );
 } 
