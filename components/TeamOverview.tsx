@@ -35,7 +35,8 @@ interface TeamStats {
   players: ExtendedPlayer[];
 }
 
-type SortableFields = 'teamName' | 'wins' | 'losses' | 'ties' | 'totalPoints' | 'pts_ppr' | 'projected_pts';
+// Update SortableFields to only include fields that exist in TeamStats
+type SortableFields = 'teamName' | 'wins' | 'losses' | 'ties' | 'totalPoints';
 
 interface RosterPlayer extends ExtendedPlayer {
   isStarter: boolean;
@@ -173,8 +174,8 @@ const TeamOverview: React.FC = () => {
   };
 
   const sortedTeams = [teamStats].sort((a, b) => {
-    const aValue = a[sortField as SortableFields];
-    const bValue = b[sortField as SortableFields];
+    const aValue = a[sortField];
+    const bValue = b[sortField];
     return sortDirection === 'asc' ? 
       (aValue < bValue ? -1 : 1) : 
       (aValue > bValue ? -1 : 1);
@@ -245,11 +246,11 @@ const TeamOverview: React.FC = () => {
                   Team
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                    onClick={() => handleSort('pts_ppr')}>
+                    onClick={() => handleSort('totalPoints')}>
                   Points
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                    onClick={() => handleSort('projected_pts')}>
+                    onClick={() => handleSort('totalPoints')}>
                   Projected
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
