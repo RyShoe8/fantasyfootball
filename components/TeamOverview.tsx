@@ -8,6 +8,7 @@ interface PlayerStats {
   pts_half_ppr?: number;
   pts_std?: number;
   projected_pts?: number;
+  [key: string]: any;
 }
 
 interface Player {
@@ -16,7 +17,9 @@ interface Player {
   position: string;
   team: string;
   injury_status?: string;
-  stats?: Record<string, PlayerStats>;
+  stats?: PlayerStats;
+  projected_pts?: number;
+  pts_ppr?: number;
 }
 
 interface Roster {
@@ -53,7 +56,7 @@ const TeamOverview: React.FC = () => {
   const teamStats = useMemo(() => {
     if (!user || !rosters) return null;
 
-    const userRoster = rosters.find(r => r.owner_id === user.user_id);
+    const userRoster = rosters.find((r: Roster) => r.owner_id === user.user_id);
     if (!userRoster) return null;
 
     const rosterPlayers = [...(userRoster.starters || []), ...(userRoster.reserves || [])]
@@ -61,9 +64,9 @@ const TeamOverview: React.FC = () => {
         const player = players[playerId as keyof typeof players] as Player | undefined;
         return player ? {
           ...player,
-          stats: (player?.stats?.[selectedWeek] || {}) as PlayerStats,
-          projected_pts: player?.stats?.[selectedWeek]?.projected_pts || 0,
-          pts_ppr: player?.stats?.[selectedWeek]?.pts_ppr || 0
+          stats: player.stats || {},
+          projected_pts: player.stats?.[selectedWeek]?.projected_pts || 0,
+          pts_ppr: player.stats?.[selectedWeek]?.pts_ppr || 0
         } : null;
       })
       .filter((p): p is NonNullable<typeof p> => p !== null);
@@ -86,7 +89,7 @@ const TeamOverview: React.FC = () => {
       return acc;
     }, {} as Record<string, { count: number; points: number; projected: number }>);
 
-    return {
+    const teamStats: TeamStats = {
       teamId: userRoster.roster_id.toString(),
       ownerId: userRoster.owner_id,
       teamName: userRoster.metadata?.team_name || `Team ${userRoster.roster_id}`,
@@ -96,7 +99,9 @@ const TeamOverview: React.FC = () => {
       totalPoints,
       positionStats,
       players: rosterPlayers
-    } as TeamStats;
+    };
+
+    return teamStats;
   }, [user, rosters, players, selectedWeek]);
 
   if (!teamStats) {
@@ -127,7 +132,7 @@ const TeamOverview: React.FC = () => {
         <select
           className="mt-1 block w-32 pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
           value={selectedWeek}
-          onChange={(e) => setSelectedWeek(e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedWeek(e.target.value)}
         >
           {Array.from({ length: 18 }, (_, i) => (
             <option key={i} value={i.toString()}>
