@@ -88,53 +88,74 @@ export function SleeperProvider({ children }: { children: React.ReactNode }) {
       console.log(`Found ${leaguesResponse.data.length} leagues:`, leaguesResponse.data);
       setLeagues(leaguesResponse.data);
 
-      // Fetch rosters for each league
-      console.log('Fetching rosters for each league...');
-      const rostersPromises = leaguesResponse.data.map(async (league: SleeperLeague) => {
-        console.log(`Fetching rosters for league ${league.league_id} (${league.name})`);
-        const response = await axios.get<SleeperRoster[]>(`https://api.sleeper.app/v1/league/${league.league_id}/rosters`);
-        console.log(`Received ${response.data.length} rosters for league ${league.league_id}`);
-        return response;
-      });
-
-      const rostersResponses = await Promise.all(rostersPromises);
-      const allRosters = rostersResponses.flatMap((response: AxiosResponse<SleeperRoster[]>) => {
-        if (!Array.isArray(response.data)) {
-          console.error('Invalid roster data received:', response.data);
-          return [];
-        }
-        
-        response.data.forEach(roster => {
-          console.log('Processing roster:', {
-            rosterId: roster.roster_id,
-            leagueId: roster.league_id,
-            ownerId: roster.owner_id,
-            metadata: roster.metadata,
-            settings: roster.settings,
-            hasMetadata: !!roster.metadata,
-            hasTeamName: !!roster.metadata?.team_name,
-            teamName: roster.metadata?.team_name || `Team ${roster.roster_id}`
-          });
-        });
-        return response.data;
-      });
-
-      console.log(`Total rosters found: ${allRosters.length}`, allRosters);
-      setRosters(allRosters);
-
-      // Fetch players data
-      console.log('Fetching players data...');
-      const playersResponse: AxiosResponse<Record<string, SleeperPlayer>> = await axios.get(
-        'https://api.sleeper.app/v1/players/nfl'
-      );
-      
-      if (!playersResponse.data || typeof playersResponse.data !== 'object') {
-        console.error('Invalid players data received:', playersResponse.data);
-        throw new Error('Invalid players data received from API');
+      // Set initial current league if none selected
+      if (leaguesResponse.data.length > 0 && !currentLeague) {
+        console.log('Setting initial current league:', leaguesResponse.data[0]);
+        setCurrentLeague(leaguesResponse.data[0]);
       }
 
-      console.log('Players data fetched successfully');
-      setPlayers(playersResponse.data);
+      // Only fetch rosters and players if we have a current league
+      if (currentLeague) {
+        // Fetch rosters for current league only
+        console.log(`Fetching rosters for league ${currentLeague.league_id} (${currentLeague.name})`);
+        const rostersResponse = await axios.get<SleeperRoster[]>(
+          `https://api.sleeper.app/v1/league/${currentLeague.league_id}/rosters`
+        );
+        
+        if (!Array.isArray(rostersResponse.data)) {
+          console.error('Invalid roster data received:', rostersResponse.data);
+          throw new Error('Invalid roster data received from API');
+        }
+
+        console.log(`Received ${rostersResponse.data.length} rosters for league ${currentLeague.league_id}`);
+        
+        // Process rosters and extract team names from metadata
+        const processedRosters = rostersResponse.data.map((roster: SleeperRoster) => {
+          // Extract team name from metadata
+          let teamName = `Team ${roster.roster_id}`;
+          
+          if (roster.metadata) {
+            // Try to get team name from metadata
+            const metadata = roster.metadata as { team_name?: string };
+            if (metadata.team_name) {
+              teamName = metadata.team_name;
+            } else {
+              // Try to get team name from player nicknames
+              const playerNicknames = Object.values(roster.metadata).filter(
+                (value): value is string => typeof value === 'string' && value.includes('Team')
+              );
+              if (playerNicknames.length > 0) {
+                teamName = playerNicknames[0];
+              }
+            }
+          }
+
+          return {
+            ...roster,
+            metadata: {
+              ...roster.metadata,
+              team_name: teamName
+            }
+          };
+        });
+
+        console.log('Processed rosters:', processedRosters);
+        setRosters(processedRosters);
+
+        // Fetch players data
+        console.log('Fetching players data...');
+        const playersResponse: AxiosResponse<Record<string, SleeperPlayer>> = await axios.get(
+          'https://api.sleeper.app/v1/players/nfl'
+        );
+        
+        if (!playersResponse.data || typeof playersResponse.data !== 'object') {
+          console.error('Invalid players data received:', playersResponse.data);
+          throw new Error('Invalid players data received from API');
+        }
+
+        console.log('Players data fetched successfully');
+        setPlayers(playersResponse.data);
+      }
 
       setIsLoading(false);
       console.log('All user data fetched and stored successfully');
