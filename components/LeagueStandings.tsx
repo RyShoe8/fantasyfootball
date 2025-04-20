@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { useSleeper } from '../contexts/SleeperContext';
-import { SleeperRoster } from '../types/sleeper';
+import type { SleeperRoster, SleeperUser } from '../types/sleeper';
 
 interface TeamStanding {
   teamId: string;
@@ -28,7 +28,7 @@ const formatStatus = (status: string) => {
 };
 
 const LeagueStandings: React.FC = () => {
-  const { rosters, currentLeague } = useSleeper();
+  const { rosters, currentLeague, users } = useSleeper();
 
   const standings = useMemo(() => {
     if (!rosters || !currentLeague) {
@@ -50,48 +50,26 @@ const LeagueStandings: React.FC = () => {
       console.log('Processing roster:', {
         rosterId: roster.roster_id,
         ownerId: roster.owner_id,
-        metadata: roster.metadata,
         settings: roster.settings
       });
-      
-      // Calculate streak (this would come from actual league data in a real app)
-      const streak = roster.settings.wins > roster.settings.losses 
-        ? `W${roster.settings.wins}`
-        : roster.settings.losses > roster.settings.wins
-          ? `L${roster.settings.losses}`
-          : '';
 
-      const teamName = roster.metadata?.team_name || `Team ${roster.roster_id}`;
-      console.log('Team name resolved:', { 
-        rosterId: roster.roster_id, 
-        teamName,
-        metadata: roster.metadata,
-        hasMetadata: !!roster.metadata,
-        hasTeamName: !!roster.metadata?.team_name
-      });
-
-      const totalPoints = (roster.settings.fpts || 0) + (roster.settings.fpts_decimal || 0);
-      const pointsAgainst = (roster.settings.fpts_against || 0) + (roster.settings.fpts_against_decimal || 0);
-
-      console.log('Team stats calculated:', {
-        rosterId: roster.roster_id,
-        wins: roster.settings.wins || 0,
-        losses: roster.settings.losses || 0,
-        totalPoints,
-        pointsAgainst,
-        streak
-      });
+      const teamUser = users?.find((u: SleeperUser) => u.user_id === roster.owner_id);
+      const teamName = roster.metadata?.team_name || 
+                      teamUser?.metadata?.team_name || 
+                      teamUser?.display_name || 
+                      teamUser?.username || 
+                      `Team ${roster.roster_id}`;
 
       return {
-        teamId: roster.roster_id,
+        teamId: roster.roster_id.toString(),
         ownerId: roster.owner_id,
         teamName,
-        wins: roster.settings.wins || 0,
-        losses: roster.settings.losses || 0,
-        ties: 0, // This would come from actual league data if available
-        totalPoints,
-        pointsAgainst,
-        streak
+        wins: roster.settings?.wins || 0,
+        losses: roster.settings?.losses || 0,
+        ties: 0,
+        totalPoints: (roster.settings?.fpts || 0) + ((roster.settings?.fpts_decimal || 0) / 100),
+        pointsAgainst: (roster.settings?.fpts_against || 0) + ((roster.settings?.fpts_against_decimal || 0) / 100),
+        streak: ''
       };
     });
 
@@ -106,7 +84,7 @@ const LeagueStandings: React.FC = () => {
 
     console.log('Sorted standings:', sortedStandings);
     return sortedStandings;
-  }, [rosters, currentLeague]);
+  }, [rosters, currentLeague, users]);
 
   if (!currentLeague) {
     return <div>Loading...</div>;
