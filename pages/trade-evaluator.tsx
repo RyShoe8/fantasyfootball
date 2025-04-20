@@ -15,7 +15,7 @@
 
 import { useSleeper } from '../contexts/SleeperContext';
 import { useRouter } from 'next/router';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { SleeperPlayer, SleeperRoster } from '../types/sleeper';
 
 // Interface for a player involved in a trade
@@ -35,13 +35,27 @@ interface TradeSide {
 
 export default function TradeEvaluator() {
   // Get roster and player data from the Sleeper context
-  const { rosters, players } = useSleeper();
+  const { rosters, players, currentLeague } = useSleeper();
   const router = useRouter();
+  const [isLoading, setIsLoading] = useState(true);
   
   // State for tracking selected team and players
   const [selectedTeam, setSelectedTeam] = useState<string>('');
   const [myPlayers, setMyPlayers] = useState<TradePlayer[]>([]);
   const [theirPlayers, setTheirPlayers] = useState<TradePlayer[]>([]);
+
+  // Check if we have the necessary data, redirect if not
+  useEffect(() => {
+    // If we don't have rosters or players data, redirect to home
+    if ((!rosters || rosters.length === 0) || !players || Object.keys(players).length === 0) {
+      console.log('Trade Evaluator page: Missing data, redirecting to home');
+      router.push('/');
+      return;
+    }
+    
+    // If we have the data, we're no longer loading
+    setIsLoading(false);
+  }, [rosters, players, router]);
 
   // Get the current user's roster (currently just using the first roster)
   const currentRoster = useMemo(() => {
@@ -118,6 +132,15 @@ export default function TradeEvaluator() {
     setTheirPlayers(theirPlayers.filter(p => p.playerId !== playerId));
   };
 
+  // Show loading state if data is not available
+  if (isLoading || !currentRoster) {
+    return (
+      <div className="p-6 flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6">
       {/* Header with back button */}
@@ -131,7 +154,7 @@ export default function TradeEvaluator() {
         </button>
       </div>
 
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* My Side of the Trade */}
         <div className="bg-white rounded-lg shadow p-4">
           <h2 className="text-xl font-semibold mb-4">My Side</h2>
@@ -228,7 +251,7 @@ export default function TradeEvaluator() {
       {mySide.players.length > 0 && theirSide.players.length > 0 && (
         <div className="mt-6 bg-white rounded-lg shadow p-4">
           <h2 className="text-xl font-semibold mb-4">Trade Analysis</h2>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="p-3 bg-blue-50 rounded">
               <h3 className="font-medium mb-2">2023 Season Comparison</h3>
               <p>Difference: {(mySide.totalLastYearPoints - theirSide.totalLastYearPoints).toFixed(2)} points</p>

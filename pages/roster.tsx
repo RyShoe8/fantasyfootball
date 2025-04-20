@@ -13,7 +13,7 @@
 
 import { useSleeper } from '../contexts/SleeperContext';
 import { useRouter } from 'next/router';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { SleeperPlayer } from '../types/sleeper';
 
 // Interface for player statistics with projected and historical points
@@ -26,9 +26,23 @@ interface PlayerStats {
 
 export default function Roster() {
   // Get roster and player data from the Sleeper context
-  const { rosters, players } = useSleeper();
+  const { rosters, players, currentLeague } = useSleeper();
   const router = useRouter();
   const [selectedWeek, setSelectedWeek] = useState(1);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Check if we have the necessary data, redirect if not
+  useEffect(() => {
+    // If we don't have rosters or players data, redirect to home
+    if ((!rosters || rosters.length === 0) || !players || Object.keys(players).length === 0) {
+      console.log('Roster page: Missing data, redirecting to home');
+      router.push('/');
+      return;
+    }
+    
+    // If we have the data, we're no longer loading
+    setIsLoading(false);
+  }, [rosters, players, router]);
 
   // Get the current user's roster (currently just using the first roster)
   const currentRoster = useMemo(() => {
@@ -81,9 +95,13 @@ export default function Roster() {
     });
   }, [currentRoster, players]);
 
-  // Show loading state if roster is not available
-  if (!currentRoster) {
-    return <div className="p-6">Loading roster...</div>;
+  // Show loading state if data is not available
+  if (isLoading || !currentRoster) {
+    return (
+      <div className="p-6 flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+      </div>
+    );
   }
 
   return (
