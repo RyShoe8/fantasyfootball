@@ -89,7 +89,10 @@ export const LeagueInfo: React.FC = () => {
     setSelectedYear,
     isLoading: contextLoading,
     user,
-    setLeagues
+    setLeagues,
+    setRosters,
+    setUsers,
+    setPlayers
   } = useSleeper();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
@@ -118,11 +121,29 @@ export const LeagueInfo: React.FC = () => {
           setLeagues(leaguesResponse.data);
           const newLeague = leaguesResponse.data[0];
           setCurrentLeague(newLeague);
-          // Only navigate after the league is set
+
+          // Fetch all necessary data for the new league
+          const [rostersResponse, usersResponse, playersResponse] = await Promise.all([
+            axios.get(`https://api.sleeper.app/v1/league/${newLeague.league_id}/rosters`),
+            axios.get(`https://api.sleeper.app/v1/league/${newLeague.league_id}/users`),
+            axios.get('https://api.sleeper.app/v1/players/nfl')
+          ]);
+
+          // Update all the necessary state
+          setRosters(rostersResponse.data);
+          setUsers(usersResponse.data);
+          setPlayers(playersResponse.data);
+
+          // Only navigate after all data is loaded
           router.push('/');
         } else {
           console.log('No leagues found for year:', year);
           setError('No leagues found for this year');
+          setLeagues([]);
+          setCurrentLeague(null);
+          setRosters([]);
+          setUsers([]);
+          setPlayers({});
         }
       }
     } catch (error) {
