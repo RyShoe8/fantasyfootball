@@ -150,7 +150,7 @@ const LeagueInfo: React.FC = () => {
             <div>
               <dt className="text-sm font-medium text-gray-500">Roster Settings</dt>
               <dd className="text-sm text-gray-900">
-                {currentLeague.settings?.roster_positions?.join(', ')}
+                {currentLeague.roster_positions?.join(', ')}
               </dd>
             </div>
           </dl>
