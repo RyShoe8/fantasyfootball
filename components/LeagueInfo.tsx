@@ -55,8 +55,12 @@ const getDateForWeek = (week: number, season: string) => {
 
 // Helper function to determine season number
 const getSeasonNumber = (season: string, leagues: SleeperLeague[]) => {
+  // Find all leagues with the same name as the current league
+  const leagueName = leagues.find(l => l.season === season)?.name || '';
+  const sameNameLeagues = leagues.filter(l => l.name === leagueName);
+  
   // Sort leagues by season to determine which season number this is
-  const sortedLeagues = [...leagues].sort((a, b) => parseInt(a.season) - parseInt(b.season));
+  const sortedLeagues = [...sameNameLeagues].sort((a, b) => parseInt(a.season) - parseInt(b.season));
   const seasonIndex = sortedLeagues.findIndex(l => l.season === season);
   
   if (seasonIndex === -1) return '';

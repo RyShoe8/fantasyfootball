@@ -51,6 +51,7 @@ const formatApiResponse = (data: any, type: string) => {
         owner_id: roster.owner_id,
         team_name: roster.metadata?.team_name || `Team ${roster.roster_id}`,
         starters: roster.starters,
+        reserves: roster.reserves || [],
         players: roster.players?.length || 0
       }));
     case 'players':
