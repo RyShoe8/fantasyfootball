@@ -74,18 +74,10 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [isInitialized, setIsInitialized] = useState(false);
   const [hasInitialized, setHasInitialized] = useState(false);
 
-  const fetchUserData = async (userId: string) => {
+  const fetchUserByUsername = async (username: string) => {
     try {
-      // Check database first
-      const dbUser = await getUserData(userId);
-      if (dbUser) {
-        setUser(dbUser);
-        localStorage.setItem('sleeperUser', JSON.stringify(dbUser));
-        return dbUser;
-      }
-
-      // If not in database, fetch from API
-      const response = await axios.get(`https://api.sleeper.app/v1/user/${userId}`);
+      // Try to fetch user by username from Sleeper API
+      const response = await axios.get(`https://api.sleeper.app/v1/user/${username}`);
       const userData = response.data;
       
       // Save to database
@@ -96,8 +88,7 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
       return userData;
     } catch (err) {
       console.error('Error fetching user data:', err);
-      setError('Failed to fetch user data');
-      return null;
+      throw new Error('User not found. Please check your username and try again.');
     }
   };
 
@@ -256,7 +247,7 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setError(null);
     try {
       console.log('Starting login process for username:', username);
-      const userData = await fetchUserData(username);
+      const userData = await fetchUserByUsername(username);
       if (!userData) {
         throw new Error('Failed to fetch user data');
       }
@@ -325,7 +316,6 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setError(err instanceof Error ? err.message : 'Failed to login');
       setUser(null);
       localStorage.removeItem('sleeperUser');
-      // Don't redirect, just show the error message
     } finally {
       setIsLoading(false);
     }

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSleeper } from '../contexts/SleeperContext';
 import { useRouter } from 'next/router';
+import Image from 'next/image';
 
 export default function Login() {
   const [username, setUsername] = useState('');
@@ -19,10 +20,18 @@ export default function Login() {
     e.preventDefault();
     setError(null);
     
+    if (!username.trim()) {
+      setError('Please enter your Sleeper username');
+      return;
+    }
+    
     try {
+      console.log('Attempting to login with username:', username);
       await login(username);
+      console.log('Login successful, redirecting to home');
       router.replace('/');
     } catch (err) {
+      console.error('Login error:', err);
       setError(err instanceof Error ? err.message : 'Failed to login');
     }
   };
@@ -42,10 +51,22 @@ export default function Login() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
-        <div>
+        <div className="text-center">
+          <div className="flex justify-center">
+            <Image
+              src="/logo.png"
+              alt="Fantasy Sports OS Logo"
+              width={150}
+              height={150}
+              priority
+            />
+          </div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
             Sign in to your account
           </h2>
+          <p className="mt-2 text-sm text-gray-600">
+            Enter your Sleeper username to access your fantasy leagues
+          </p>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="rounded-md shadow-sm -space-y-px">
