@@ -142,9 +142,9 @@ const LeagueInfo: React.FC = () => {
           <h3 className="text-lg font-medium text-gray-900">Settings</h3>
           <dl className="mt-2 space-y-2">
             <div>
-              <dt className="text-sm font-medium text-gray-500">Scoring Settings</dt>
+              <dt className="text-sm font-medium text-gray-500">League Type</dt>
               <dd className="text-sm text-gray-900">
-                {currentLeague.settings?.scoring_settings ? 'Custom' : 'Standard'}
+                {currentLeague.settings?.type === 1 ? 'Redraft' : 'Dynasty'}
               </dd>
             </div>
             <div>
