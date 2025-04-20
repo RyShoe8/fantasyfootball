@@ -1,5 +1,4 @@
-/** @jsxImportSource react */
-import React, { useState, useMemo, ChangeEvent } from 'react';
+import React, { useState, useMemo, ChangeEvent, useEffect } from 'react';
 import { useSleeper } from '../contexts/SleeperContext';
 import { SleeperRoster, SleeperPlayer } from '../types/sleeper';
 import LeagueStandings from './LeagueStandings';
@@ -59,11 +58,11 @@ interface RosterData {
   teamName: string;
 }
 
-const TeamOverview: React.FC = () => {
-  const { user, rosters, players, currentLeague, leagues, users } = useSleeper();
-  const [selectedWeek, setSelectedWeek] = useState('0');
+export const TeamOverview: React.FC = () => {
+  const { user, rosters, players, selectedWeek, setSelectedWeek, currentLeague, users, leagues } = useSleeper();
   const [sortField, setSortField] = useState<SortableFields>('totalPoints');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const [playerStats, setPlayerStats] = useState<Record<string, PlayerStats>>({});
 
   const rosterData = useMemo<RosterData | null>(() => {
     if (!user || !rosters || !players || !currentLeague) {
@@ -108,16 +107,21 @@ const TeamOverview: React.FC = () => {
     }
 
     // Get team name from users array
-    const userData = users.find(u => u.user_id === user.user_id);
+    const userData = users.find((u: { user_id: string }) => u.user_id === user.user_id);
     const teamName = userData?.metadata?.team_name || userData?.display_name || 'Your Team';
     console.log('Team name from users array:', teamName);
 
     // Get all players from the roster
-    const allPlayers = userRoster.players || [];
+    const allPlayers = [
+      ...(userRoster.starters || []),
+      ...(userRoster.reserves || []),
+      ...(userRoster.taxi || []),
+      ...(userRoster.ir || [])
+    ];
     
     // Get starters and bench players
     const starters = userRoster.starters || [];
-    const benchPlayers = allPlayers.filter(playerId => !starters.includes(playerId));
+    const benchPlayers = allPlayers.filter((playerId: string) => !starters.includes(playerId));
 
     const rosterPlayers = [...starters, ...benchPlayers]
       .map(playerId => {
@@ -184,7 +188,7 @@ const TeamOverview: React.FC = () => {
     console.log('User roster settings:', userRoster.settings);
 
     // Get team name from users array
-    const userData = users.find(u => u.user_id === user.user_id);
+    const userData = users.find((u: { user_id: string }) => u.user_id === user.user_id);
     const teamName = userData?.metadata?.team_name || 'Your Team';
     console.log('Team name from users array:', teamName);
 
@@ -275,6 +279,20 @@ const TeamOverview: React.FC = () => {
     return stats;
   }, [user, rosters, players, selectedWeek, currentLeague, users]);
 
+  useEffect(() => {
+    // Fetch player stats when component mounts
+    const fetchPlayerStats = async () => {
+      try {
+        const stats: Record<string, PlayerStats> = {};
+        // TODO: Implement actual stats fetching
+        setPlayerStats(stats);
+      } catch (error) {
+        console.error('Error fetching player stats:', error);
+      }
+    };
+    fetchPlayerStats();
+  }, []);
+
   if (!teamStats || !rosterData) {
     return <div>Loading...</div>;
   }
@@ -320,6 +338,35 @@ const TeamOverview: React.FC = () => {
     const seasonNumber = seasonIndex + 1;
     const suffix = ['th', 'st', 'nd', 'rd'][seasonNumber % 10] || 'th';
     return ` (${seasonNumber}${suffix} Season)`;
+  };
+
+  const handleIdClick = (id: string): void => {
+    console.log('ID clicked:', id);
+  };
+
+  const handlePlayerClick = (playerId: string): void => {
+    console.log('Player clicked:', playerId);
+  };
+
+  const handleBenchPlayerClick = (playerId: string): void => {
+    console.log('Bench player clicked:', playerId);
+  };
+
+  const handleTaxiPlayerClick = (playerId: string): void => {
+    console.log('Taxi player clicked:', playerId);
+  };
+
+  const handleIRPlayerClick = (playerId: string): void => {
+    console.log('IR player clicked:', playerId);
+  };
+
+  const handleReservePlayerClick = (playerId: string): void => {
+    console.log('Reserve player clicked:', playerId);
+  };
+
+  const getPlayerStats = (playerId: string): PlayerStats => {
+    const stats = playerStats[playerId] as PlayerStats;
+    return stats || { projected: 0, actual: 0 };
   };
 
   return (
@@ -469,12 +516,12 @@ const TeamOverview: React.FC = () => {
                       {Object.entries(team.positionStats).map(([pos, stats]) => (
                         <div key={pos} className="flex justify-between">
                           <span>{formatPosition(pos)}:</span>
-                          <span>{stats.points.toFixed(2)} pts</span>
+                          <span>{(stats as { points: number }).points.toFixed(2)} pts</span>
                         </div>
                       ))}
                       <div className="flex justify-between pt-1 border-t border-gray-200">
                         <span>Bench:</span>
-                        <span>{rosterData.roster.players?.filter(id => !rosterData.roster.starters?.includes(id)).length || 0} players</span>
+                        <span>{rosterData.roster.players?.filter((id: string) => !rosterData.roster.starters?.includes(id)).length || 0} players</span>
                       </div>
                     </div>
                   </td>
@@ -491,12 +538,12 @@ const TeamOverview: React.FC = () => {
           <div>
             <h3 className="text-lg font-semibold mb-2">Starters</h3>
             <div className="space-y-2">
-              {rosterData.roster.starters?.map(playerId => {
+              {rosterData.roster.starters?.map((playerId: string) => {
                 const player = players?.[playerId];
                 return player ? (
                   <div key={playerId} className="flex justify-between items-center">
                     <span>{`${player.first_name} ${player.last_name}`} ({player.position})</span>
-                    <span>{player.stats?.pts_ppr || 0} pts</span>
+                    <span>{getPlayerStats(playerId).projected} pts</span>
                   </div>
                 ) : null;
               })}
@@ -505,12 +552,12 @@ const TeamOverview: React.FC = () => {
           <div>
             <h3 className="text-lg font-semibold mb-2">Bench</h3>
             <div className="space-y-2">
-              {rosterData.roster.players?.filter(id => !rosterData.roster.starters?.includes(id)).map(playerId => {
+              {rosterData.roster.players?.filter((id: string) => !rosterData.roster.starters?.includes(id)).map((playerId: string) => {
                 const player = players?.[playerId];
                 return player ? (
                   <div key={playerId} className="flex justify-between items-center">
                     <span>{`${player.first_name} ${player.last_name}`} ({player.position})</span>
-                    <span>{player.stats?.pts_ppr || 0} pts</span>
+                    <span>{getPlayerStats(playerId).projected} pts</span>
                   </div>
                 ) : null;
               })}
@@ -520,12 +567,12 @@ const TeamOverview: React.FC = () => {
             <div>
               <h3 className="text-lg font-semibold mb-2">Taxi Squad</h3>
               <div className="space-y-2">
-                {rosterData.roster.taxi.map(playerId => {
+                {rosterData.roster.taxi.map((playerId: string) => {
                   const player = players?.[playerId];
                   return player ? (
                     <div key={playerId} className="flex justify-between items-center">
                       <span>{`${player.first_name} ${player.last_name}`} ({player.position})</span>
-                      <span>{player.stats?.pts_ppr || 0} pts</span>
+                      <span>{getPlayerStats(playerId).projected} pts</span>
                     </div>
                   ) : null;
                 })}
@@ -536,12 +583,12 @@ const TeamOverview: React.FC = () => {
             <div>
               <h3 className="text-lg font-semibold mb-2">Injured Reserve</h3>
               <div className="space-y-2">
-                {rosterData.roster.ir.map(playerId => {
+                {rosterData.roster.ir.map((playerId: string) => {
                   const player = players?.[playerId];
                   return player ? (
                     <div key={playerId} className="flex justify-between items-center">
                       <span>{`${player.first_name} ${player.last_name}`} ({player.position})</span>
-                      <span>{player.stats?.pts_ppr || 0} pts</span>
+                      <span>{getPlayerStats(playerId).projected} pts</span>
                     </div>
                   ) : null;
                 })}
@@ -560,8 +607,8 @@ const TeamOverview: React.FC = () => {
               {Object.entries(teamStats.positionStats).map(([position, stats]) => (
                 <div key={position}>
                   <p className="text-sm text-gray-600">{position}</p>
-                  <p className="text-xl font-bold">{stats.count} players</p>
-                  <p className="text-sm text-gray-600">{stats.points.toFixed(2)} pts</p>
+                  <p className="text-xl font-bold">{(stats as { count: number }).count} players</p>
+                  <p className="text-sm text-gray-600">{(stats as { points: number }).points.toFixed(2)} pts</p>
                 </div>
               ))}
             </div>
@@ -574,4 +621,4 @@ const TeamOverview: React.FC = () => {
   );
 };
 
-export default TeamOverview; 
+export default TeamOverview;
