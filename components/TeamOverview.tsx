@@ -62,8 +62,14 @@ const TeamOverview: React.FC = () => {
         const player = players[playerId as keyof typeof players];
         if (!player) return null;
 
-        // Get stats for the selected week
-        const weekStats = player.stats?.[selectedWeek] || {};
+        // Get stats for the selected week and ensure it's typed as PlayerStats
+        const rawStats = player.stats?.[selectedWeek] || {};
+        const weekStats: PlayerStats = {
+          ...rawStats,
+          fpts: typeof rawStats.fpts === 'number' ? rawStats.fpts : 0,
+          fpts_decimal: typeof rawStats.fpts_decimal === 'number' ? rawStats.fpts_decimal : 0,
+          projected_pts: typeof rawStats.projected_pts === 'number' ? rawStats.projected_pts : 0
+        };
         
         // Calculate fantasy points based on Sleeper API format
         const fpts = weekStats.fpts || 0;
