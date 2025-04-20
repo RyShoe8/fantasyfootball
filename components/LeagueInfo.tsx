@@ -258,7 +258,7 @@ export const LeagueInfo: React.FC = () => {
               <h3 className="text-sm font-medium text-gray-500">Settings</h3>
               <p className="mt-1">
                 {currentLeague.settings.type === 1 ? 'Keeper League' : 'Redraft League'} •{' '}
-                {currentLeague.settings.playoff_teams} Teams
+                {currentLeague.settings.total_rosters} Teams
               </p>
             </div>
           </div>
