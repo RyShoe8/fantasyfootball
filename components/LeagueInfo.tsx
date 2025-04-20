@@ -209,6 +209,30 @@ export const LeagueInfo: React.FC = () => {
       )}
 
       {currentLeague && (
+        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div>
+            <h3 className="text-sm font-medium text-gray-500">League Start</h3>
+            <p className="mt-1">{formatDate(currentLeague.settings.start_week)}</p>
+          </div>
+          <div>
+            <h3 className="text-sm font-medium text-gray-500">Trade Deadline</h3>
+            <p className="mt-1">{formatDate(currentLeague.settings.trade_deadline)}</p>
+          </div>
+          <div>
+            <h3 className="text-sm font-medium text-gray-500">Playoff Teams</h3>
+            <p className="mt-1">{currentLeague.settings.playoff_team_count} Teams</p>
+          </div>
+          <div>
+            <h3 className="text-sm font-medium text-gray-500">Playoff Format</h3>
+            <p className="mt-1">
+              {currentLeague.settings.playoff_week_start} Week{' '}
+              {currentLeague.settings.playoff_week_start + currentLeague.settings.playoff_team_count - 1} Finals
+            </p>
+          </div>
+        </div>
+      )}
+
+      {currentLeague && (
         <div className="mt-4">
           <h3 className="text-sm font-medium text-gray-500 mb-2">Roster Positions</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
