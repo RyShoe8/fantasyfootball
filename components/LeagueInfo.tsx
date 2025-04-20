@@ -1,7 +1,6 @@
-import React, { ChangeEvent, useState } from 'react';
+import React, { ChangeEvent } from 'react';
 import { useSleeper } from '../contexts/SleeperContext';
 import { SleeperLeague } from '../types/sleeper';
-import axios from 'axios';
 
 // Helper function to format dates
 const formatDate = (timestamp: number): string => {
@@ -85,11 +84,6 @@ const getSeasonNumber = (season: string, leagues: SleeperLeague[]) => {
 
 export default function LeagueInfo() {
   const { currentLeague, leagues, setCurrentLeague } = useSleeper();
-  const [showDebug, setShowDebug] = useState(false);
-  const [rosters, setRosters] = useState([]);
-  const [users, setUsers] = useState([]);
-  const [players, setPlayers] = useState([]);
-  const [apiResponse, setApiResponse] = useState('');
 
   console.log('LeagueInfo - currentLeague:', currentLeague);
   console.log('LeagueInfo - leagues:', leagues);
@@ -98,65 +92,6 @@ export default function LeagueInfo() {
     console.log('LeagueInfo - No current league selected');
     return null;
   }
-
-  const handleFetchRosters = async () => {
-    try {
-      const response = await axios.get(`https://api.sleeper.app/v1/league/${currentLeague.league_id}/rosters`);
-      console.log('Rosters API Response:', response.data);
-      setRosters(response.data);
-      setApiResponse(JSON.stringify(response.data, null, 2));
-    } catch (error) {
-      console.error('Error fetching rosters:', error);
-      setApiResponse('Error fetching rosters');
-    }
-  };
-
-  const handleFetchUsers = async () => {
-    try {
-      const response = await axios.get(`https://api.sleeper.app/v1/league/${currentLeague.league_id}/users`);
-      console.log('Users API Response:', response.data);
-      setUsers(response.data);
-      setApiResponse(JSON.stringify(response.data, null, 2));
-    } catch (error) {
-      console.error('Error fetching users:', error);
-      setApiResponse('Error fetching users');
-    }
-  };
-
-  const handleFetchPlayers = async () => {
-    try {
-      const response = await axios.get('https://api.sleeper.app/v1/players/nfl');
-      console.log('Players API Response:', response.data);
-      setPlayers(response.data);
-      setApiResponse(JSON.stringify(response.data, null, 2));
-    } catch (error) {
-      console.error('Error fetching players:', error);
-      setApiResponse('Error fetching players');
-    }
-  };
-
-  const handleFetchDraftPicks = async () => {
-    try {
-      const response = await axios.get(`https://api.sleeper.app/v1/draft/${currentLeague.league_id}/picks`);
-      console.log('Draft Picks API Response:', response.data);
-      setApiResponse(JSON.stringify(response.data, null, 2));
-    } catch (error) {
-      console.error('Error fetching draft picks:', error);
-      setApiResponse('Error fetching draft picks');
-    }
-  };
-
-  const handleFetchLeague = async () => {
-    try {
-      const response = await axios.get(`https://api.sleeper.app/v1/league/${currentLeague.league_id}`);
-      console.log('League API Response:', response.data);
-      setCurrentLeague(response.data);
-      setApiResponse(JSON.stringify(response.data, null, 2));
-    } catch (error) {
-      console.error('Error fetching league:', error);
-      setApiResponse('Error fetching league');
-    }
-  };
 
   return (
     <div className="space-y-6">
@@ -267,51 +202,6 @@ export default function LeagueInfo() {
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Debug Section */}
-      <div className="bg-white shadow rounded-lg p-6">
-        <h2 className="text-xl font-bold mb-4">Debug Section</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-          <button
-            onClick={handleFetchRosters}
-            className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
-          >
-            Fetch Rosters
-          </button>
-          <button
-            onClick={handleFetchUsers}
-            className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
-          >
-            Fetch Users
-          </button>
-          <button
-            onClick={handleFetchPlayers}
-            className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
-          >
-            Fetch Players
-          </button>
-          <button
-            onClick={handleFetchDraftPicks}
-            className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
-          >
-            Fetch Draft Picks
-          </button>
-          <button
-            onClick={handleFetchLeague}
-            className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
-          >
-            Fetch League
-          </button>
-        </div>
-        {apiResponse && (
-          <div className="mt-4">
-            <h3 className="text-lg font-semibold mb-2">API Response:</h3>
-            <pre className="bg-gray-100 p-4 rounded overflow-x-auto whitespace-pre-wrap">
-              {apiResponse}
-            </pre>
-          </div>
-        )}
       </div>
     </div>
   );
