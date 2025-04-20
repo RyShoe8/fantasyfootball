@@ -390,18 +390,63 @@ export const TeamOverview: React.FC = () => {
           <p className="text-gray-700">{teamStats.teamName}</p>
         </div>
         <div className="bg-gray-50 p-4 rounded-lg">
-          <h3 className="text-lg font-semibold mb-2">Team Stats</h3>
+          <h3 className="text-lg font-semibold mb-2">Record</h3>
           <div className="grid grid-cols-2 gap-2">
-            <p className="text-gray-700">Total Points: {teamStats.totalPoints}</p>
-            <p className="text-gray-700">QB: {teamStats.positionStats.QB.count} players</p>
-            <p className="text-gray-700">RB: {teamStats.positionStats.RB.count} players</p>
-            <p className="text-gray-700">WR: {teamStats.positionStats.WR.count} players</p>
-            <p className="text-gray-700">TE: {teamStats.positionStats.TE.count} players</p>
-            <p className="text-gray-700">FLEX: {teamStats.positionStats.FLEX.count} players</p>
+            <p className="text-gray-700">Wins: {teamStats.wins}</p>
+            <p className="text-gray-700">Losses: {teamStats.losses}</p>
           </div>
         </div>
       </div>
 
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-2xl font-bold text-gray-900">Team Overview</h2>
+        <select
+          className="mt-1 block w-32 pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+          value={selectedWeek}
+          onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedWeek(e.target.value)}
+        >
+          {Array.from({ length: 18 }, (_, i) => (
+            <option key={i} value={i.toString()}>
+              Week {i}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <h3 className="text-lg font-semibold mb-2">Starters</h3>
+          <div className="space-y-2">
+            {rosterData.roster.starters?.map((playerId: string) => {
+              const player = players?.[playerId];
+              return player ? (
+                <div key={playerId} className="flex justify-between items-center">
+                  <span>{`${player.first_name} ${player.last_name}`} ({player.position})</span>
+                  <span>{getPlayerStats(playerId).projected} pts</span>
+                </div>
+              ) : null;
+            })}
+          </div>
+        </div>
+        <div>
+          <h3 className="text-lg font-semibold mb-2">Bench</h3>
+          <div className="space-y-2">
+            {rosterData.roster.players?.filter((id: string) => !rosterData.roster.starters?.includes(id)).map((playerId: string) => {
+              const player = players?.[playerId];
+              return player ? (
+                <div key={playerId} className="flex justify-between items-center">
+                  <span>{`${player.first_name} ${player.last_name}`} ({player.position})</span>
+                  <span>{getPlayerStats(playerId).projected} pts</span>
+                </div>
+              ) : null;
+            })}
+          </div>
+        </div>
+        {rosterData.roster.taxi && rosterData.roster.taxi.length > 0 && (
+          <div>
+            <h3 className="text-lg font-semibold mb-2">Taxi Squad</h3>
+            <div className="space-y-2">
+              {rosterData.roster.taxi.map((playerId: string) => {
       <div className="bg-white shadow rounded-lg p-6">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-2xl font-bold text-gray-900">Team Overview</h2>

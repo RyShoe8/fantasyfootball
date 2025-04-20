@@ -100,10 +100,10 @@ const LeagueStandings: React.FC = () => {
   return (
     <div className="bg-white shadow rounded-lg p-6">
       <div className="mb-4">
-        <h2 className="text-2xl font-bold text-gray-900">League Standings</h2>
-        <p className="text-gray-600">{currentLeague.name}</p>
-        <p className="text-gray-600">Season: {currentLeague.season}</p>
-        <p className="text-gray-600">Status: {formatStatus(currentLeague.status)}</p>
+        <div className="flex justify-between items-center">
+          <h2 className="text-2xl font-bold text-gray-900">League Standings</h2>
+          <span className="text-gray-600">Season: {currentLeague.season}</span>
+        </div>
       </div>
 
       {standings.length === 0 ? (
