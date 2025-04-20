@@ -1,12 +1,19 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSleeper } from '../contexts/SleeperContext';
 import { useRouter } from 'next/router';
 
 export default function Login() {
   const [username, setUsername] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const { login, isLoading } = useSleeper();
+  const { login, isLoading, user, hasInitialized } = useSleeper();
   const router = useRouter();
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (hasInitialized && user) {
+      router.replace('/');
+    }
+  }, [user, hasInitialized, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -14,11 +21,23 @@ export default function Login() {
     
     try {
       await login(username);
-      router.push('/');
+      router.replace('/');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to login');
     }
   };
+
+  // Show loading state while checking auth
+  if (!hasInitialized) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
