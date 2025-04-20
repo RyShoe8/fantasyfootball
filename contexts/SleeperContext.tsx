@@ -20,6 +20,9 @@ interface SleeperContextType {
   login: (username: string) => Promise<void>;
   logout: () => void;
   setCurrentLeague: (league: SleeperLeague) => void;
+  setRosters: (rosters: SleeperRoster[]) => void;
+  setUsers: (users: SleeperUser[]) => void;
+  setPlayers: (players: Record<string, SleeperPlayer>) => void;
 }
 
 const SleeperContext = createContext<SleeperContextType | undefined>(undefined);
@@ -279,6 +282,9 @@ export function SleeperProvider({ children }: { children: React.ReactNode }) {
         login,
         logout,
         setCurrentLeague,
+        setRosters,
+        setUsers: () => {},
+        setPlayers
       }}
     >
       {children}
