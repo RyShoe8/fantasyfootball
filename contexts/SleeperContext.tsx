@@ -354,14 +354,14 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
         try {
           const [rostersResponse, usersResponse] = await Promise.all([
             Promise.race([
-              axios.get(`https://api.sleeper.app/v1/league/${league.league_id}/rosters`),
+              axios.get<SleeperRoster[]>(`https://api.sleeper.app/v1/league/${league.league_id}/rosters`),
               new Promise((_, reject) => setTimeout(() => reject(new Error('Request timed out')), timeout))
             ]),
             Promise.race([
-              axios.get(`https://api.sleeper.app/v1/league/${league.league_id}/users`),
+              axios.get<SleeperUser[]>(`https://api.sleeper.app/v1/league/${league.league_id}/users`),
               new Promise((_, reject) => setTimeout(() => reject(new Error('Request timed out')), timeout))
             ])
-          ]);
+          ]) as [AxiosResponse<SleeperRoster[]>, AxiosResponse<SleeperUser[]>];
           
           // Update state with the fetched data
           setRosters(rostersResponse.data || []);
