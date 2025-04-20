@@ -373,7 +373,7 @@ export const TeamOverview: React.FC = () => {
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {sortedTeams.map((team, index) => (
-              <tr key={team.roster.roster_id}>
+              <tr key={team.teamId}>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{index + 1}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{team.teamName}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{team.wins}-{team.losses}</td>
