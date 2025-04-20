@@ -54,6 +54,7 @@ interface Player extends SleeperPlayer {
   overall_rank?: number;
   position_rank?: number;
   roster_slot?: 'starter' | 'bench' | 'ir' | 'taxi';
+  age?: number;
 }
 
 interface RosterPlayer extends Player {
@@ -149,7 +150,8 @@ const Roster: React.FC = () => {
         owner_id: userRoster.owner_id,
         roster_slot: slot,
         overall_rank: player.search_rank || 0,
-        position_rank: 0 // This would need to be calculated based on position
+        position_rank: 0, // This would need to be calculated based on position
+        age: player.age
       } as RosterPlayer;
     })
     .filter((p): p is NonNullable<typeof p> => p !== null);
@@ -379,9 +381,6 @@ const Roster: React.FC = () => {
                   Player
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Position
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Team
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -412,9 +411,9 @@ const Roster: React.FC = () => {
                 <tr key={player.player_id} className={player.isStarter ? 'bg-green-50' : ''}>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
-                      <div className="flex-shrink-0 h-10 w-10">
+                      <div className="flex-shrink-0 h-10 w-10 relative">
                         <img
-                          className="h-10 w-10 rounded-full object-cover"
+                          className="h-10 w-10 rounded-full object-cover absolute inset-0"
                           src={`https://sleepercdn.com/players/avatar/${player.player_id}`}
                           alt={player.full_name}
                           onError={(e) => {
@@ -423,21 +422,21 @@ const Roster: React.FC = () => {
                             const parent = target.parentElement;
                             if (parent) {
                               const fallback = document.createElement('div');
-                              fallback.className = 'h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-sm font-medium';
+                              fallback.className = 'h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-sm font-medium absolute inset-0';
                               fallback.textContent = player.position;
                               parent.appendChild(fallback);
                             }
                           }}
                         />
+                        <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-sm font-medium absolute inset-0 opacity-0">
+                          {player.position}
+                        </div>
                       </div>
                       <div className="ml-4">
                         <div className="text-sm font-medium text-gray-900">{player.full_name}</div>
-                        <div className="text-sm text-gray-500">{player.position}</div>
+                        <div className="text-sm text-gray-500">{player.position} • {player.age || 'N/A'} years old</div>
                       </div>
                     </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {player.position}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {player.team}
@@ -562,7 +561,6 @@ const Roster: React.FC = () => {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Player</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Position</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Team</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Injury Notes</th>
@@ -575,9 +573,9 @@ const Roster: React.FC = () => {
                     <tr key={player.player_id}>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
-                          <div className="flex-shrink-0 h-10 w-10">
+                          <div className="flex-shrink-0 h-10 w-10 relative">
                             <img
-                              className="h-10 w-10 rounded-full object-cover"
+                              className="h-10 w-10 rounded-full object-cover absolute inset-0"
                               src={`https://sleepercdn.com/players/avatar/${player.player_id}`}
                               alt={player.full_name}
                               onError={(e) => {
@@ -586,19 +584,21 @@ const Roster: React.FC = () => {
                                 const parent = target.parentElement;
                                 if (parent) {
                                   const fallback = document.createElement('div');
-                                  fallback.className = 'h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-sm font-medium';
+                                  fallback.className = 'h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-sm font-medium absolute inset-0';
                                   fallback.textContent = player.position;
                                   parent.appendChild(fallback);
                                 }
                               }}
                             />
+                            <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-sm font-medium absolute inset-0 opacity-0">
+                              {player.position}
+                            </div>
                           </div>
                           <div className="ml-4">
                             <div className="text-sm font-medium text-gray-900">{player.full_name}</div>
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{player.position}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{player.team}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {player.injury_status ? (
@@ -625,7 +625,6 @@ const Roster: React.FC = () => {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Player</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Position</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Team</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Injury Notes</th>
@@ -638,9 +637,9 @@ const Roster: React.FC = () => {
                     <tr key={player.player_id}>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
-                          <div className="flex-shrink-0 h-10 w-10">
+                          <div className="flex-shrink-0 h-10 w-10 relative">
                             <img
-                              className="h-10 w-10 rounded-full object-cover"
+                              className="h-10 w-10 rounded-full object-cover absolute inset-0"
                               src={`https://sleepercdn.com/players/avatar/${player.player_id}`}
                               alt={player.full_name}
                               onError={(e) => {
@@ -649,19 +648,21 @@ const Roster: React.FC = () => {
                                 const parent = target.parentElement;
                                 if (parent) {
                                   const fallback = document.createElement('div');
-                                  fallback.className = 'h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-sm font-medium';
+                                  fallback.className = 'h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-sm font-medium absolute inset-0';
                                   fallback.textContent = player.position;
                                   parent.appendChild(fallback);
                                 }
                               }}
                             />
+                            <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-sm font-medium absolute inset-0 opacity-0">
+                              {player.position}
+                            </div>
                           </div>
                           <div className="ml-4">
                             <div className="text-sm font-medium text-gray-900">{player.full_name}</div>
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{player.position}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{player.team}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {player.injury_status ? (
