@@ -16,8 +16,9 @@ interface PlayerStats {
   [key: string]: any;
 }
 
-interface Player extends SleeperPlayer {
-  stats?: PlayerStats;
+// Create a separate interface for our extended player type
+interface ExtendedPlayer extends Omit<SleeperPlayer, 'stats'> {
+  stats?: Record<string, PlayerStats>;
   projected_pts?: number;
   pts_ppr?: number;
 }
@@ -31,12 +32,12 @@ interface TeamStats {
   ties: number;
   totalPoints: number;
   positionStats: Record<string, { count: number; points: number; projected: number }>;
-  players: Player[];
+  players: ExtendedPlayer[];
 }
 
 type SortableFields = 'teamName' | 'wins' | 'losses' | 'ties' | 'totalPoints' | 'pts_ppr' | 'projected_pts';
 
-interface RosterPlayer extends Player {
+interface RosterPlayer extends ExtendedPlayer {
   isStarter: boolean;
   owner_id: string;
   full_name: string;
@@ -111,13 +112,17 @@ const TeamOverview: React.FC = () => {
 
     const rosterPlayers = [...(userRoster.starters || []), ...(userRoster.reserves || [])]
       .map(playerId => {
-        const player = players[playerId as keyof typeof players];
-        return player ? {
+        const player = players[playerId as keyof typeof players] as ExtendedPlayer | undefined;
+        if (!player) return null;
+        
+        const weekStats = player.stats?.[selectedWeek] || {};
+        
+        return {
           ...player,
           stats: player.stats || {},
-          projected_pts: player.stats?.[selectedWeek]?.projected_pts || 0,
-          pts_ppr: player.stats?.[selectedWeek]?.pts_ppr || 0
-        } : null;
+          projected_pts: weekStats.projected_pts || 0,
+          pts_ppr: weekStats.pts_ppr || 0
+        } as ExtendedPlayer;
       })
       .filter((p): p is NonNullable<typeof p> => p !== null);
 
