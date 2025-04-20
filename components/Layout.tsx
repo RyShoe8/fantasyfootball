@@ -10,31 +10,47 @@ interface LayoutProps {
 }
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
-  const { user, isLoading } = useSleeper();
+  const { user, isLoading, error } = useSleeper();
   const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isClient, setIsClient] = useState(false);
 
   // Check if current page requires authentication
   const requiresAuth = !['/login'].includes(router.pathname);
 
   useEffect(() => {
-    // Log current path and auth state for debugging
-    console.log('Current path:', router.pathname);
-    console.log('User authenticated:', !!user);
-    console.log('Requires auth:', requiresAuth);
+    setIsClient(true);
+  }, []);
 
-    // Redirect to login if not authenticated and trying to access protected page
-    if (requiresAuth && !user && !isLoading) {
-      console.log('Redirecting to login page - not authenticated');
+  useEffect(() => {
+    if (!isLoading && requiresAuth && !user) {
       router.push('/login');
     }
   }, [router.pathname, user, isLoading, requiresAuth]);
 
-  // Show loading spinner while checking auth state
-  if (isLoading) {
+  // Show loading spinner while checking auth state or during initial load
+  if (isLoading || !isClient) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gray-100">
         <Spinner />
+      </div>
+    );
+  }
+
+  // Show error state if there's an error
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold text-red-600 mb-2">Error</h2>
+          <p className="text-gray-600">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Retry
+          </button>
+        </div>
       </div>
     );
   }

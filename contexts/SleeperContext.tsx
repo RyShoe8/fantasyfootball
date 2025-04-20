@@ -130,33 +130,40 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const initializeContext = async () => {
       if (isInitialized) return;
 
-      console.log('SleeperProvider mounted, checking for stored user...');
-      const storedUser = localStorage.getItem('sleeperUser');
-      
-      if (storedUser) {
-        try {
-          const userData = JSON.parse(storedUser);
-          setUser(userData);
-          
-          // Fetch league data
-          const leaguesResponse = await axios.get(`https://api.sleeper.app/v1/user/${userData.user_id}/leagues/nfl/2023`);
-          if (leaguesResponse.data.length > 0) {
-            const leagueId = leaguesResponse.data[0].league_id;
-            await Promise.all([
-              fetchRosters(leagueId),
-              fetchUsers(leagueId),
-              fetchPlayers()
-            ]);
+      try {
+        setIsLoading(true);
+        console.log('SleeperProvider mounted, checking for stored user...');
+        const storedUser = localStorage.getItem('sleeperUser');
+        
+        if (storedUser) {
+          try {
+            const userData = JSON.parse(storedUser);
+            setUser(userData);
+            
+            // Fetch league data
+            const leaguesResponse = await axios.get(`https://api.sleeper.app/v1/user/${userData.user_id}/leagues/nfl/2023`);
+            if (leaguesResponse.data.length > 0) {
+              const leagueId = leaguesResponse.data[0].league_id;
+              await Promise.all([
+                fetchRosters(leagueId),
+                fetchUsers(leagueId),
+                fetchPlayers()
+              ]);
+            }
+          } catch (err) {
+            console.error('Error initializing context:', err);
+            setError('Failed to initialize context');
+            localStorage.removeItem('sleeperUser');
+            setUser(null);
           }
-        } catch (err) {
-          console.error('Error initializing context:', err);
-          setError('Failed to initialize context');
-          localStorage.removeItem('sleeperUser');
         }
+      } catch (err) {
+        console.error('Error during initialization:', err);
+        setError('Failed to initialize application');
+      } finally {
+        setIsLoading(false);
+        setIsInitialized(true);
       }
-      
-      setIsLoading(false);
-      setIsInitialized(true);
     };
 
     initializeContext();
