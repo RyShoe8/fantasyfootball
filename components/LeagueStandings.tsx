@@ -62,7 +62,13 @@ const LeagueStandings: React.FC = () => {
           : '';
 
       const teamName = roster.metadata?.team_name || `Team ${roster.roster_id}`;
-      console.log('Team name resolved:', { rosterId: roster.roster_id, teamName });
+      console.log('Team name resolved:', { 
+        rosterId: roster.roster_id, 
+        teamName,
+        metadata: roster.metadata,
+        hasMetadata: !!roster.metadata,
+        hasTeamName: !!roster.metadata?.team_name
+      });
 
       const totalPoints = (roster.settings.fpts || 0) + (roster.settings.fpts_decimal || 0);
       const pointsAgainst = (roster.settings.fpts_against || 0) + (roster.settings.fpts_against_decimal || 0);

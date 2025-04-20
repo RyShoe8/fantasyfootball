@@ -126,6 +126,16 @@ const TeamOverview: React.FC = () => {
     console.log('User roster ID:', userRoster.roster_id);
     console.log('User roster settings:', userRoster.settings);
 
+    // Get team name from roster metadata or use a default
+    const teamName = userRoster.metadata?.team_name || `Team ${userRoster.roster_id}`;
+    console.log('Team name resolved:', {
+      rosterId: userRoster.roster_id,
+      teamName,
+      metadata: userRoster.metadata,
+      hasMetadata: !!userRoster.metadata,
+      hasTeamName: !!userRoster.metadata?.team_name
+    });
+
     const rosterPlayers = [...(userRoster.starters || []), ...(userRoster.reserves || [])]
       .map(playerId => {
         const player = players[playerId as keyof typeof players] as ExtendedPlayer | undefined;
@@ -165,13 +175,6 @@ const TeamOverview: React.FC = () => {
       return acc;
     }, {} as Record<string, { count: number; points: number; projected: number }>);
     console.log('Position stats calculated:', positionStats);
-
-    // Get the team name from the roster metadata, or use a default if not available
-    const teamName = userRoster.metadata?.team_name || `Team ${userRoster.roster_id}`;
-    console.log('Team name resolved:', { 
-      fromMetadata: userRoster.metadata?.team_name,
-      final: teamName 
-    });
 
     const teamStats: TeamStats = {
       teamId: userRoster.roster_id.toString(),
