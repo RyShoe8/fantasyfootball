@@ -93,7 +93,7 @@ const getSeasonNumber = (season: string, leagues: SleeperLeague[]) => {
 };
 
 // Helper function to format playoff type
-const formatPlayoffType = (type: number, subtype: number) => {
+const formatPlayoffType = (type: number) => {
   const typeMap: Record<number, string> = {
     0: 'Bracket',
     1: 'Round Robin',
@@ -102,17 +102,7 @@ const formatPlayoffType = (type: number, subtype: number) => {
     4: 'Single Elimination'
   };
 
-  const subtypeMap: Record<number, string> = {
-    0: 'Single Elimination',
-    1: 'Double Elimination',
-    2: 'Consolation',
-    3: 'Round Robin'
-  };
-
-  const typeStr = typeMap[type] || 'Unknown';
-  const subtypeStr = subtypeMap[subtype] || 'Unknown';
-  
-  return `${typeStr} (${subtypeStr})`;
+  return typeMap[type] || 'Unknown';
 };
 
 export const LeagueInfo: React.FC = () => {
@@ -248,10 +238,7 @@ export const LeagueInfo: React.FC = () => {
           <div>
             <h3 className="text-sm font-medium text-gray-500">Playoff Format</h3>
             <p className="mt-1">
-              {formatPlayoffType(
-                currentLeague.settings.playoff_type,
-                currentLeague.settings.playoff_subtype
-              )} • Weeks {currentLeague.settings.playoff_week_start}-{currentLeague.settings.playoff_week_start + currentLeague.settings.playoff_teams - 1}
+              {formatPlayoffType(currentLeague.settings.playoff_type)} • Weeks {currentLeague.settings.playoff_week_start}-{currentLeague.settings.playoff_week_start + currentLeague.settings.playoff_teams - 1}
             </p>
           </div>
         </div>
