@@ -347,22 +347,60 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
       if (league) {
         localStorage.setItem('sleeperCurrentLeague', JSON.stringify(league));
         
-        // Fetch all necessary data for the new league
-        const [rostersResponse, usersResponse, playersResponse] = await Promise.all([
-          axios.get(`https://api.sleeper.app/v1/league/${league.league_id}/rosters`),
-          axios.get(`https://api.sleeper.app/v1/league/${league.league_id}/users`),
-          axios.get('https://api.sleeper.app/v1/players/nfl')
-        ]);
-        
-        // Update all the necessary state
-        setRosters(rostersResponse.data);
-        setUsers(usersResponse.data);
-        setPlayers(playersResponse.data);
+        // Fetch all necessary data for the new league with timeouts
+        const timeout = 5000; // 5 second timeout
+        try {
+          const [rostersResponse, usersResponse] = await Promise.all([
+            Promise.race([
+              axios.get(`https://api.sleeper.app/v1/league/${league.league_id}/rosters`),
+              new Promise((_, reject) => setTimeout(() => reject(new Error('Request timed out')), timeout))
+            ]),
+            Promise.race([
+              axios.get(`https://api.sleeper.app/v1/league/${league.league_id}/users`),
+              new Promise((_, reject) => setTimeout(() => reject(new Error('Request timed out')), timeout))
+            ])
+          ]);
+          
+          // Update state with the fetched data
+          setRosters(rostersResponse.data || []);
+          setUsers(usersResponse.data || []);
+          
+          // Fetch players only if we don't have them cached
+          const cachedPlayers = localStorage.getItem('sleeperPlayers');
+          const cacheTimestamp = localStorage.getItem('sleeperPlayersTimestamp');
+          const now = Date.now();
+          const ONE_DAY = 24 * 60 * 60 * 1000;
+
+          if (!cachedPlayers || !cacheTimestamp || (now - parseInt(cacheTimestamp)) >= ONE_DAY) {
+            try {
+              const playersResponse = await Promise.race([
+                axios.get('/api/players'),
+                new Promise((_, reject) => setTimeout(() => reject(new Error('Request timed out')), timeout))
+              ]);
+              
+              if (playersResponse.data) {
+                setPlayers(playersResponse.data);
+                localStorage.setItem('sleeperPlayers', JSON.stringify(playersResponse.data));
+                localStorage.setItem('sleeperPlayersTimestamp', now.toString());
+              }
+            } catch (error) {
+              console.warn('Failed to fetch players, using cached data if available');
+              if (cachedPlayers) {
+                setPlayers(JSON.parse(cachedPlayers));
+              }
+            }
+          } else {
+            setPlayers(JSON.parse(cachedPlayers));
+          }
+        } catch (error) {
+          console.error('Error fetching league data:', error);
+          // Don't throw here, just show what we have
+          setError('Some data could not be loaded. Please refresh to try again.');
+        }
       } else {
         // Clear all league-related data
         setRosters([]);
         setUsers([]);
-        setPlayers({});
         localStorage.removeItem('sleeperCurrentLeague');
       }
     } catch (error) {
@@ -488,100 +526,71 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
           return;
         }
 
-        console.log('Starting initialization...');
         const storedUser = localStorage.getItem('sleeperUser');
-        const storedCurrentLeague = localStorage.getItem('sleeperCurrentLeague');
-        const storedSelectedYear = localStorage.getItem('sleeperSelectedYear');
-        const storedSelectedWeek = localStorage.getItem('sleeperSelectedWeek');
-
-        console.log('Stored data:', { 
-          user: storedUser ? 'Found' : 'Not found',
-          currentLeague: storedCurrentLeague ? 'Found' : 'Not found',
-          selectedYear: storedSelectedYear ? 'Found' : 'Not found',
-          selectedWeek: storedSelectedWeek ? 'Found' : 'Not found'
-        });
-
-        if (storedUser) {
-          try {
-            const userData = JSON.parse(storedUser);
-            console.log('Parsed user data:', userData);
-
-            // Validate user data
-            if (!userData || !userData.user_id) {
-              console.error('Invalid user data:', userData);
-              throw new Error('Invalid user data');
-            }
-
-            console.log('Setting user data...');
-            setUser(userData);
-
-            // Set selected year if available
-            if (storedSelectedYear) {
-              setSelectedYearState(storedSelectedYear);
-            }
-
-            // Set selected week if available
-            if (storedSelectedWeek) {
-              setSelectedWeekState(storedSelectedWeek);
-            }
-
-            // Fetch league data with timeout
-            console.log('Fetching leagues...');
-            const yearToFetch = storedSelectedYear || getCurrentSeason().toString();
-            setSelectedYearState(yearToFetch);
-
-            try {
-              const timeout = 10000; // 10 second timeout
-              const leaguesResponse = await Promise.race([
-                axios.get<SleeperLeague[]>(`https://api.sleeper.app/v1/user/${userData.user_id}/leagues/nfl/${yearToFetch}`),
-                new Promise((_, reject) => 
-                  setTimeout(() => reject(new Error('Request timed out')), timeout)
-                )
-              ]) as { data: SleeperLeague[] };
-
-              if (leaguesResponse.data && leaguesResponse.data.length > 0) {
-                // Set leagues first
-                setLeagues(leaguesResponse.data);
-                
-                // Set current league from localStorage if available
-                if (storedCurrentLeague) {
-                  const parsedLeague = JSON.parse(storedCurrentLeague);
-                  // Verify the league exists in the fetched leagues
-                  const leagueExists = leaguesResponse.data.some((l: SleeperLeague) => l.league_id === parsedLeague.league_id);
-                  if (leagueExists) {
-                    await setCurrentLeague(parsedLeague);
-                  } else {
-                    await setCurrentLeague(leaguesResponse.data[0]);
-                  }
-                } else {
-                  await setCurrentLeague(leaguesResponse.data[0]);
-                }
-              } else {
-                setError('No leagues found for this user');
-                setLeagues([]);
-                setCurrentLeagueState(null);
-              }
-            } catch (err) {
-              console.error('Error fetching leagues:', err);
-              // Don't throw here, we still want to show the basic user data
-              setError('Failed to fetch leagues. Please check your internet connection and try again.');
-            }
-          } catch (err) {
-            console.error('Error initializing context:', err);
-            setError('Failed to initialize context');
-            localStorage.removeItem('sleeperUser');
-            setUser(null);
-          }
-        } else {
+        if (!storedUser) {
           console.log('No stored user found');
+          setIsLoading(false);
+          setIsInitialized(true);
+          return;
         }
-      } catch (err) {
-        console.error('Error during initialization:', err);
+
+        try {
+          const userData = JSON.parse(storedUser);
+          if (!userData || !userData.user_id) {
+            throw new Error('Invalid user data');
+          }
+
+          setUser(userData);
+          
+          // Set stored preferences
+          const storedYear = localStorage.getItem('sleeperSelectedYear') || getCurrentSeason().toString();
+          setSelectedYearState(storedYear);
+          
+          const storedWeek = localStorage.getItem('sleeperSelectedWeek') || '1';
+          setSelectedWeekState(storedWeek);
+
+          // Fetch leagues with timeout
+          const timeout = 5000;
+          try {
+            const leaguesResponse = await Promise.race([
+              axios.get<SleeperLeague[]>(`https://api.sleeper.app/v1/user/${userData.user_id}/leagues/nfl/${storedYear}`),
+              new Promise((_, reject) => setTimeout(() => reject(new Error('Request timed out')), timeout))
+            ]) as { data: SleeperLeague[] };
+
+            if (leaguesResponse.data?.length > 0) {
+              setLeagues(leaguesResponse.data);
+              
+              // Set current league
+              const storedCurrentLeague = localStorage.getItem('sleeperCurrentLeague');
+              if (storedCurrentLeague) {
+                const parsedLeague = JSON.parse(storedCurrentLeague);
+                const leagueExists = leaguesResponse.data.some(l => l.league_id === parsedLeague.league_id);
+                await setCurrentLeague(leagueExists ? parsedLeague : leaguesResponse.data[0]);
+              } else {
+                await setCurrentLeague(leaguesResponse.data[0]);
+              }
+            } else {
+              setError('No leagues found');
+              setLeagues([]);
+              setCurrentLeagueState(null);
+            }
+          } catch (error) {
+            console.error('Error fetching leagues:', error);
+            setError('Failed to load leagues. Please refresh to try again.');
+          }
+        } catch (error) {
+          console.error('Error parsing user data:', error);
+          localStorage.removeItem('sleeperUser');
+          setUser(null);
+          setError('Invalid user data. Please log in again.');
+        }
+      } catch (error) {
+        console.error('Error during initialization:', error);
         setError('Failed to initialize application');
       } finally {
-        console.log('Initialization complete');
         setIsLoading(false);
         setIsInitialized(true);
+        setHasInitialized(true);
       }
     };
 
