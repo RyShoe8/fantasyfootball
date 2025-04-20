@@ -498,9 +498,9 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
       players: Object.keys(players).length,
       isLoading,
       error,
-      isInitialized
+      hasInitialized
     });
-  }, [user, leagues, currentLeague, rosters, users, players, isLoading, error, isInitialized]);
+  }, [user, leagues, currentLeague, rosters, users, players, isLoading, error, hasInitialized]);
 
   return (
     <SleeperContext.Provider
