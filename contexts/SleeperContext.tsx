@@ -711,83 +711,8 @@ export function SleeperProvider({ children }: { children: React.ReactNode }) {
 
     return () => {
       mounted = false;
-        // Set a timeout for the entire initialization process
-        const initTimeout = setTimeout(() => {
-          if (isLoading) {
-            console.error('Initialization timed out');
-            setError('Initialization timed out. Please try refreshing the page.');
-            setIsLoading(false);
-            setHasInitialized(true);
-          }
-        }, 10000); // 10 second timeout
-
-        // Fetch leagues with timeout
-        try {
-          const leaguesResponse = await axios.get(`https://api.sleeper.app/v1/user/${userData.user_id}/leagues/nfl/${selectedYear}`);
-          const leaguesData = leaguesResponse.data;
-          setLeagues(leaguesData);
-
-          if (leaguesData.length > 0) {
-            const currentLeagueData = leaguesData[0];
-            setCurrentLeagueState(currentLeagueData);
-
-            // Fetch rosters and users in parallel with timeouts
-            const fetchPromises = [];
-            
-            // Add roster fetch with timeout
-            const rostersPromise = (async () => {
-              try {
-                await fetchRosters(currentLeagueData.league_id);
-              } catch (err) {
-                console.error('Error fetching rosters:', err);
-                setError('Failed to fetch rosters. Some data may be incomplete.');
-              }
-            })();
-            fetchPromises.push(rostersPromise);
-            
-            // Add users fetch with timeout
-            const usersPromise = (async () => {
-              try {
-                await fetchUsers(currentLeagueData.league_id);
-              } catch (err) {
-                console.error('Error fetching users:', err);
-                setError('Failed to fetch users. Some data may be incomplete.');
-              }
-            })();
-            fetchPromises.push(usersPromise);
-            
-            // Add players fetch with timeout
-            const playersPromise = (async () => {
-              try {
-                await fetchPlayers();
-              } catch (err) {
-                console.error('Error fetching players:', err);
-                setError('Failed to fetch players. Some data may be incomplete.');
-              }
-            })();
-            fetchPromises.push(playersPromise);
-            
-            // Wait for all promises to settle (either resolve or reject)
-            await Promise.allSettled(fetchPromises);
-          }
-        } catch (error) {
-          console.error('Error fetching leagues:', error);
-          setError('Failed to fetch leagues. Please try refreshing the page.');
-        }
-
-        clearTimeout(initTimeout);
-        setIsLoading(false);
-        setHasInitialized(true);
-      } catch (error) {
-        console.error('Initialization error:', error);
-        setError('An error occurred during initialization. Please try refreshing the page.');
-        setIsLoading(false);
-        setHasInitialized(true);
-      }
     };
-
-    initializeContext();
-  }, [isInitialized]);
+  }, []);
 
   // Update the context value
   const value: SleeperContextType = {
