@@ -175,8 +175,15 @@ const TeamOverview: React.FC = () => {
 
     // Calculate team stats
     const stats: TeamStats = {
+      teamId: userRoster.roster_id,
+      ownerId: userRoster.owner_id,
+      teamName: userRoster.metadata?.team_name || 'Your Team',
+      wins: userRoster.settings?.wins || 0,
+      losses: userRoster.settings?.losses || 0,
+      ties: userRoster.settings?.ties || 0,
       totalPoints: 0,
-      positionStats: {}
+      positionStats: {},
+      players: []
     };
 
     // Process starters
@@ -190,6 +197,7 @@ const TeamOverview: React.FC = () => {
         stats.positionStats[position].count++;
         stats.positionStats[position].points += player.stats?.pts_ppr || 0;
         stats.totalPoints += player.stats?.pts_ppr || 0;
+        stats.players.push(player as ExtendedPlayer);
       }
     });
 
@@ -204,6 +212,7 @@ const TeamOverview: React.FC = () => {
         stats.positionStats[position].count++;
         stats.positionStats[position].points += player.stats?.pts_ppr || 0;
         stats.totalPoints += player.stats?.pts_ppr || 0;
+        stats.players.push(player as ExtendedPlayer);
       }
     });
 
@@ -218,6 +227,7 @@ const TeamOverview: React.FC = () => {
         stats.positionStats[position].count++;
         stats.positionStats[position].points += player.stats?.pts_ppr || 0;
         stats.totalPoints += player.stats?.pts_ppr || 0;
+        stats.players.push(player as ExtendedPlayer);
       }
     });
 
@@ -232,6 +242,7 @@ const TeamOverview: React.FC = () => {
         stats.positionStats[position].count++;
         stats.positionStats[position].points += player.stats?.pts_ppr || 0;
         stats.totalPoints += player.stats?.pts_ppr || 0;
+        stats.players.push(player as ExtendedPlayer);
       }
     });
 
