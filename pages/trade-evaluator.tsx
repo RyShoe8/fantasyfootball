@@ -219,6 +219,13 @@ export default function TradeEvaluator() {
     const teamId = e.target.value;
     setSelectedTeam(teamId);
     const roster = rosters.find((r: SleeperRoster) => r.roster_id.toString() === teamId);
+    if (roster) {
+      const teamUser = users?.find(u => u.user_id === roster.owner_id);
+      roster.metadata = {
+        ...roster.metadata,
+        team_name: teamUser?.metadata?.team_name || teamUser?.display_name
+      };
+    }
     setSelectedTeamRoster(roster || null);
   };
 

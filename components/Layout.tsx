@@ -49,7 +49,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           <div className="flex justify-between h-16">
             <div className="flex">
               <div className="flex-shrink-0 flex items-center">
-                <h1 className="text-xl font-bold text-gray-800">🏈 Fantasy Football Assistant</h1>
+                <h1 className="text-xl font-bold text-gray-800">🏈 Fantasy OS</h1>
               </div>
             </div>
             <div className="flex items-center">

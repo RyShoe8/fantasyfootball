@@ -224,7 +224,7 @@ export default function Home() {
           {currentRoster ? (
             <div className="space-y-4">
               <div className="space-y-2">
-                <p className="text-gray-600">Team Name: {currentRoster.roster_id || 'Unnamed Team'}</p>
+                <p className="text-gray-600">Team Name: {currentRoster.metadata?.team_name || 'Unnamed Team'}</p>
                 <p className="text-gray-600">Record: {currentRoster.settings.wins}-{currentRoster.settings.losses}</p>
                 <p className="text-gray-600">Total Points: {currentRoster.settings.fpts}</p>
               </div>
@@ -296,52 +296,43 @@ export default function Home() {
 
       {/* API Debug Section */}
       <div className="bg-white shadow rounded-lg p-6">
-        <button
-          onClick={() => setShowDebug(!showDebug)}
-          className="mb-4 px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
-        >
-          {showDebug ? 'Hide Debug Data' : 'Show Debug Data'}
-        </button>
-
-        {showDebug && (
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <button
-                onClick={handleFetchRosters}
-                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-              >
-                Fetch Rosters
-              </button>
-              <button
-                onClick={handleFetchUsers}
-                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-              >
-                Fetch Users
-              </button>
-              <button
-                onClick={handleFetchPlayers}
-                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-              >
-                Fetch Players
-              </button>
-              <button
-                onClick={handleFetchDraftPicks}
-                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-              >
-                Fetch Draft Picks
-              </button>
-            </div>
-
-            {debugData && (
-              <div className="mt-4">
-                <h3 className="text-lg font-medium text-gray-900 mb-2">API Response:</h3>
-                <pre className="bg-gray-100 p-4 rounded whitespace-pre-wrap">
-                  {JSON.stringify(formatApiResponse(debugData, debugType), null, 2)}
-                </pre>
-              </div>
-            )}
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <button
+              onClick={handleFetchRosters}
+              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+            >
+              Fetch Rosters
+            </button>
+            <button
+              onClick={handleFetchUsers}
+              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+            >
+              Fetch Users
+            </button>
+            <button
+              onClick={handleFetchPlayers}
+              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+            >
+              Fetch Players
+            </button>
+            <button
+              onClick={handleFetchDraftPicks}
+              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+            >
+              Fetch Draft Picks
+            </button>
           </div>
-        )}
+
+          {debugData && (
+            <div className="mt-4">
+              <h3 className="text-lg font-medium text-gray-900 mb-2">API Response:</h3>
+              <pre className="bg-gray-100 p-4 rounded whitespace-pre-wrap">
+                {JSON.stringify(formatApiResponse(debugData, debugType), null, 2)}
+              </pre>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
