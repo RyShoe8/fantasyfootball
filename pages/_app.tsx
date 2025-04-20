@@ -23,12 +23,12 @@ function AppContent({ Component, pageProps }: AppProps) {
     // If we're still loading, don't redirect yet
     if (isLoading) return;
 
-    // If there's no user and we're not on a public route, redirect to login
-    if (!user) {
-      console.log('No user found, redirecting to login');
+    // If there's no user or there's an error, redirect to login
+    if (!user || error) {
+      console.log('Redirecting to login:', !user ? 'No user found' : 'Error occurred');
       router.replace('/login');
     }
-  }, [user, isLoading, hasInitialized, router.pathname]);
+  }, [user, isLoading, hasInitialized, router.pathname, error]);
 
   // Log state changes for debugging
   useEffect(() => {
