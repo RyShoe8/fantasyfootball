@@ -216,8 +216,8 @@ const TeamOverview: React.FC = () => {
     });
 
     // Process bench players (reserve)
-    if (userRoster.reserve) {
-      userRoster.reserve.forEach((playerId: string) => {
+    if (userRoster.reserves) {
+      userRoster.reserves.forEach((playerId: string) => {
         const player = players[playerId];
         if (player) {
           const position = player.position as keyof typeof stats.positionStats;
