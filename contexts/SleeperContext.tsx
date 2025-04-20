@@ -132,18 +132,19 @@ export function SleeperProvider({ children }: { children: React.ReactNode }) {
       console.log('Leagues data:', formatApiResponse(leaguesResponse.data, 'league'));
       setLeagues(leaguesResponse.data);
 
-      // Set initial current league if none selected
-      if (leaguesResponse.data.length > 0 && !currentLeague) {
-        console.log('Setting initial current league:', formatApiResponse(leaguesResponse.data[0], 'league'));
-        setCurrentLeague(leaguesResponse.data[0]);
-      }
+      // Get the first league or use the current league if it exists in the fetched leagues
+      const targetLeague = currentLeague && leaguesResponse.data.some(l => l.league_id === currentLeague.league_id)
+        ? currentLeague
+        : leaguesResponse.data[0];
 
-      // Only fetch rosters and players if we have a current league
-      if (currentLeague) {
-        // Fetch rosters for current league only
-        console.log(`Fetching rosters for league ${currentLeague.league_id}`);
+      if (targetLeague) {
+        console.log('Setting target league:', formatApiResponse(targetLeague, 'league'));
+        setCurrentLeague(targetLeague);
+
+        // Fetch rosters for target league
+        console.log(`Fetching rosters for league ${targetLeague.league_id}`);
         const rostersResponse = await axios.get<SleeperRoster[]>(
-          `https://api.sleeper.app/v1/league/${currentLeague.league_id}/rosters`
+          `https://api.sleeper.app/v1/league/${targetLeague.league_id}/rosters`
         );
         
         if (!Array.isArray(rostersResponse.data)) {
@@ -167,6 +168,9 @@ export function SleeperProvider({ children }: { children: React.ReactNode }) {
 
         console.log('Players data:', formatApiResponse(playersResponse.data, 'players'));
         setPlayers(playersResponse.data);
+      } else {
+        console.log('No leagues found for user');
+        setError('No leagues found for this user. Please check your Sleeper account.');
       }
 
       setIsLoading(false);
