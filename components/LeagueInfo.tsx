@@ -243,7 +243,7 @@ export const LeagueInfo: React.FC = () => {
           </div>
           <div>
             <h3 className="text-sm font-medium text-gray-500">Playoff Teams</h3>
-            <p className="mt-1">{currentLeague.settings.playoff_team_count} Teams</p>
+            <p className="mt-1">{currentLeague.settings.playoff_teams} Teams</p>
           </div>
           <div>
             <h3 className="text-sm font-medium text-gray-500">Playoff Format</h3>
@@ -251,7 +251,7 @@ export const LeagueInfo: React.FC = () => {
               {formatPlayoffType(
                 currentLeague.settings.playoff_type,
                 currentLeague.settings.playoff_subtype
-              )} • Weeks {currentLeague.settings.playoff_week_start}-{currentLeague.settings.playoff_week_start + currentLeague.settings.playoff_team_count - 1}
+              )} • Weeks {currentLeague.settings.playoff_week_start}-{currentLeague.settings.playoff_week_start + currentLeague.settings.playoff_teams - 1}
             </p>
           </div>
         </div>
