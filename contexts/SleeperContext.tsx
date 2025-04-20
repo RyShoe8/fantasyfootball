@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { SleeperService } from '../services/sleeperService';
-import { SleeperLeague, SleeperRoster, SleeperUser } from '../types/sleeper';
+import { SleeperUser, SleeperLeague, SleeperRoster, SleeperPlayer } from '../types/sleeper';
+import axios from 'axios';
 
 interface SleeperContextType {
   service: SleeperService | null;
@@ -8,6 +9,7 @@ interface SleeperContextType {
   leagues: SleeperLeague[];
   currentLeague: SleeperLeague | null;
   rosters: SleeperRoster[];
+  players: Record<string, SleeperPlayer>;
   isLoading: boolean;
   error: string | null;
   setCurrentLeague: (league: SleeperLeague) => void;
@@ -20,6 +22,7 @@ const SleeperContext = createContext<SleeperContextType>({
   leagues: [],
   currentLeague: null,
   rosters: [],
+  players: {},
   isLoading: false,
   error: null,
   setCurrentLeague: () => {},
@@ -28,12 +31,13 @@ const SleeperContext = createContext<SleeperContextType>({
 
 export const useSleeper = () => useContext(SleeperContext);
 
-export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const SleeperProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [service, setService] = useState<SleeperService | null>(null);
   const [user, setUser] = useState<SleeperUser | null>(null);
   const [leagues, setLeagues] = useState<SleeperLeague[]>([]);
   const [currentLeague, setCurrentLeague] = useState<SleeperLeague | null>(null);
   const [rosters, setRosters] = useState<SleeperRoster[]>([]);
+  const [players, setPlayers] = useState<Record<string, SleeperPlayer>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -52,13 +56,22 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
       const leaguesData = await sleeperService.getLeagues();
       setLeagues(leaguesData);
 
+      const playersData = await sleeperService.getPlayers();
+      setPlayers(playersData);
+
       if (leaguesData.length > 0) {
         setCurrentLeague(leaguesData[0]);
         const rostersData = await sleeperService.getRosters(leaguesData[0].league_id);
         setRosters(rostersData);
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+    } catch (error: unknown) {
+      let errorMessage = 'An unexpected error occurred';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (axios.isAxiosError(error)) {
+        errorMessage = error.response?.data?.message || 'Network request failed';
+      }
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -92,6 +105,7 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
         leagues,
         currentLeague,
         rosters,
+        players,
         isLoading,
         error,
         setCurrentLeague,
