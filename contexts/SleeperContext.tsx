@@ -3,6 +3,7 @@
  * 
  * Provides global state management for Sleeper fantasy football data.
  * Handles user authentication, league data, rosters, and player information.
+ * Updated to include users state management.
  */
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
