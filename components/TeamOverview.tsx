@@ -4,27 +4,38 @@ import { useSleeper } from '../contexts/SleeperContext';
 import { SleeperRoster, SleeperPlayer } from '../types/sleeper';
 
 interface PlayerStats {
-  points?: number;
-  projected?: number;
-  [key: string]: any;
+  pts_ppr?: number;
+  pts_half_ppr?: number;
+  pts_std?: number;
+  projected_pts?: number;
 }
 
 interface Player {
+  player_id: string;
+  full_name: string;
   position: string;
-  stats?: PlayerStats;
-  [key: string]: any;
+  team: string;
+  injury_status?: string;
+  stats?: Record<string, PlayerStats>;
+}
+
+interface Roster {
+  roster_id: number;
+  owner_id: string;
+  starters: string[];
+  reserves: string[];
+  players: string[];
+  metadata: {
+    team_name?: string;
+  };
 }
 
 interface TeamStats {
-  teamId: string;
-  ownerId: string;
-  teamName: string;
   wins: number;
   losses: number;
   ties: number;
-  totalPoints: number;
-  positionStats: Record<string, { count: number; points: number; projected: number }>;
-  players: Player[];
+  pointsFor: number;
+  pointsAgainst: number;
 }
 
 type SortConfig = {
@@ -43,15 +54,18 @@ const TeamOverview: React.FC = () => {
     return rosters.map((roster: SleeperRoster) => {
       const rosterPlayers = [...(roster.starters || []), ...(roster.reserves || [])]
         .map(playerId => {
-          const player = players[playerId];
-          return {
+          const player = players[playerId as keyof typeof players] as Player | undefined;
+          return player ? {
             ...player,
-            stats: (player?.stats?.[selectedWeek] || {}) as PlayerStats
-          };
-        });
+            stats: (player?.stats?.[selectedWeek] || {}) as PlayerStats,
+            projected_pts: player?.stats?.[selectedWeek]?.projected_pts || 0,
+            pts_ppr: player?.stats?.[selectedWeek]?.pts_ppr || 0
+          } : null;
+        })
+        .filter((p): p is NonNullable<typeof p> => p !== null);
 
       const totalPoints = rosterPlayers.reduce((sum, player) => 
-        sum + ((player.stats?.points as number) || 0), 0);
+        sum + ((player.pts_ppr as number) || 0), 0);
 
       const positionStats = rosterPlayers.reduce((acc, player) => {
         const pos = player.position;
@@ -63,8 +77,8 @@ const TeamOverview: React.FC = () => {
           };
         }
         acc[pos].count++;
-        acc[pos].points += ((player.stats?.points as number) || 0);
-        acc[pos].projected += ((player.stats?.projected as number) || 0);
+        acc[pos].points += ((player.pts_ppr as number) || 0);
+        acc[pos].projected += ((player.projected_pts as number) || 0);
         return acc;
       }, {} as Record<string, { count: number; points: number; projected: number }>);
 
@@ -75,7 +89,7 @@ const TeamOverview: React.FC = () => {
         wins: roster.settings.wins,
         losses: roster.settings.losses,
         ties: 0, // Sleeper API doesn't provide ties in settings
-        totalPoints: roster.settings.fpts,
+        totalPoints: totalPoints,
         positionStats,
         players: rosterPlayers
       };
