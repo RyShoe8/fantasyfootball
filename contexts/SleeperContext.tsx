@@ -376,9 +376,9 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
           if (!cachedPlayers || !cacheTimestamp || (now - parseInt(cacheTimestamp)) >= ONE_DAY) {
             try {
               const playersResponse = await Promise.race([
-                axios.get('/api/players'),
+                axios.get<Record<string, SleeperPlayer>>('/api/players'),
                 new Promise((_, reject) => setTimeout(() => reject(new Error('Request timed out')), timeout))
-              ]);
+              ]) as AxiosResponse<Record<string, SleeperPlayer>>;
               
               if (playersResponse.data) {
                 setPlayers(playersResponse.data);
