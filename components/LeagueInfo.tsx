@@ -200,7 +200,7 @@ export const LeagueInfo: React.FC = () => {
           <div>
             <h3 className="text-sm font-medium text-gray-500">Settings</h3>
             <p className="mt-1">
-              {currentLeague.settings.type === 'keeper' ? 'Keeper League' : 'Redraft League'} •{' '}
+              {currentLeague.settings.type === 1 ? 'Keeper League' : 'Redraft League'} •{' '}
               {currentLeague.settings.playoff_week_start} Teams
             </p>
           </div>
