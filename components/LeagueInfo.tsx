@@ -101,7 +101,9 @@ export const LeagueInfo: React.FC = () => {
     setSelectedYear,
     isLoading,
     user,
-    setLeagues
+    setLeagues,
+    setIsLoading,
+    setError
   } = useSleeper();
   const router = useRouter();
 
@@ -114,19 +116,28 @@ export const LeagueInfo: React.FC = () => {
   };
 
   const handleYearChange = async (year: string) => {
-    setSelectedYear(year);
-    // Refresh leagues for the selected year
-    if (user) {
-      try {
+    try {
+      setIsLoading(true);
+      setSelectedYear(year);
+      // Refresh leagues for the selected year
+      if (user) {
         const leaguesResponse = await axios.get(`https://api.sleeper.app/v1/user/${user.user_id}/leagues/nfl/${year}`);
         if (leaguesResponse.data.length > 0) {
           setLeagues(leaguesResponse.data);
-          setCurrentLeague(leaguesResponse.data[0]);
-          router.push(`/league/${leaguesResponse.data[0].league_id}`);
+          const newLeague = leaguesResponse.data[0];
+          setCurrentLeague(newLeague);
+          // Only navigate after the league is set
+          router.push('/');
+        } else {
+          console.log('No leagues found for year:', year);
+          setError('No leagues found for this year');
         }
-      } catch (error) {
-        console.error('Error fetching leagues for year:', error);
       }
+    } catch (error) {
+      console.error('Error fetching leagues for year:', error);
+      setError('Failed to fetch leagues for this year');
+    } finally {
+      setIsLoading(false);
     }
   };
 
