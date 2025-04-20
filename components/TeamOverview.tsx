@@ -208,7 +208,7 @@ export const TeamOverview: React.FC = () => {
 
     // Calculate team stats
     const stats: TeamStats = {
-      teamId: userRoster.roster_id,
+      teamId: userRoster.roster_id.toString(),
       ownerId: userRoster.owner_id,
       teamName: teamName,
       wins: userRoster.settings?.wins || 0,
