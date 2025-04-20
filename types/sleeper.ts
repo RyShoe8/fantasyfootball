@@ -70,6 +70,14 @@ export interface SleeperRoster {
   reserves?: string[];
   taxi?: string[];
   ir?: string[];
+  draft_picks?: {
+    season: string;
+    round: number;
+    pick?: number;
+    roster_id?: string;
+    owner_id?: string;
+    previous_owner_id?: string;
+  }[];
 }
 
 export interface SleeperPlayer {
