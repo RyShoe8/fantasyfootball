@@ -15,8 +15,9 @@ const options: MongoClientOptions = {
   directConnection: true,
   tls: false,
   minHeartbeatFrequencyMS: 5000,
-  authMechanism: 'SCRAM-SHA-256',
-  authSource: 'admin',
+  // Only use authentication if credentials are provided in the URI
+  authMechanism: uri.includes('@') ? 'SCRAM-SHA-256' : undefined,
+  authSource: uri.includes('@') ? 'admin' : undefined,
   retryWrites: false,
   retryReads: false
 };
