@@ -11,6 +11,7 @@ import { SleeperUser, SleeperLeague, SleeperRoster, SleeperPlayer } from '../typ
 
 interface SleeperContextType {
   user: SleeperUser | null;
+  users: SleeperUser[];
   leagues: SleeperLeague[];
   rosters: SleeperRoster[];
   players: Record<string, SleeperPlayer>;
@@ -29,6 +30,7 @@ const SleeperContext = createContext<SleeperContextType | undefined>(undefined);
 
 export function SleeperProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<SleeperUser | null>(null);
+  const [users, setUsers] = useState<SleeperUser[]>([]);
   const [leagues, setLeagues] = useState<SleeperLeague[]>([]);
   const [rosters, setRosters] = useState<SleeperRoster[]>([]);
   const [players, setPlayers] = useState<Record<string, SleeperPlayer>>({});
@@ -273,6 +275,7 @@ export function SleeperProvider({ children }: { children: React.ReactNode }) {
     <SleeperContext.Provider
       value={{
         user,
+        users,
         leagues,
         rosters,
         players,
@@ -283,7 +286,7 @@ export function SleeperProvider({ children }: { children: React.ReactNode }) {
         logout,
         setCurrentLeague,
         setRosters,
-        setUsers: () => {},
+        setUsers,
         setPlayers
       }}
     >
