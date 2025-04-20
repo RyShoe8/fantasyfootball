@@ -94,7 +94,7 @@ export default function TradeEvaluator() {
     if (!currentRoster || !players) return [];
     
     // Get all players from the roster
-    return currentRoster.players
+    return [...(currentRoster.starters || []), ...(currentRoster.reserves || [])]
       .map((playerId: string) => {
         const player = players[playerId as keyof typeof players] as Player | undefined;
         if (!player) return null;
@@ -116,7 +116,7 @@ export default function TradeEvaluator() {
     if (!selectedTeamRoster || !players) return [];
     
     // Get all players from the selected team's roster
-    return selectedTeamRoster.players
+    return [...(selectedTeamRoster.starters || []), ...(selectedTeamRoster.reserves || [])]
       .map((playerId: string) => {
         const player = players[playerId as keyof typeof players] as Player | undefined;
         if (!player) return null;
@@ -151,7 +151,7 @@ export default function TradeEvaluator() {
   };
 
   const handleWeekChange = (e: ChangeEvent<HTMLSelectElement>) => {
-    setSelectedWeek(parseInt(e.target.value));
+    setSelectedWeek(e.target.value);
   };
 
   const handleTeamChange = (e: ChangeEvent<HTMLSelectElement>) => {
@@ -198,7 +198,7 @@ export default function TradeEvaluator() {
         <div className="bg-white rounded-lg shadow p-4">
           <h2 className="text-xl font-semibold mb-4">My Side</h2>
           <div className="space-y-2">
-            {mySide.map(player => (
+            {mySide.map((player: TradePlayer) => (
               <div key={player.playerId} className="flex justify-between items-center">
                 <span>{player.player.full_name}</span>
                 <button
@@ -220,7 +220,7 @@ export default function TradeEvaluator() {
         <div className="bg-white rounded-lg shadow p-4">
           <h2 className="text-xl font-semibold mb-4">Their Side</h2>
           <div className="space-y-2">
-            {theirSide.map(player => (
+            {theirSide.map((player: TradePlayer) => (
               <div key={player.playerId} className="flex justify-between items-center">
                 <span>{player.player.full_name}</span>
                 <button
@@ -245,7 +245,7 @@ export default function TradeEvaluator() {
         <div className="bg-white rounded-lg shadow p-4">
           <h2 className="text-xl font-semibold mb-4">My Players</h2>
           <div className="space-y-2">
-            {availablePlayers.map(player => (
+            {availablePlayers.map((player: TradePlayer) => (
               <div key={player.playerId} className="flex justify-between items-center">
                 <span>{player.player.full_name}</span>
                 <button
@@ -269,15 +269,15 @@ export default function TradeEvaluator() {
           >
             <option value="">Select a team</option>
             {rosters
-              .filter(r => r.owner_id !== user?.user_id)
-              .map(team => (
+              .filter((r: SleeperRoster) => r.owner_id !== user?.user_id)
+              .map((team: SleeperRoster) => (
                 <option key={team.roster_id} value={team.roster_id}>
                   {team.metadata?.team_name || `Team ${team.roster_id}`}
                 </option>
               ))}
           </select>
           <div className="space-y-2">
-            {selectedTeamPlayers.map(player => (
+            {selectedTeamPlayers.map((player: TradePlayer) => (
               <div key={player.playerId} className="flex justify-between items-center">
                 <span>{player.player.full_name}</span>
                 <button

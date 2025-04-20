@@ -58,6 +58,9 @@ export interface SleeperRoster {
     fpts_against: number;
     fpts_against_decimal: number;
   };
+  metadata?: {
+    team_name?: string;
+  };
 }
 
 export interface SleeperPlayer {
