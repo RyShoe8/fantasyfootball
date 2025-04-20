@@ -42,10 +42,13 @@ export default function Layout({ children }: LayoutProps) {
                       onError={(e) => {
                         const target = e.target as HTMLImageElement;
                         target.style.display = 'none';
-                        target.parentElement?.classList.add('bg-indigo-100');
-                        target.parentElement?.classList.add('text-indigo-600');
-                        target.parentElement?.classList.add('font-semibold');
-                        target.parentElement?.textContent = user.display_name.charAt(0).toUpperCase();
+                        const parent = target.parentElement;
+                        if (parent) {
+                          parent.classList.add('bg-indigo-100');
+                          parent.classList.add('text-indigo-600');
+                          parent.classList.add('font-semibold');
+                          parent.textContent = user.display_name.charAt(0).toUpperCase();
+                        }
                       }}
                     />
                   ) : (
