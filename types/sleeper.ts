@@ -3,6 +3,10 @@ export interface SleeperUser {
   username: string;
   display_name: string;
   avatar: string;
+  metadata?: {
+    team_name?: string;
+    [key: string]: string | undefined;
+  };
 }
 
 export interface SleeperLeague {
