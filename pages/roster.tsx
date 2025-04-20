@@ -14,7 +14,7 @@
 /** @jsxImportSource react */
 import React, { useState, useMemo, SyntheticEvent } from 'react';
 import { useSleeper } from '../contexts/SleeperContext';
-import { SleeperRoster, SleeperPlayer } from '../types/sleeper';
+import { SleeperRoster, SleeperPlayer, SleeperLeague } from '../types/sleeper';
 
 interface PlayerStats {
   pts_ppr?: number;
@@ -80,10 +80,26 @@ interface RosterData {
 }
 
 const Roster: React.FC = () => {
-  const { user, rosters, players, currentLeague, playerStats } = useSleeper();
+  const { 
+    user, 
+    rosters, 
+    players, 
+    currentLeague, 
+    playerStats, 
+    leagues,
+    setCurrentLeague,
+    selectedYear,
+    setSelectedYear
+  } = useSleeper();
   const [selectedWeek, setSelectedWeek] = useState('0');
   const [sortField, setSortField] = useState<keyof PlayerStats>('pts_ppr');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+
+  // Get current season helper function
+  const getCurrentSeason = () => {
+    const now = new Date();
+    return now.getMonth() >= 8 ? now.getFullYear() : now.getFullYear() - 1;
+  };
 
   const rosterData = useMemo<RosterData | null>(() => {
     if (!user || !rosters || !players || !currentLeague) return null;
@@ -311,18 +327,42 @@ const Roster: React.FC = () => {
     <div className="space-y-6">
       <div className="bg-white shadow rounded-lg p-6">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-bold text-gray-900">My Roster</h2>
-          <select
-            className="mt-1 block w-32 pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-            value={selectedWeek}
-            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedWeek(e.target.value)}
-          >
-            {Array.from({ length: 18 }, (_, i) => (
-              <option key={i} value={i.toString()}>
-                Week {i}
-              </option>
-            ))}
-          </select>
+          <h2 className="text-2xl font-bold text-gray-900">Roster</h2>
+          <div className="flex gap-4">
+            {/* Year Selection */}
+            <select
+              className="mt-1 block w-32 pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+              value={selectedYear}
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedYear(e.target.value)}
+            >
+              {Array.from({ length: 3 }, (_, i) => {
+                const year = (getCurrentSeason() - i).toString();
+                return (
+                  <option key={year} value={year}>
+                    {year}
+                  </option>
+                );
+              })}
+            </select>
+
+            {/* Team Selection */}
+            <select
+              className="mt-1 block w-64 pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+              value={currentLeague?.league_id || ''}
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
+                const league = leagues.find((l: SleeperLeague) => l.league_id === e.target.value);
+                if (league) {
+                  setCurrentLeague(league);
+                }
+              }}
+            >
+              {leagues.map((league: SleeperLeague) => (
+                <option key={league.league_id} value={league.league_id}>
+                  {league.name}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
         <div className="overflow-x-auto">
