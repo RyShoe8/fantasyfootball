@@ -187,10 +187,27 @@ export const TeamOverview: React.FC = () => {
 
     // Calculate streak
     const calculateStreak = (roster: SleeperRoster) => {
-      const wins = roster.settings?.wins || 0;
-      const losses = roster.settings?.losses || 0;
-      const streak = wins > losses ? `W${wins}` : losses > wins ? `L${losses}` : 'T1';
-      return streak;
+      // Get matchup results from metadata
+      const matchupResults = roster.metadata?.record || [];
+      if (!matchupResults || matchupResults.length === 0) {
+        return '-';
+      }
+
+      // Get the most recent results (last 5 games)
+      const recentResults = matchupResults.slice(-5);
+      let currentStreak = 0;
+      let streakType = recentResults[recentResults.length - 1] === 'W' ? 'W' : 'L';
+
+      // Count consecutive wins/losses from the most recent game
+      for (let i = recentResults.length - 1; i >= 0; i--) {
+        if (recentResults[i] === streakType) {
+          currentStreak++;
+        } else {
+          break;
+        }
+      }
+
+      return currentStreak > 0 ? `${streakType}${currentStreak}` : '-';
     };
 
     const stats: TeamStats = {

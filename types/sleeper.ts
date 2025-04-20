@@ -52,30 +52,24 @@ export interface SleeperLeague {
 }
 
 export interface SleeperRoster {
+  starters: string[];
+  settings: {
+    wins?: number;
+    losses?: number;
+    ties?: number;
+    [key: string]: any;
+  };
   roster_id: number;
+  players: string[];
   owner_id: string;
   league_id: string;
-  starters: string[];
-  reserves: string[];
-  taxi: string[];
-  ir: string[];
-  players: string[];
-  settings: {
-    wins: number;
-    losses: number;
-    fpts: number;
-    fpts_decimal: number;
-    fpts_against: number;
-    fpts_against_decimal: number;
-  };
   metadata: {
     team_name?: string;
+    record?: string[]; // Array of 'W' or 'L' for each game
   };
-  draft_picks?: {
-    season: string;
-    round: number;
-    pick: number;
-  }[];
+  reserves?: string[];
+  taxi?: string[];
+  ir?: string[];
 }
 
 export interface SleeperPlayer {
