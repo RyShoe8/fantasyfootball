@@ -103,10 +103,6 @@ export const LeagueInfo: React.FC = () => {
     const league = leagues.find((l: SleeperLeague) => l.league_id === leagueId);
     if (league) {
       setCurrentLeague(league);
-      // Only navigate if we're not already on the league page
-      if (!router.pathname.includes('/league/')) {
-        router.push(`/league/${league.league_id}`);
-      }
     }
   };
 
