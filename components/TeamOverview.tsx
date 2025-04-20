@@ -62,10 +62,46 @@ const TeamOverview: React.FC = () => {
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
   const rosterData = useMemo<RosterData | null>(() => {
-    if (!user || !rosters || !players || !currentLeague) return null;
+    if (!user || !rosters || !players || !currentLeague) {
+      console.log('Missing required data:', { 
+        hasUser: !!user, 
+        hasRosters: !!rosters, 
+        hasPlayers: !!players, 
+        hasCurrentLeague: !!currentLeague 
+      });
+      return null;
+    }
 
-    const userRoster = rosters.find((r: SleeperRoster) => r.owner_id === user.user_id);
-    if (!userRoster) return null;
+    // Filter rosters to only include those from the current league
+    const leagueRosters = rosters.filter((r: SleeperRoster) => {
+      const matches = r.league_id === currentLeague.league_id;
+      console.log('Checking roster:', { 
+        rosterId: r.roster_id, 
+        leagueId: r.league_id, 
+        currentLeagueId: currentLeague.league_id,
+        matches 
+      });
+      return matches;
+    });
+    console.log('League rosters:', leagueRosters.map((r: SleeperRoster) => ({ 
+      rosterId: r.roster_id, 
+      ownerId: r.owner_id,
+      leagueId: r.league_id
+    })));
+    
+    // Find the user's roster in the current league
+    const userRoster = leagueRosters.find((r: SleeperRoster) => r.owner_id === user.user_id);
+    if (!userRoster) {
+      console.log('User roster not found in current league:', { 
+        userId: user.user_id, 
+        leagueId: currentLeague.league_id,
+        availableRosters: leagueRosters.map((r: SleeperRoster) => ({ 
+          rosterId: r.roster_id, 
+          ownerId: r.owner_id 
+        }))
+      });
+      return null;
+    }
 
     const rosterPlayers = [...(userRoster.starters || []), ...(userRoster.reserves || [])]
       .map(playerId => {
@@ -113,7 +149,11 @@ const TeamOverview: React.FC = () => {
 
     // Filter rosters to only include those from the current league
     const leagueRosters = rosters.filter((r: SleeperRoster) => r.league_id === currentLeague.league_id);
-    console.log('League rosters:', leagueRosters);
+    console.log('League rosters:', leagueRosters.map((r: SleeperRoster) => ({ 
+      rosterId: r.roster_id, 
+      ownerId: r.owner_id,
+      leagueId: r.league_id
+    })));
     
     // Find the user's roster in the current league
     const userRoster = leagueRosters.find((r: SleeperRoster) => r.owner_id === user.user_id);
