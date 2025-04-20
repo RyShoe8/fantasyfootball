@@ -277,26 +277,71 @@ export default function TradeEvaluator() {
   }
 
   return (
-    <div className="p-6">
-      {/* Header with back button */}
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Trade Evaluator</h1>
-        <button
-          onClick={() => router.push('/')}
-          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-        >
-          Back to Dashboard
-        </button>
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-2xl font-bold mb-6">Trade Evaluator</h1>
+      
+      {/* Week Selection and Team Selection */}
+      <div className="bg-white rounded-lg shadow p-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Select Week</label>
+            <select
+              className="w-full p-2 border rounded"
+              value={selectedWeek}
+              onChange={handleWeekChange}
+            >
+              <option value="0">Week 0 (Projected)</option>
+              <option value="1">Week 1</option>
+              <option value="2">Week 2</option>
+              <option value="3">Week 3</option>
+              <option value="4">Week 4</option>
+              <option value="5">Week 5</option>
+              <option value="6">Week 6</option>
+              <option value="7">Week 7</option>
+              <option value="8">Week 8</option>
+              <option value="9">Week 9</option>
+              <option value="10">Week 10</option>
+              <option value="11">Week 11</option>
+              <option value="12">Week 12</option>
+              <option value="13">Week 13</option>
+              <option value="14">Week 14</option>
+              <option value="15">Week 15</option>
+              <option value="16">Week 16</option>
+              <option value="17">Week 17</option>
+              <option value="18">Week 18</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Select Team to Trade With</label>
+            <select
+              className="w-full p-2 border rounded"
+              value={selectedTeam}
+              onChange={handleTeamChange}
+            >
+              <option value="">Select a team</option>
+              {rosters
+                .filter((r: SleeperRoster) => r.owner_id !== user?.user_id)
+                .map((team: SleeperRoster) => {
+                  const teamUser = users?.find(u => u.user_id === team.owner_id);
+                  return (
+                    <option key={team.roster_id} value={team.roster_id}>
+                      {teamUser?.metadata?.team_name || teamUser?.display_name || teamUser?.username || `Team ${team.roster_id}`}
+                    </option>
+                  );
+                })}
+            </select>
+          </div>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Trade Overview */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         {/* My Side */}
         <div className="bg-white rounded-lg shadow p-4">
           <h2 className="text-xl font-semibold mb-4">
-            My Side
-            {currentRoster && (
-              <span className="text-gray-600 text-base ml-2">
-                ({users?.find(u => u.user_id === currentRoster.owner_id)?.metadata?.team_name || 
+            My Side {currentRoster && (
+              <span className="text-gray-600">
+                - {currentRoster.metadata?.team_name || 
                   users?.find(u => u.user_id === currentRoster.owner_id)?.display_name || 
                   users?.find(u => u.user_id === currentRoster.owner_id)?.username || 
                   `Team ${currentRoster.roster_id}`})
@@ -390,7 +435,7 @@ export default function TradeEvaluator() {
       </div>
 
       {/* Player Selection */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* My Players */}
         <div className="bg-white rounded-lg shadow p-4">
           <h2 className="text-xl font-semibold mb-4">My Players</h2>
@@ -441,24 +486,7 @@ export default function TradeEvaluator() {
         {/* Their Players */}
         <div className="bg-white rounded-lg shadow p-4">
           <h2 className="text-xl font-semibold mb-4">Their Players</h2>
-          <select
-            className="w-full mb-4 p-2 border rounded"
-            value={selectedTeam}
-            onChange={handleTeamChange}
-          >
-            <option value="">Select a team</option>
-            {rosters
-              .filter((r: SleeperRoster) => r.owner_id !== user?.user_id)
-              .map((team: SleeperRoster) => {
-                const teamUser = users?.find(u => u.user_id === team.owner_id);
-                return (
-                  <option key={team.roster_id} value={team.roster_id}>
-                    {teamUser?.metadata?.team_name || teamUser?.display_name || teamUser?.username || `Team ${team.roster_id}`}
-                  </option>
-                );
-              })}
-          </select>
-          {selectedTeamRoster && (
+          {selectedTeamRoster ? (
             <>
               <div className="space-y-2">
                 {selectedTeamPlayers.map((player: TradePlayer) => (
@@ -503,6 +531,10 @@ export default function TradeEvaluator() {
                 </div>
               )}
             </>
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              <p>Please select a team to trade with from the dropdown above</p>
+            </div>
           )}
         </div>
       </div>
