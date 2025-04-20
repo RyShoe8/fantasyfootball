@@ -1,15 +1,33 @@
+/**
+ * Dashboard Page (Home)
+ * 
+ * This is the main dashboard of the Fantasy Football application.
+ * It displays an overview of the user's league, team, and provides
+ * access to various features like roster management, trade evaluation,
+ * and player rankings.
+ * 
+ * Key features:
+ * - League information display
+ * - Team overview with record and points
+ * - Quick access to roster management
+ * - Trade evaluation tool
+ * - Placeholder cards for upcoming features
+ */
+
 import LeagueInfo from '../components/LeagueInfo';
 import { useSleeper } from '../contexts/SleeperContext';
 import { useRouter } from 'next/router';
 
 export default function Home() {
+  // Get league, roster, and player data from the Sleeper context
   const { currentLeague, rosters, players } = useSleeper();
   const router = useRouter();
   
   // Find the current roster (assuming it's the first one for now)
   const currentRoster = rosters.length > 0 ? rosters[0] : null;
 
-  const formatLeagueSetting = (value: any) => {
+  // Helper function to format league settings for display
+  const formatLeagueSetting = (value: any): string => {
     if (typeof value === 'boolean') return value ? 'Yes' : 'No';
     if (typeof value === 'number') return value.toString();
     return value || 'N/A';
@@ -21,8 +39,10 @@ export default function Home() {
 
   return (
     <div className="space-y-6">
+      {/* League Information Component */}
       {currentLeague && <LeagueInfo />}
       
+      {/* Dashboard Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {/* Team Overview Card */}
         <div className="bg-white rounded-lg shadow p-6">

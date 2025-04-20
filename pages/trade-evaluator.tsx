@@ -1,14 +1,32 @@
+/**
+ * Trade Evaluator Page
+ * 
+ * This page allows users to evaluate potential trades between their team and other teams in the league.
+ * It calculates the total points from the previous season and projected points for the upcoming season
+ * to help users make informed trading decisions.
+ * 
+ * Key features:
+ * - Select players from your roster to include in a trade
+ * - Choose another team from your league
+ * - Select players from the other team to include in the trade
+ * - View total points comparison between both sides
+ * - See projected points comparison for the upcoming season
+ */
+
 import { useSleeper } from '../contexts/SleeperContext';
 import { useRouter } from 'next/router';
 import { useState, useMemo } from 'react';
+import { SleeperPlayer, SleeperRoster } from '../types/sleeper';
 
+// Interface for a player involved in a trade
 interface TradePlayer {
   playerId: string;
-  player: any;
+  player: SleeperPlayer;
   projectedPoints: number;
   totalPoints: number;
 }
 
+// Interface for one side of a trade (your team or the other team)
 interface TradeSide {
   players: TradePlayer[];
   totalProjectedPoints: number;
@@ -16,22 +34,27 @@ interface TradeSide {
 }
 
 export default function TradeEvaluator() {
+  // Get roster and player data from the Sleeper context
   const { rosters, players } = useSleeper();
   const router = useRouter();
+  
+  // State for tracking selected team and players
   const [selectedTeam, setSelectedTeam] = useState<string>('');
   const [myPlayers, setMyPlayers] = useState<TradePlayer[]>([]);
   const [theirPlayers, setTheirPlayers] = useState<TradePlayer[]>([]);
 
+  // Get the current user's roster (currently just using the first roster)
   const currentRoster = useMemo(() => {
     if (!rosters || rosters.length === 0) return null;
     return rosters[0]; // For now, just show first roster
   }, [rosters]);
 
+  // Get all players from the current user's roster
   const myRosterPlayers = useMemo(() => {
     if (!currentRoster || !players) return [];
     
     const allPlayers = [...currentRoster.starters, ...currentRoster.reserves];
-    return allPlayers.map(playerId => {
+    return allPlayers.map((playerId: string) => {
       const player = players[playerId];
       return {
         playerId,
@@ -42,16 +65,18 @@ export default function TradeEvaluator() {
     });
   }, [currentRoster, players]);
 
+  // Get the selected team's roster
   const selectedTeamRoster = useMemo(() => {
     if (!selectedTeam || !rosters) return null;
-    return rosters.find(r => r.roster_id === selectedTeam);
+    return rosters.find((r: SleeperRoster) => r.roster_id === selectedTeam);
   }, [selectedTeam, rosters]);
 
+  // Get all players from the selected team's roster
   const theirRosterPlayers = useMemo(() => {
     if (!selectedTeamRoster || !players) return [];
     
     const allPlayers = [...selectedTeamRoster.starters, ...selectedTeamRoster.reserves];
-    return allPlayers.map(playerId => {
+    return allPlayers.map((playerId: string) => {
       const player = players[playerId];
       return {
         playerId,
@@ -62,18 +87,21 @@ export default function TradeEvaluator() {
     });
   }, [selectedTeamRoster, players]);
 
+  // Calculate totals for the current user's side of the trade
   const mySide: TradeSide = useMemo(() => ({
     players: myPlayers,
-    totalProjectedPoints: myPlayers.reduce((sum, p) => sum + p.projectedPoints, 0),
-    totalLastYearPoints: myPlayers.reduce((sum, p) => sum + p.totalPoints, 0)
+    totalProjectedPoints: myPlayers.reduce((sum: number, p: TradePlayer) => sum + p.projectedPoints, 0),
+    totalLastYearPoints: myPlayers.reduce((sum: number, p: TradePlayer) => sum + p.totalPoints, 0)
   }), [myPlayers]);
 
+  // Calculate totals for the other team's side of the trade
   const theirSide: TradeSide = useMemo(() => ({
     players: theirPlayers,
-    totalProjectedPoints: theirPlayers.reduce((sum, p) => sum + p.projectedPoints, 0),
-    totalLastYearPoints: theirPlayers.reduce((sum, p) => sum + p.totalPoints, 0)
+    totalProjectedPoints: theirPlayers.reduce((sum: number, p: TradePlayer) => sum + p.projectedPoints, 0),
+    totalLastYearPoints: theirPlayers.reduce((sum: number, p: TradePlayer) => sum + p.totalPoints, 0)
   }), [theirPlayers]);
 
+  // Handler functions for adding and removing players from the trade
   const handleAddMyPlayer = (player: TradePlayer) => {
     setMyPlayers([...myPlayers, player]);
   };
@@ -92,6 +120,7 @@ export default function TradeEvaluator() {
 
   return (
     <div className="p-6">
+      {/* Header with back button */}
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Trade Evaluator</h1>
         <button
@@ -103,7 +132,7 @@ export default function TradeEvaluator() {
       </div>
 
       <div className="grid grid-cols-2 gap-6">
-        {/* My Side */}
+        {/* My Side of the Trade */}
         <div className="bg-white rounded-lg shadow p-4">
           <h2 className="text-xl font-semibold mb-4">My Side</h2>
           <div className="mb-4">
@@ -142,7 +171,7 @@ export default function TradeEvaluator() {
           </div>
         </div>
 
-        {/* Their Side */}
+        {/* Their Side of the Trade */}
         <div className="bg-white rounded-lg shadow p-4">
           <h2 className="text-xl font-semibold mb-4">Their Side</h2>
           <div className="mb-4">
@@ -195,7 +224,7 @@ export default function TradeEvaluator() {
         </div>
       </div>
 
-      {/* Trade Analysis */}
+      {/* Trade Analysis Section */}
       {mySide.players.length > 0 && theirSide.players.length > 0 && (
         <div className="mt-6 bg-white rounded-lg shadow p-4">
           <h2 className="text-xl font-semibold mb-4">Trade Analysis</h2>
