@@ -17,60 +17,22 @@
 import React, { useState, useMemo, useEffect, ChangeEvent } from 'react';
 import { useSleeper } from '../contexts/SleeperContext';
 import { useRouter } from 'next/router';
-import { SleeperRoster, SleeperPlayer } from '../types/sleeper';
+import type { SleeperRoster, SleeperUser } from '../types/sleeper';
+import type { PlayerStats } from '../types/player';
 
-interface PlayerStats {
-  pts_ppr?: number;
-  pts_half_ppr?: number;
-  pts_std?: number;
-  projected_pts?: number;
-  [key: string]: any;
-}
-
-interface Player {
+interface TradePlayer {
   player_id: string;
   full_name: string;
   position: string;
   team: string;
-  injury_status?: string;
-  stats?: PlayerStats;
-  projected_pts?: number;
-  pts_ppr?: number;
-}
-
-interface Roster {
-  roster_id: number;
-  owner_id: string;
-  starters: string[];
-  reserves: string[];
-  players: string[];
-  metadata: {
-    team_name?: string;
-  };
-  draft_picks?: {
-    season: string;
-    round: number;
-    pick: number;
-  }[];
-}
-
-interface TradePlayer extends SleeperPlayer {
-  stats: PlayerStats;
   projected_pts: number;
   pts_ppr: number;
-  full_name: string;
-  position: string;
-  team: string;
-  player_id: string;
+  stats: PlayerStats;
 }
 
 interface TradeSide {
   players: TradePlayer[];
-  draftPicks: {
-    season: string;
-    round: number;
-    pick: number;
-  }[];
+  draftPicks: {season: string; round: number; pick: number}[];
   totalProjectedPoints: number;
   totalPoints: number;
 }
@@ -78,7 +40,6 @@ interface TradeSide {
 export default function TradeEvaluator() {
   const { user, rosters, players, currentLeague, users } = useSleeper();
   const router = useRouter();
-  const [selectedWeek, setSelectedWeek] = useState('0');
   const [selectedTeam, setSelectedTeam] = useState<string>('');
   const [mySide, setMySide] = useState<TradePlayer[]>([]);
   const [theirSide, setTheirSide] = useState<TradePlayer[]>([]);
@@ -122,8 +83,8 @@ export default function TradeEvaluator() {
         // Skip if player is already in the trade
         if (tradedPlayerIds.has(player.player_id)) return null;
 
-        // Get stats for the selected week
-        const rawStats = (player.stats?.[selectedWeek] || {}) as Partial<PlayerStats>;
+        // Get stats for the current week (using week 0 for projected stats)
+        const rawStats = (player.stats?.['0'] || {}) as Partial<PlayerStats>;
         const weekStats: PlayerStats = {
           ...rawStats,
           fpts: typeof rawStats.fpts === 'number' ? rawStats.fpts : 0,
@@ -148,7 +109,7 @@ export default function TradeEvaluator() {
         } as TradePlayer;
       })
       .filter((p): p is NonNullable<typeof p> => p !== null);
-  }, [currentRoster, players, selectedWeek, mySide, theirSide]);
+  }, [currentRoster, players, mySide, theirSide]);
 
   const selectedTeamPlayers = useMemo(() => {
     if (!selectedTeamRoster || !players) return [];
@@ -167,8 +128,8 @@ export default function TradeEvaluator() {
         // Skip if player is already in the trade
         if (tradedPlayerIds.has(player.player_id)) return null;
 
-        // Get stats for the selected week
-        const rawStats = (player.stats?.[selectedWeek] || {}) as Partial<PlayerStats>;
+        // Get stats for the current week (using week 0 for projected stats)
+        const rawStats = (player.stats?.['0'] || {}) as Partial<PlayerStats>;
         const weekStats: PlayerStats = {
           ...rawStats,
           fpts: typeof rawStats.fpts === 'number' ? rawStats.fpts : 0,
@@ -193,7 +154,7 @@ export default function TradeEvaluator() {
         } as TradePlayer;
       })
       .filter((p): p is NonNullable<typeof p> => p !== null);
-  }, [selectedTeamRoster, players, selectedWeek, mySide, theirSide]);
+  }, [selectedTeamRoster, players, mySide, theirSide]);
 
   const handleAddPlayer = (player: TradePlayer, side: 'my' | 'their') => {
     if (side === 'my') {
@@ -209,10 +170,6 @@ export default function TradeEvaluator() {
     } else {
       setTheirSide(theirSide.filter((p: TradePlayer) => p.player_id !== player.player_id));
     }
-  };
-
-  const handleWeekChange = (e: ChangeEvent<HTMLSelectElement>) => {
-    setSelectedWeek(e.target.value);
   };
 
   const handleTeamChange = (e: ChangeEvent<HTMLSelectElement>) => {
@@ -280,57 +237,27 @@ export default function TradeEvaluator() {
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold mb-6">Trade Evaluator</h1>
       
-      {/* Week Selection and Team Selection */}
+      {/* Team Selection */}
       <div className="bg-white rounded-lg shadow p-4 mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Select Week</label>
-            <select
-              className="w-full p-2 border rounded"
-              value={selectedWeek}
-              onChange={handleWeekChange}
-            >
-              <option value="0">Week 0 (Projected)</option>
-              <option value="1">Week 1</option>
-              <option value="2">Week 2</option>
-              <option value="3">Week 3</option>
-              <option value="4">Week 4</option>
-              <option value="5">Week 5</option>
-              <option value="6">Week 6</option>
-              <option value="7">Week 7</option>
-              <option value="8">Week 8</option>
-              <option value="9">Week 9</option>
-              <option value="10">Week 10</option>
-              <option value="11">Week 11</option>
-              <option value="12">Week 12</option>
-              <option value="13">Week 13</option>
-              <option value="14">Week 14</option>
-              <option value="15">Week 15</option>
-              <option value="16">Week 16</option>
-              <option value="17">Week 17</option>
-              <option value="18">Week 18</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Select Team to Trade With</label>
-            <select
-              className="w-full p-2 border rounded"
-              value={selectedTeam}
-              onChange={handleTeamChange}
-            >
-              <option value="">Select a team</option>
-              {rosters
-                .filter((r: SleeperRoster) => r.owner_id !== user?.user_id)
-                .map((team: SleeperRoster) => {
-                  const teamUser = users?.find(u => u.user_id === team.owner_id);
-                  return (
-                    <option key={team.roster_id} value={team.roster_id}>
-                      {teamUser?.metadata?.team_name || teamUser?.display_name || teamUser?.username || `Team ${team.roster_id}`}
-                    </option>
-                  );
-                })}
-            </select>
-          </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Select Team to Trade With</label>
+          <select
+            className="w-full p-2 border rounded"
+            value={selectedTeam}
+            onChange={handleTeamChange}
+          >
+            <option value="">Select a team</option>
+            {rosters
+              .filter((r: SleeperRoster) => r.owner_id !== user?.user_id)
+              .map((team: SleeperRoster) => {
+                const teamUser = users?.find(u => u.user_id === team.owner_id);
+                return (
+                  <option key={team.roster_id} value={team.roster_id}>
+                    {teamUser?.metadata?.team_name || teamUser?.display_name || teamUser?.username || `Team ${team.roster_id}`}
+                  </option>
+                );
+              })}
+          </select>
         </div>
       </div>
 

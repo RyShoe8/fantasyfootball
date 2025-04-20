@@ -3,9 +3,9 @@ export interface SleeperUser {
   username: string;
   display_name: string;
   avatar: string;
-  metadata?: {
+  metadata: {
     team_name?: string;
-    [key: string]: string | undefined;
+    [key: string]: any;
   };
 }
 
@@ -48,7 +48,7 @@ export interface SleeperLeague {
 }
 
 export interface SleeperRoster {
-  roster_id: string;
+  roster_id: number;
   owner_id: string;
   league_id: string;
   starters: string[];
@@ -64,7 +64,7 @@ export interface SleeperRoster {
     fpts_against: number;
     fpts_against_decimal: number;
   };
-  metadata?: {
+  metadata: {
     team_name?: string;
   };
   draft_picks?: {
