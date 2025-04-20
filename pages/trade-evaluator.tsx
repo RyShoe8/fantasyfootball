@@ -448,28 +448,35 @@ export default function TradeEvaluator() {
                   </div>
                 ))}
               </div>
-              {selectedTeamRoster.draft_picks
-                .filter(pick => {
-                  // Check if this pick is already in either side of the trade
-                  const isInMySide = myDraftPicks.some(p => 
-                    p.season === pick.season && p.round === pick.round && p.pick === pick.pick
-                  );
-                  const isInTheirSide = theirDraftPicks.some(p => 
-                    p.season === pick.season && p.round === pick.round && p.pick === pick.pick
-                  );
-                  return !isInMySide && !isInTheirSide;
-                })
-                .map((pick, index) => (
-                  <div key={index} className="flex justify-between items-center">
-                    <span>{pick.season} Round {pick.round} Pick {pick.pick}</span>
-                    <button
-                      onClick={() => handleAddDraftPick(pick, 'their')}
-                      className="text-blue-500"
-                    >
-                      Add
-                    </button>
+              {selectedTeamRoster?.draft_picks && (
+                <div className="mt-4 pt-4 border-t">
+                  <h3 className="font-medium mb-2">Their Draft Picks</h3>
+                  <div className="space-y-2">
+                    {selectedTeamRoster.draft_picks
+                      .filter(pick => {
+                        // Check if this pick is already in either side of the trade
+                        const isInMySide = myDraftPicks.some(p => 
+                          p.season === pick.season && p.round === pick.round && p.pick === pick.pick
+                        );
+                        const isInTheirSide = theirDraftPicks.some(p => 
+                          p.season === pick.season && p.round === pick.round && p.pick === pick.pick
+                        );
+                        return !isInMySide && !isInTheirSide;
+                      })
+                      .map((pick, index) => (
+                        <div key={index} className="flex justify-between items-center">
+                          <span>{pick.season} Round {pick.round} Pick {pick.pick}</span>
+                          <button
+                            onClick={() => handleAddDraftPick(pick, 'their')}
+                            className="text-blue-500"
+                          >
+                            Add
+                          </button>
+                        </div>
+                      ))}
                   </div>
-                ))}
+                </div>
+              )}
             </>
           )}
         </div>
