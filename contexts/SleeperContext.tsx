@@ -61,7 +61,7 @@ export function SleeperProvider({ children }: { children: React.ReactNode }) {
       setError(null);
 
       // Fetch user's leagues
-      const leaguesResponse = await axios.get(`https://api.sleeper.app/v1/user/${userId}/leagues/nfl/2023`);
+      const leaguesResponse = await axios.get(`https://api.sleeper.app/v1/user/${userId}/leagues/nfl/${new Date().getFullYear()}`);
       setLeagues(leaguesResponse.data);
 
       // Fetch rosters for each league
