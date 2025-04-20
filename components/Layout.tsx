@@ -46,9 +46,18 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       isMobile
     });
 
-    if (isHydrated && !isLoading && requiresAuth && !user) {
-      console.log('Layout: Redirecting to login...');
-      router.push('/login');
+    // Only redirect if we're hydrated and not loading
+    if (isHydrated && !isLoading) {
+      // If we need auth but don't have a user, redirect to login
+      if (requiresAuth && !user) {
+        console.log('Layout: Redirecting to login...');
+        router.push('/login');
+      }
+      // If we're on login page and have a user, redirect to home
+      else if (router.pathname === '/login' && user) {
+        console.log('Layout: User already logged in, redirecting to home...');
+        router.push('/');
+      }
     }
   }, [router.pathname, user, isLoading, requiresAuth, isHydrated, currentLeague, isMobile]);
 

@@ -107,13 +107,23 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
       // Fetch league data
       const currentSeason = getCurrentSeason();
       const leaguesResponse = await axios.get(`https://api.sleeper.app/v1/user/${userData.user_id}/leagues/nfl/${currentSeason}`);
+      
       if (leaguesResponse.data.length > 0) {
+        // Set leagues first
+        setLeagues(leaguesResponse.data);
+        
+        // Set current league
         const leagueId = leaguesResponse.data[0].league_id;
+        setCurrentLeague(leaguesResponse.data[0]);
+        
+        // Fetch additional data
         await Promise.all([
           fetchRosters(leagueId),
           fetchUsers(leagueId),
           fetchPlayers()
         ]);
+      } else {
+        setError('No leagues found for this user');
       }
     } catch (err) {
       console.error('Login error:', err);
