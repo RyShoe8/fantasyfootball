@@ -14,16 +14,16 @@
  * - Placeholder cards for upcoming features
  */
 
-import LeagueInfo from '../components/LeagueInfo';
+import React, { useState } from 'react';
 import { useSleeper } from '../contexts/SleeperContext';
 import { useRouter } from 'next/router';
-import { useState } from 'react';
+import LeagueInfo from '../components/LeagueInfo';
+import LeagueStandings from '../components/LeagueStandings';
 import { SleeperLeague } from '../types/sleeper';
 import axios from 'axios';
 import DebugSection from '../components/DebugSection';
 import Link from 'next/link';
 import TeamOverview from '../components/TeamOverview';
-import LeagueStandings from '../components/LeagueStandings';
 import PlayerRankings from '../components/PlayerRankings';
 
 const SLEEPER_API_BASE = 'https://api.sleeper.app/v1';
@@ -82,74 +82,87 @@ const formatApiResponse = (data: any, type: string) => {
   }
 };
 
-export default function Home() {
-  const { 
-    currentLeague, 
-    leagues, 
-    rosters, 
-    players, 
-    user, 
-    setCurrentLeague,
-    setRosters,
-    setUsers,
-    setPlayers,
-    setDraftPicks
-  } = useSleeper();
+const Home: React.FC = () => {
+  const { user, login, isLoading, error } = useSleeper();
+  const [username, setUsername] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
-  
-  // Find the current roster (assuming it's the first one for now)
-  const currentRoster = rosters.length > 0 ? rosters[0] : null;
 
-  console.log('Home - currentLeague:', currentLeague);
-  console.log('Home - currentRoster:', currentRoster);
-  console.log('Home - players:', players ? Object.keys(players).length : 0, 'players loaded');
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!username.trim()) return;
+
+    setIsSubmitting(true);
+    try {
+      await login(username);
+    } catch (err) {
+      console.error('Login error:', err);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+        <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
+          <h1 className="text-2xl font-bold text-center mb-6">Fantasy Football Stats</h1>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
+                Sleeper Username
+              </label>
+              <input
+                type="text"
+                id="username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Enter your Sleeper username"
+                disabled={isSubmitting}
+              />
+            </div>
+            {error && (
+              <div className="text-red-500 text-sm mt-2">
+                {error}
+              </div>
+            )}
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className={`w-full py-2 px-4 rounded-md text-white font-medium ${
+                isSubmitting
+                  ? 'bg-blue-400 cursor-not-allowed'
+                  : 'bg-blue-500 hover:bg-blue-600'
+              }`}
+            >
+              {isSubmitting ? 'Loading...' : 'View Stats'}
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="container mx-auto px-4 py-8 space-y-6">
-      {/* League Info */}
-      <div className="bg-white rounded-lg shadow p-6">
+    <div className="min-h-screen bg-gray-100 py-6 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto">
         <LeagueInfo />
-      </div>
-
-      {/* Team Overview */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <TeamOverview />
-      </div>
-
-      {/* League Standings and Trade Evaluator */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="space-y-6">
-          {/* League Standings */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold mb-4">League Standings</h2>
-            <LeagueStandings />
-          </div>
-
-          {/* Trade Evaluator */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold mb-4">Trade Evaluator</h2>
-            <div className="text-center py-8">
-              <p className="text-gray-600 mb-4">Evaluate potential trades with other teams</p>
-              <Link href="/trade-evaluator">
-                <a className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                  Open Trade Evaluator
-                </a>
-              </Link>
-            </div>
-          </div>
-        </div>
-
-        {/* Player Rankings */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-semibold mb-4">Player Rankings</h2>
-          <PlayerRankings />
-        </div>
-      </div>
-
-      {/* Debug Section */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <DebugSection />
+        <LeagueStandings />
       </div>
     </div>
   );
-}
+};
+
+export default Home;

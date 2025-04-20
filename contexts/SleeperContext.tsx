@@ -298,7 +298,7 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
         setCurrentLeagueState(leaguesData[0]);
         
         // Fetch additional data with timeout
-        const timeout = 10000; // 10 seconds timeout
+        const timeout = 5000; // 5 seconds timeout
         try {
           await Promise.race([
             Promise.all([
@@ -323,6 +323,8 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
     } catch (err) {
       console.error('Login error:', err);
       setError(err instanceof Error ? err.message : 'Failed to login');
+      setUser(null);
+      localStorage.removeItem('sleeperUser');
     } finally {
       setIsLoading(false);
     }
@@ -523,6 +525,7 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
           console.log('Not in browser environment, skipping initialization');
           setIsLoading(false);
           setIsInitialized(true);
+          setHasInitialized(true);
           return;
         }
 
@@ -531,6 +534,7 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
           console.log('No stored user found');
           setIsLoading(false);
           setIsInitialized(true);
+          setHasInitialized(true);
           return;
         }
 
