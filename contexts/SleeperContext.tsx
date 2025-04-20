@@ -219,9 +219,32 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
     localStorage.removeItem('sleeperUser');
   };
 
-  const setCurrentLeague = (league: SleeperLeague) => {
-    setCurrentLeagueState(league);
-    localStorage.setItem('sleeperCurrentLeague', JSON.stringify(league));
+  const setCurrentLeague = async (league: SleeperLeague) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      // Set the current league first
+      setCurrentLeagueState(league);
+      localStorage.setItem('sleeperCurrentLeague', JSON.stringify(league));
+      
+      // Fetch all necessary data for the new league
+      const [rostersResponse, usersResponse, playersResponse] = await Promise.all([
+        axios.get(`https://api.sleeper.app/v1/league/${league.league_id}/rosters`),
+        axios.get(`https://api.sleeper.app/v1/league/${league.league_id}/users`),
+        axios.get('https://api.sleeper.app/v1/players/nfl')
+      ]);
+      
+      // Update all the necessary state
+      setRosters(rostersResponse.data);
+      setUsers(usersResponse.data);
+      setPlayers(playersResponse.data);
+    } catch (error) {
+      console.error('Error setting current league:', error);
+      setError('Failed to load league data');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const setSelectedWeek = (week: string) => {
@@ -229,9 +252,47 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
     localStorage.setItem('sleeperSelectedWeek', week);
   };
 
-  const setSelectedYear = (year: string) => {
-    setSelectedYearState(year);
-    localStorage.setItem('sleeperSelectedYear', year);
+  const setSelectedYear = async (year: string) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      setSelectedYearState(year);
+      localStorage.setItem('sleeperSelectedYear', year);
+      
+      if (user) {
+        // Fetch leagues for the selected year
+        const leaguesResponse = await axios.get(`https://api.sleeper.app/v1/user/${user.user_id}/leagues/nfl/${year}`);
+        if (leaguesResponse.data.length > 0) {
+          setLeagues(leaguesResponse.data);
+          
+          // Try to find a league with the same name as the current league
+          if (currentLeague) {
+            const sameNameLeague = leaguesResponse.data.find(
+              (l: SleeperLeague) => l.name === currentLeague.name
+            );
+            if (sameNameLeague) {
+              await setCurrentLeague(sameNameLeague);
+              return;
+            }
+          }
+          
+          // If no matching league found, use the first one
+          await setCurrentLeague(leaguesResponse.data[0]);
+        } else {
+          setError('No leagues found for this year');
+          setLeagues([]);
+          setRosters([]);
+          setUsers([]);
+          setPlayers({});
+          setCurrentLeagueState(null);
+        }
+      }
+    } catch (error) {
+      console.error('Error setting selected year:', error);
+      setError('Failed to load leagues for this year');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   useEffect(() => {

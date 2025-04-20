@@ -142,8 +142,10 @@ export const LeagueInfo: React.FC = () => {
               setUsers(usersResponse.data);
               setPlayers(playersResponse.data);
 
-              // Only navigate after all data is loaded
-              router.push('/');
+              // Only navigate if we're not already on the league page
+              if (!router.pathname.includes('/league/')) {
+                router.push(`/league/${sameNameLeague.league_id}`);
+              }
               return;
             }
           }
@@ -164,8 +166,10 @@ export const LeagueInfo: React.FC = () => {
           setUsers(usersResponse.data);
           setPlayers(playersResponse.data);
 
-          // Only navigate after all data is loaded
-          router.push('/');
+          // Only navigate if we're not already on the league page
+          if (!router.pathname.includes('/league/')) {
+            router.push(`/league/${newLeague.league_id}`);
+          }
         } else {
           console.log('No leagues found for year:', year);
           setError('No leagues found for this year');
@@ -173,10 +177,7 @@ export const LeagueInfo: React.FC = () => {
           setRosters([]);
           setUsers([]);
           setPlayers({});
-          // Keep the current league if we have leagues from other years
-          if (leagues.length === 0) {
-            setCurrentLeague(leaguesResponse.data[0]);
-          }
+          setCurrentLeague(null);
         }
       }
     } catch (error) {
