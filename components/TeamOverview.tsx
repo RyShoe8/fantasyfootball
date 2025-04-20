@@ -469,7 +469,7 @@ const TeamOverview: React.FC = () => {
                 const player = players?.[playerId];
                 return player ? (
                   <div key={playerId} className="flex justify-between items-center">
-                    <span>{player.name} ({player.position})</span>
+                    <span>{`${player.first_name} ${player.last_name}`} ({player.position})</span>
                     <span>{player.stats?.pts_ppr || 0} pts</span>
                   </div>
                 ) : null;
@@ -483,7 +483,7 @@ const TeamOverview: React.FC = () => {
                 const player = players?.[playerId];
                 return player ? (
                   <div key={playerId} className="flex justify-between items-center">
-                    <span>{player.name} ({player.position})</span>
+                    <span>{`${player.first_name} ${player.last_name}`} ({player.position})</span>
                     <span>{player.stats?.pts_ppr || 0} pts</span>
                   </div>
                 ) : null;
@@ -498,7 +498,7 @@ const TeamOverview: React.FC = () => {
                   const player = players?.[playerId];
                   return player ? (
                     <div key={playerId} className="flex justify-between items-center">
-                      <span>{player.name} ({player.position})</span>
+                      <span>{`${player.first_name} ${player.last_name}`} ({player.position})</span>
                       <span>{player.stats?.pts_ppr || 0} pts</span>
                     </div>
                   ) : null;
@@ -514,7 +514,7 @@ const TeamOverview: React.FC = () => {
                   const player = players?.[playerId];
                   return player ? (
                     <div key={playerId} className="flex justify-between items-center">
-                      <span>{player.name} ({player.position})</span>
+                      <span>{`${player.first_name} ${player.last_name}`} ({player.position})</span>
                       <span>{player.stats?.pts_ppr || 0} pts</span>
                     </div>
                   ) : null;
