@@ -67,6 +67,46 @@ const getSeasonNumber = (season: string, leagues: SleeperLeague[]) => {
   return ` (${seasonNumber}${suffix} Season)`;
 };
 
+// Helper function to format API response data
+const formatApiResponse = (data: any, type: string) => {
+  switch (type) {
+    case 'user':
+      return {
+        username: data.username,
+        display_name: data.display_name,
+        user_id: data.user_id,
+        avatar: data.avatar
+      };
+    case 'league':
+      return {
+        name: data.name,
+        league_id: data.league_id,
+        season: data.season,
+        status: data.status,
+        total_rosters: data.total_rosters,
+        roster_positions: data.roster_positions,
+        settings: {
+          num_teams: data.settings.num_teams,
+          playoff_teams: data.settings.playoff_teams,
+          waiver_type: data.settings.waiver_type,
+          waiver_budget: data.settings.waiver_budget
+        }
+      };
+    case 'rosters':
+      return data.map((roster: any) => ({
+        roster_id: roster.roster_id,
+        owner_id: roster.owner_id,
+        team_name: roster.metadata?.team_name || `Team ${roster.roster_id}`,
+        starters: roster.starters,
+        players: roster.players?.length || 0
+      }));
+    case 'players':
+      return `Total players: ${Object.keys(data).length}`;
+    default:
+      return data;
+  }
+};
+
 export default function LeagueInfo() {
   const { currentLeague, leagues, setCurrentLeague, user, rosters, players } = useSleeper();
   const [showDebug, setShowDebug] = useState(false);
@@ -86,12 +126,6 @@ export default function LeagueInfo() {
     } catch (err) {
       return 'Error formatting JSON';
     }
-  };
-
-  // Helper function to truncate long text
-  const truncateText = (text: string, maxLength: number = 1000) => {
-    if (text.length <= maxLength) return text;
-    return text.slice(0, maxLength) + '...';
   };
 
   return (
@@ -224,7 +258,7 @@ export default function LeagueInfo() {
         </div>
       </div>
 
-      {/* Debug Section */}
+      {/* Debug Section - Moved to bottom */}
       <div className="bg-white shadow rounded-lg p-6">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-2xl font-bold text-gray-900">API Debug Data</h2>
@@ -241,42 +275,36 @@ export default function LeagueInfo() {
             <div className="bg-gray-50 p-4 rounded-lg">
               <h3 className="text-lg font-medium text-gray-900 mb-2">User Data</h3>
               <pre className="overflow-auto p-4 bg-gray-800 text-gray-100 rounded-md text-sm">
-                {formatJSON(user)}
+                {formatJSON(formatApiResponse(user, 'user'))}
               </pre>
             </div>
 
             <div className="bg-gray-50 p-4 rounded-lg">
               <h3 className="text-lg font-medium text-gray-900 mb-2">Current League Data</h3>
               <pre className="overflow-auto p-4 bg-gray-800 text-gray-100 rounded-md text-sm">
-                {formatJSON(currentLeague)}
+                {formatJSON(formatApiResponse(currentLeague, 'league'))}
               </pre>
             </div>
 
             <div className="bg-gray-50 p-4 rounded-lg">
               <h3 className="text-lg font-medium text-gray-900 mb-2">All Leagues Data</h3>
               <pre className="overflow-auto p-4 bg-gray-800 text-gray-100 rounded-md text-sm">
-                {formatJSON(leagues)}
+                {formatJSON(leagues.map(league => formatApiResponse(league, 'league')))}
               </pre>
             </div>
 
             <div className="bg-gray-50 p-4 rounded-lg">
               <h3 className="text-lg font-medium text-gray-900 mb-2">Rosters Data</h3>
               <pre className="overflow-auto p-4 bg-gray-800 text-gray-100 rounded-md text-sm">
-                {formatJSON(rosters)}
+                {formatJSON(formatApiResponse(rosters, 'rosters'))}
               </pre>
             </div>
 
             <div className="bg-gray-50 p-4 rounded-lg">
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Players Data (Sample)</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Players Data</h3>
               <pre className="overflow-auto p-4 bg-gray-800 text-gray-100 rounded-md text-sm">
-                {formatJSON(Object.entries(players).slice(0, 5).reduce((acc, [key, value]) => {
-                  acc[key] = value;
-                  return acc;
-                }, {} as Record<string, any>))}
+                {formatApiResponse(players, 'players')}
               </pre>
-              <p className="mt-2 text-sm text-gray-500">
-                Showing first 5 players only. Total players: {Object.keys(players).length}
-              </p>
             </div>
           </div>
         )}
