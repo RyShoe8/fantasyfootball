@@ -1,12 +1,22 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSleeper } from '../contexts/SleeperContext';
 
 export default function Login() {
   const [username, setUsername] = useState('');
   const { initialize, isLoading, error } = useSleeper();
 
+  useEffect(() => {
+    // Restore username from localStorage on component mount
+    const savedUsername = localStorage.getItem('sleeperUsername');
+    if (savedUsername) {
+      setUsername(savedUsername);
+    }
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    // Save username to localStorage before initializing
+    localStorage.setItem('sleeperUsername', username);
     await initialize(username);
   };
 
