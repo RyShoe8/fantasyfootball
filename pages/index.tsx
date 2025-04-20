@@ -21,6 +21,8 @@ import { useState } from 'react';
 import { SleeperLeague } from '../types/sleeper';
 import axios from 'axios';
 
+const SLEEPER_API_BASE = 'https://api.sleeper.app/v1';
+
 // Helper function to format API response data
 const formatApiResponse = (data: any, type: string) => {
   switch (type) {
@@ -86,7 +88,8 @@ export default function Home() {
     setCurrentLeague,
     setRosters,
     setUsers,
-    setPlayers
+    setPlayers,
+    setDraftPicks
   } = useSleeper();
   const router = useRouter();
   const [apiResponse, setApiResponse] = useState<any>(null);
