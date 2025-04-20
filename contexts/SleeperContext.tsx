@@ -254,6 +254,9 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
       
       console.log('User data fetched successfully:', userData);
       
+      // Set user state
+      setUser(userData);
+      
       // Fetch league data
       const currentSeason = getCurrentSeason();
       setSelectedYearState(currentSeason.toString());
