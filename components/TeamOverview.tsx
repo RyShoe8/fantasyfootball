@@ -1,5 +1,6 @@
 import React, { useState, useMemo, ChangeEvent } from 'react';
 import { useSleeper } from '../contexts/SleeperContext';
+import { SleeperRoster, SleeperPlayer } from '../types/sleeper';
 
 interface Player {
   position: string;
@@ -9,20 +10,6 @@ interface Player {
     [key: string]: any;
   };
   [key: string]: any;
-}
-
-interface Roster {
-  roster_id: string;
-  owner_id: string;
-  metadata?: {
-    team_name?: string;
-  };
-  settings: {
-    wins: number;
-    losses: number;
-    ties: number;
-  };
-  players?: Record<string, Player>;
 }
 
 interface TeamStats {
@@ -50,11 +37,11 @@ export default function TeamOverview() {
   const teamStats = useMemo(() => {
     if (!rosters || !players) return [];
 
-    return rosters.map((roster: Roster) => {
-      const rosterPlayers = Object.entries(roster.players || {})
-        .map(([playerId, player]) => ({
-          ...player,
-          stats: player.stats?.[selectedWeek] || {}
+    return rosters.map((roster: SleeperRoster) => {
+      const rosterPlayers = [...(roster.starters || []), ...(roster.reserves || [])]
+        .map(playerId => ({
+          ...players[playerId],
+          stats: players[playerId]?.stats?.[selectedWeek] || {}
         }));
 
       const totalPoints = rosterPlayers.reduce((sum, player) => 
@@ -78,11 +65,11 @@ export default function TeamOverview() {
       return {
         teamId: roster.roster_id,
         ownerId: roster.owner_id,
-        teamName: roster.metadata?.team_name || `Team ${roster.roster_id}`,
+        teamName: `Team ${roster.roster_id}`,
         wins: roster.settings.wins,
         losses: roster.settings.losses,
-        ties: roster.settings.ties,
-        totalPoints,
+        ties: 0, // Sleeper API doesn't provide ties in settings
+        totalPoints: roster.settings.fpts,
         positionStats,
         players: rosterPlayers
       };
