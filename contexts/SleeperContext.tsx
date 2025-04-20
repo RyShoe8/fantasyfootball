@@ -577,21 +577,30 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
   }, [isInitialized]);
 
   // Update the context value
-  const value = {
+  const value: SleeperContextType = {
     user,
-    leagues,
-    currentLeague,
-    setCurrentLeague,
-    rosters,
     users,
+    leagues,
+    rosters,
     players,
     playerStats,
-    selectedYear,
-    setSelectedYear,
+    draftPicks,
+    currentLeague,
     selectedWeek,
-    setSelectedWeek,
+    selectedYear,
     isLoading,
     error,
+    login,
+    logout,
+    setCurrentLeague,
+    setSelectedWeek,
+    setSelectedYear,
+    setRosters,
+    setUsers,
+    setPlayers,
+    setDraftPicks,
+    setLeagues,
+    setIsLoading,
     setError,
     fetchPlayerStats,
     hasInitialized: isInitialized
@@ -613,9 +622,7 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
   }, [user, leagues, currentLeague, rosters, users, players, isLoading, error, hasInitialized]);
 
   return (
-    <SleeperContext.Provider
-      value={value}
-    >
+    <SleeperContext.Provider value={value}>
       {children}
     </SleeperContext.Provider>
   );
