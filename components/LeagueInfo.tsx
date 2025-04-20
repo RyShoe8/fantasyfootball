@@ -119,7 +119,18 @@ export const LeagueInfo: React.FC = () => {
         const leaguesResponse = await axios.get(`https://api.sleeper.app/v1/user/${user.user_id}/leagues/nfl/${year}`);
         if (leaguesResponse.data.length > 0) {
           setLeagues(leaguesResponse.data);
-          const newLeague = leaguesResponse.data[0];
+          
+          // Try to find a league with the same name in the new year's leagues
+          let newLeague = leaguesResponse.data[0];
+          if (currentLeague) {
+            const sameNameLeague = leaguesResponse.data.find(
+              (l: SleeperLeague) => l.name === currentLeague.name
+            );
+            if (sameNameLeague) {
+              newLeague = sameNameLeague;
+            }
+          }
+          
           setCurrentLeague(newLeague);
 
           // Fetch all necessary data for the new league
