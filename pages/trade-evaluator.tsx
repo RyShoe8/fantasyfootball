@@ -293,71 +293,65 @@ export default function TradeEvaluator() {
 
         {/* Their Side */}
         <div className="bg-white rounded-lg shadow p-4">
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Select Team to Trade With</label>
-            <select
-              className="w-full p-2 border rounded"
-              value={selectedTeam}
-              onChange={handleTeamChange}
-            >
-              <option value="">Select a team</option>
-              {rosters
-                .filter((r: SleeperRoster) => r.owner_id !== user?.user_id)
-                .map((team: SleeperRoster) => {
-                  const teamUser = users?.find(u => u.user_id === team.owner_id);
-                  return (
-                    <option key={team.roster_id} value={team.roster_id}>
-                      {teamUser?.metadata?.team_name || teamUser?.display_name || teamUser?.username || `Team ${team.roster_id}`}
-                    </option>
-                  );
-                })}
-            </select>
-          </div>
+          <h2 className="text-xl font-semibold mb-4">Select Team to Trade With</h2>
+          <select
+            className="w-full p-2 border rounded"
+            value={selectedTeam}
+            onChange={handleTeamChange}
+          >
+            <option value="">Select a team</option>
+            {rosters
+              .filter((r: SleeperRoster) => r.owner_id !== user?.user_id)
+              .map((team: SleeperRoster) => {
+                const teamUser = users?.find(u => u.user_id === team.owner_id);
+                return (
+                  <option key={team.roster_id} value={team.roster_id}>
+                    {teamUser?.metadata?.team_name || teamUser?.display_name || teamUser?.username || `Team ${team.roster_id}`}
+                  </option>
+                );
+              })}
+          </select>
 
-          <h2 className="text-xl font-semibold mb-4">
-            Their Side {selectedTeamRoster && `- ${selectedTeamRoster.metadata?.team_name || 
-              users?.find(u => u.user_id === selectedTeamRoster.owner_id)?.metadata?.team_name || 
-              users?.find(u => u.user_id === selectedTeamRoster.owner_id)?.display_name || 
-              `Team ${selectedTeamRoster.roster_id}`}`}
-          </h2>
-          <div className="space-y-4">
-            <div>
-              <h3 className="font-medium mb-2">Players</h3>
-              <div className="space-y-2">
-                {theirSide.map((player: TradePlayer) => (
-                  <div key={player.player_id} className="flex justify-between items-center">
-                    <span>{player.full_name} ({player.position})</span>
-                    <button
-                      onClick={() => handleRemovePlayer(player, 'their')}
-                      className="text-red-500"
-                    >
-                      Remove
-                    </button>
-                  </div>
-                ))}
+          {selectedTeamRoster && (
+            <div className="mt-4 space-y-4">
+              <div>
+                <h3 className="font-medium mb-2">Players</h3>
+                <div className="space-y-2">
+                  {theirSide.map((player: TradePlayer) => (
+                    <div key={player.player_id} className="flex justify-between items-center">
+                      <span>{player.full_name} ({player.position})</span>
+                      <button
+                        onClick={() => handleRemovePlayer(player, 'their')}
+                        className="text-red-500"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <h3 className="font-medium mb-2">Draft Picks</h3>
+                <div className="space-y-2">
+                  {theirDraftPicks.map((pick, index) => (
+                    <div key={index} className="flex justify-between items-center">
+                      <span>{pick.season} Round {pick.round} Pick {pick.pick}</span>
+                      <button
+                        onClick={() => handleRemoveDraftPick(pick, 'their')}
+                        className="text-red-500"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="pt-4 border-t">
+                <p>Total Projected Points: {theirSideStats.totalProjectedPoints.toFixed(2)}</p>
+                <p>Total Points: {theirSideStats.totalPoints.toFixed(2)}</p>
               </div>
             </div>
-            <div>
-              <h3 className="font-medium mb-2">Draft Picks</h3>
-              <div className="space-y-2">
-                {theirDraftPicks.map((pick, index) => (
-                  <div key={index} className="flex justify-between items-center">
-                    <span>{pick.season} Round {pick.round} Pick {pick.pick}</span>
-                    <button
-                      onClick={() => handleRemoveDraftPick(pick, 'their')}
-                      className="text-red-500"
-                    >
-                      Remove
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className="pt-4 border-t">
-              <p>Total Projected Points: {theirSideStats.totalProjectedPoints.toFixed(2)}</p>
-              <p>Total Points: {theirSideStats.totalPoints.toFixed(2)}</p>
-            </div>
-          </div>
+          )}
         </div>
       </div>
 
