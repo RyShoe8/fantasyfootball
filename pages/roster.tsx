@@ -402,33 +402,27 @@ const Roster: React.FC = () => {
                 <tr key={player.player_id} className={player.isStarter ? 'bg-green-50' : ''}>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
-                      <div className="flex-shrink-0 h-10 w-10 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden">
+                      <div className="flex-shrink-0 h-10 w-10">
                         <img
                           className="h-10 w-10 rounded-full object-cover"
                           src={`https://sleepercdn.com/avatars/${player.player_id}`}
                           alt={player.full_name}
-                          loading="lazy"
-                          onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
+                          onError={(e) => {
                             const target = e.target as HTMLImageElement;
                             target.style.display = 'none';
                             const parent = target.parentElement;
                             if (parent) {
                               const fallback = document.createElement('div');
-                              fallback.className = 'h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center text-gray-500 text-sm font-medium';
+                              fallback.className = 'h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-sm font-medium';
                               fallback.textContent = player.position;
                               parent.appendChild(fallback);
                             }
                           }}
-                          onLoad={(e: React.SyntheticEvent<HTMLImageElement>) => {
-                            const target = e.target as HTMLImageElement;
-                            target.style.opacity = '1';
-                          }}
-                          style={{ opacity: 0, transition: 'opacity 0.2s ease-in-out' }}
                         />
                       </div>
                       <div className="ml-4">
                         <div className="text-sm font-medium text-gray-900">{player.full_name}</div>
-                        <div className="text-sm text-gray-500">{player.roster_slot}</div>
+                        <div className="text-sm text-gray-500">{player.position}</div>
                       </div>
                     </div>
                   </td>
@@ -568,28 +562,22 @@ const Roster: React.FC = () => {
                     <tr key={player.player_id}>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
-                          <div className="flex-shrink-0 h-10 w-10 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden">
+                          <div className="flex-shrink-0 h-10 w-10">
                             <img
                               className="h-10 w-10 rounded-full object-cover"
                               src={`https://sleepercdn.com/avatars/${player.player_id}`}
                               alt={player.full_name}
-                              loading="lazy"
-                              onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
+                              onError={(e) => {
                                 const target = e.target as HTMLImageElement;
                                 target.style.display = 'none';
                                 const parent = target.parentElement;
                                 if (parent) {
                                   const fallback = document.createElement('div');
-                                  fallback.className = 'h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center text-gray-500 text-sm font-medium';
+                                  fallback.className = 'h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-sm font-medium';
                                   fallback.textContent = player.position;
                                   parent.appendChild(fallback);
                                 }
                               }}
-                              onLoad={(e: React.SyntheticEvent<HTMLImageElement>) => {
-                                const target = e.target as HTMLImageElement;
-                                target.style.opacity = '1';
-                              }}
-                              style={{ opacity: 0, transition: 'opacity 0.2s ease-in-out' }}
                             />
                           </div>
                           <div className="ml-4">
@@ -637,28 +625,22 @@ const Roster: React.FC = () => {
                     <tr key={player.player_id}>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
-                          <div className="flex-shrink-0 h-10 w-10 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden">
+                          <div className="flex-shrink-0 h-10 w-10">
                             <img
                               className="h-10 w-10 rounded-full object-cover"
                               src={`https://sleepercdn.com/avatars/${player.player_id}`}
                               alt={player.full_name}
-                              loading="lazy"
-                              onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
+                              onError={(e) => {
                                 const target = e.target as HTMLImageElement;
                                 target.style.display = 'none';
                                 const parent = target.parentElement;
                                 if (parent) {
                                   const fallback = document.createElement('div');
-                                  fallback.className = 'h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center text-gray-500 text-sm font-medium';
+                                  fallback.className = 'h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-sm font-medium';
                                   fallback.textContent = player.position;
                                   parent.appendChild(fallback);
                                 }
                               }}
-                              onLoad={(e: React.SyntheticEvent<HTMLImageElement>) => {
-                                const target = e.target as HTMLImageElement;
-                                target.style.opacity = '1';
-                              }}
-                              style={{ opacity: 0, transition: 'opacity 0.2s ease-in-out' }}
                             />
                           </div>
                           <div className="ml-4">

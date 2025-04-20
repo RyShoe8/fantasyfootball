@@ -180,35 +180,21 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const fetchPlayerStats = useCallback(async (season: string, week: string) => {
+    if (!season || !week) {
+      console.log('Missing season or week for player stats fetch');
+      return;
+    }
     try {
-      // Check if we have stats in localStorage first
-      const cacheKey = `sleeperPlayerStats_${season}_${week}`;
-      const cachedStats = localStorage.getItem(cacheKey);
-      const cacheTimestamp = localStorage.getItem(`${cacheKey}_timestamp`);
-      const now = Date.now();
-      const ONE_HOUR = 60 * 60 * 1000;
-
-      // Use cached data if it's less than an hour old
-      if (cachedStats && cacheTimestamp && (now - parseInt(cacheTimestamp)) < ONE_HOUR) {
-        console.log('Using cached player stats');
-        setPlayerStats(JSON.parse(cachedStats));
-        return;
-      }
-
-      console.log('Fetching fresh player stats');
+      console.log('Fetching player stats for season:', season, 'week:', week);
       const response = await axios.get(`/api/player-stats?season=${season}&week=${week}`);
-      const statsData = response.data;
-      
-      // Cache the data
-      localStorage.setItem(cacheKey, JSON.stringify(statsData));
-      localStorage.setItem(`${cacheKey}_timestamp`, now.toString());
-      
-      setPlayerStats(statsData);
+      if (response.data) {
+        setPlayerStats(response.data);
+      }
     } catch (error) {
       console.error('Error fetching player stats:', error);
-      setError('Failed to fetch player stats');
+      // Don't set error state here, just log it
     }
-  }, [setError]);
+  }, []);
 
   const login = async (username: string) => {
     setIsLoading(true);
@@ -466,10 +452,10 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
   }, [isInitialized]);
 
   useEffect(() => {
-    if (selectedYear && selectedWeek) {
+    if (selectedYear && selectedWeek && currentLeague) {
       fetchPlayerStats(selectedYear, selectedWeek);
     }
-  }, [selectedYear, selectedWeek, fetchPlayerStats]);
+  }, [selectedYear, selectedWeek, currentLeague, fetchPlayerStats]);
 
   // Add a debug effect to log state changes
   useEffect(() => {
