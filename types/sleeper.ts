@@ -55,6 +55,7 @@ export interface SleeperRoster {
   reserves: string[];
   taxi: string[];
   ir: string[];
+  players: string[];
   settings: {
     wins: number;
     losses: number;
