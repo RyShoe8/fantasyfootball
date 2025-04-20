@@ -56,6 +56,7 @@ interface RosterPlayer extends ExtendedPlayer {
 interface RosterData {
   roster: SleeperRoster;
   players: RosterPlayer[];
+  teamName: string;
 }
 
 const TeamOverview: React.FC = () => {
@@ -106,6 +107,10 @@ const TeamOverview: React.FC = () => {
       return null;
     }
 
+    // Get team name from user metadata
+    const teamName = user.metadata?.team_name || 'Your Team';
+    console.log('Team name from user metadata:', teamName);
+
     const rosterPlayers = [...(userRoster.starters || []), ...(userRoster.reserves || [])]
       .map(playerId => {
         const player = players[playerId as keyof typeof players];
@@ -140,7 +145,8 @@ const TeamOverview: React.FC = () => {
 
     return {
       roster: userRoster,
-      players: rosterPlayers
+      players: rosterPlayers,
+      teamName: teamName
     };
   }, [user, rosters, players, selectedWeek, currentLeague]);
 
@@ -169,20 +175,29 @@ const TeamOverview: React.FC = () => {
     console.log('User roster ID:', userRoster.roster_id);
     console.log('User roster settings:', userRoster.settings);
 
-    // Get team name from roster metadata
-    const teamName = userRoster.metadata?.team_name || 'Your Team';
-    console.log('Team name:', teamName);
+    // Get team name from user metadata
+    const teamName = user.metadata?.team_name || 'Your Team';
+    console.log('Team name from user metadata:', teamName);
 
     // Calculate team stats
     const stats: TeamStats = {
       teamId: userRoster.roster_id,
       ownerId: userRoster.owner_id,
-      teamName: userRoster.metadata?.team_name || 'Your Team',
+      teamName: teamName,
       wins: userRoster.settings?.wins || 0,
       losses: userRoster.settings?.losses || 0,
       ties: 0, // Ties are not tracked in Sleeper API
       totalPoints: 0,
-      positionStats: {},
+      positionStats: {
+        QB: { count: 0, points: 0 },
+        RB: { count: 0, points: 0 },
+        WR: { count: 0, points: 0 },
+        TE: { count: 0, points: 0 },
+        FLEX: { count: 0, points: 0 },
+        SUPERFLEX: { count: 0, points: 0 },
+        DEF: { count: 0, points: 0 },
+        K: { count: 0, points: 0 }
+      },
       players: []
     };
 
@@ -190,61 +205,63 @@ const TeamOverview: React.FC = () => {
     userRoster.starters.forEach((playerId: string) => {
       const player = players[playerId];
       if (player) {
-        const position = player.position;
-        if (!stats.positionStats[position]) {
-          stats.positionStats[position] = { count: 0, points: 0 };
+        const position = player.position as keyof typeof stats.positionStats;
+        if (position in stats.positionStats) {
+          stats.positionStats[position].count++;
+          stats.positionStats[position].points += player.stats?.pts_ppr || 0;
+          stats.totalPoints += player.stats?.pts_ppr || 0;
+          stats.players.push(player as ExtendedPlayer);
         }
-        stats.positionStats[position].count++;
-        stats.positionStats[position].points += player.stats?.pts_ppr || 0;
-        stats.totalPoints += player.stats?.pts_ppr || 0;
-        stats.players.push(player as ExtendedPlayer);
       }
     });
 
-    // Process reserves
-    userRoster.reserves?.forEach((playerId: string) => {
-      const player = players[playerId];
-      if (player) {
-        const position = player.position;
-        if (!stats.positionStats[position]) {
-          stats.positionStats[position] = { count: 0, points: 0 };
+    // Process bench players (reserve)
+    if (userRoster.reserve) {
+      userRoster.reserve.forEach((playerId: string) => {
+        const player = players[playerId];
+        if (player) {
+          const position = player.position as keyof typeof stats.positionStats;
+          if (position in stats.positionStats) {
+            stats.positionStats[position].count++;
+            stats.positionStats[position].points += player.stats?.pts_ppr || 0;
+            stats.totalPoints += player.stats?.pts_ppr || 0;
+            stats.players.push(player as ExtendedPlayer);
+          }
         }
-        stats.positionStats[position].count++;
-        stats.positionStats[position].points += player.stats?.pts_ppr || 0;
-        stats.totalPoints += player.stats?.pts_ppr || 0;
-        stats.players.push(player as ExtendedPlayer);
-      }
-    });
+      });
+    }
 
     // Process taxi squad
-    userRoster.taxi?.forEach((playerId: string) => {
-      const player = players[playerId];
-      if (player) {
-        const position = player.position;
-        if (!stats.positionStats[position]) {
-          stats.positionStats[position] = { count: 0, points: 0 };
+    if (userRoster.taxi) {
+      userRoster.taxi.forEach((playerId: string) => {
+        const player = players[playerId];
+        if (player) {
+          const position = player.position as keyof typeof stats.positionStats;
+          if (position in stats.positionStats) {
+            stats.positionStats[position].count++;
+            stats.positionStats[position].points += player.stats?.pts_ppr || 0;
+            stats.totalPoints += player.stats?.pts_ppr || 0;
+            stats.players.push(player as ExtendedPlayer);
+          }
         }
-        stats.positionStats[position].count++;
-        stats.positionStats[position].points += player.stats?.pts_ppr || 0;
-        stats.totalPoints += player.stats?.pts_ppr || 0;
-        stats.players.push(player as ExtendedPlayer);
-      }
-    });
+      });
+    }
 
     // Process IR spots
-    userRoster.ir?.forEach((playerId: string) => {
-      const player = players[playerId];
-      if (player) {
-        const position = player.position;
-        if (!stats.positionStats[position]) {
-          stats.positionStats[position] = { count: 0, points: 0 };
+    if (userRoster.ir) {
+      userRoster.ir.forEach((playerId: string) => {
+        const player = players[playerId];
+        if (player) {
+          const position = player.position as keyof typeof stats.positionStats;
+          if (position in stats.positionStats) {
+            stats.positionStats[position].count++;
+            stats.positionStats[position].points += player.stats?.pts_ppr || 0;
+            stats.totalPoints += player.stats?.pts_ppr || 0;
+            stats.players.push(player as ExtendedPlayer);
+          }
         }
-        stats.positionStats[position].count++;
-        stats.positionStats[position].points += player.stats?.pts_ppr || 0;
-        stats.totalPoints += player.stats?.pts_ppr || 0;
-        stats.players.push(player as ExtendedPlayer);
-      }
-    });
+      });
+    }
 
     return stats;
   }, [user, rosters, players, selectedWeek, currentLeague]);
