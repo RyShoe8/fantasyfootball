@@ -31,11 +31,15 @@ interface Roster {
 }
 
 interface TeamStats {
+  teamId: string;
+  ownerId: string;
+  teamName: string;
   wins: number;
   losses: number;
   ties: number;
-  pointsFor: number;
-  pointsAgainst: number;
+  totalPoints: number;
+  positionStats: Record<string, { count: number; points: number; projected: number }>;
+  players: Player[];
 }
 
 type SortConfig = {
@@ -83,7 +87,7 @@ const TeamOverview: React.FC = () => {
       }, {} as Record<string, { count: number; points: number; projected: number }>);
 
       return {
-        teamId: roster.roster_id,
+        teamId: roster.roster_id.toString(),
         ownerId: roster.owner_id,
         teamName: `Team ${roster.roster_id}`,
         wins: roster.settings.wins,
