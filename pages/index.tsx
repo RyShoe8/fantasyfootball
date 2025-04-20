@@ -107,40 +107,43 @@ export default function Home() {
   return (
     <div className="container mx-auto px-4 py-8 space-y-6">
       {/* League Info */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="bg-white rounded-lg shadow p-6">
         <LeagueInfo />
       </div>
 
-      {/* Team Overview and Trade Evaluator */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-lg shadow p-6">
-          <TeamOverview />
-        </div>
+      {/* Team Overview */}
+      <div className="bg-white rounded-lg shadow p-6">
+        <TeamOverview />
+      </div>
 
-        {/* Trade Evaluator */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-semibold mb-4">Trade Evaluator</h2>
-          <div className="text-center py-8">
-            <p className="text-gray-600 mb-4">Evaluate potential trades with other teams</p>
-            <Link href="/trade-evaluator">
-              <a className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                Open Trade Evaluator
-              </a>
-            </Link>
+      {/* League Standings and Trade Evaluator */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="space-y-6">
+          {/* League Standings */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-xl font-semibold mb-4">League Standings</h2>
+            <LeagueStandings />
+          </div>
+
+          {/* Trade Evaluator */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-xl font-semibold mb-4">Trade Evaluator</h2>
+            <div className="text-center py-8">
+              <p className="text-gray-600 mb-4">Evaluate potential trades with other teams</p>
+              <Link href="/trade-evaluator">
+                <a className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                  Open Trade Evaluator
+                </a>
+              </Link>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* League Standings */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-xl font-semibold mb-4">League Standings</h2>
-        <LeagueStandings />
-      </div>
-
-      {/* Player Rankings */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-xl font-semibold mb-4">Player Rankings</h2>
-        <PlayerRankings />
+        {/* Player Rankings */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <h2 className="text-xl font-semibold mb-4">Player Rankings</h2>
+          <PlayerRankings />
+        </div>
       </div>
 
       {/* Debug Section */}
