@@ -254,12 +254,14 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
       
       console.log('User data fetched successfully:', userData);
       
-      // Set user state
+      // Set user state and save to localStorage
       setUser(userData);
+      localStorage.setItem('sleeperUser', JSON.stringify(userData));
       
       // Fetch league data
       const currentSeason = getCurrentSeason();
       setSelectedYearState(currentSeason.toString());
+      localStorage.setItem('sleeperSelectedYear', currentSeason.toString());
       
       // Check database first
       const dbLeague = await getLeagueData(userData.user_id, currentSeason.toString());
@@ -290,6 +292,7 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
         // Set current league
         const leagueId = leaguesData[0].league_id;
         setCurrentLeagueState(leaguesData[0]);
+        localStorage.setItem('sleeperCurrentLeague', JSON.stringify(leaguesData[0]));
         
         // Fetch additional data with timeout
         const timeout = 5000; // 5 seconds timeout
@@ -314,11 +317,23 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
         setLeagues([]);
         setCurrentLeagueState(null);
       }
+
+      // Set initialization flags
+      setIsInitialized(true);
+      setHasInitialized(true);
     } catch (err) {
       console.error('Login error:', err);
       setError(err instanceof Error ? err.message : 'Failed to login');
+      // Clear all state on login failure
       setUser(null);
+      setLeagues([]);
+      setCurrentLeagueState(null);
+      setRosters([]);
+      setUsers([]);
+      setPlayers({});
       localStorage.removeItem('sleeperUser');
+      localStorage.removeItem('sleeperCurrentLeague');
+      localStorage.removeItem('sleeperSelectedYear');
     } finally {
       setIsLoading(false);
     }
