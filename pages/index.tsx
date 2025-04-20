@@ -307,8 +307,8 @@ export default function Home() {
         {apiResponse && (
           <div className="mt-6">
             <h3 className="text-xl font-semibold mb-2">API Response ({apiResponseType})</h3>
-            <div className="bg-gray-100 p-4 rounded-md overflow-auto max-h-96">
-              <pre className="text-sm">{formatJSON(apiResponse)}</pre>
+            <div className="bg-gray-100 p-4 rounded-md">
+              <pre className="text-sm whitespace-pre-wrap">{formatJSON(apiResponse)}</pre>
             </div>
           </div>
         )}
