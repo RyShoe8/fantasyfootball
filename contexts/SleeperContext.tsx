@@ -169,6 +169,10 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
               const leagueId = leaguesResponse.data[0].league_id;
               console.log('Selected league ID:', leagueId);
               
+              // Set leagues and current league
+              setLeagues(leaguesResponse.data);
+              setCurrentLeague(leaguesResponse.data[0]);
+              
               // Fetch all data in parallel
               console.log('Fetching league data...');
               const [rostersResponse, usersResponse, playersResponse] = await Promise.all([
@@ -215,6 +219,8 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
   useEffect(() => {
     console.log('State updated:', {
       user: user ? 'Present' : 'Not present',
+      leagues: leagues.length,
+      currentLeague: currentLeague ? 'Present' : 'Not present',
       rosters: rosters.length,
       users: users.length,
       players: Object.keys(players).length,
@@ -222,7 +228,7 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
       error,
       isInitialized
     });
-  }, [user, rosters, users, players, isLoading, error, isInitialized]);
+  }, [user, leagues, currentLeague, rosters, users, players, isLoading, error, isInitialized]);
 
   return (
     <SleeperContext.Provider
