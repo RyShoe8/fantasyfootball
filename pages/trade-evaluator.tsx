@@ -87,29 +87,42 @@ export default function TradeEvaluator() {
 
   const currentRoster = useMemo(() => {
     if (!user || !rosters) return null;
-    return rosters.find((r: Roster) => r.owner_id === user.user_id);
+    return rosters.find((r: SleeperRoster) => r.owner_id === user.user_id);
   }, [user, rosters]);
 
   const availablePlayers = useMemo(() => {
     if (!currentRoster || !players) return [];
-    
-    // Get all players from the roster
     return [...(currentRoster.starters || []), ...(currentRoster.reserves || [])]
-      .map((playerId: string) => {
-        const player = players[playerId as keyof typeof players] as Player | undefined;
+      .map(playerId => {
+        const player = players[playerId as keyof typeof players];
         if (!player) return null;
 
         // Get stats for the selected week
-        const weekStats = player.stats?.[selectedWeek] || {};
+        const rawStats = (player.stats?.[selectedWeek] || {}) as Partial<PlayerStats>;
+        const weekStats: PlayerStats = {
+          ...rawStats,
+          fpts: typeof rawStats.fpts === 'number' ? rawStats.fpts : 0,
+          fpts_decimal: typeof rawStats.fpts_decimal === 'number' ? rawStats.fpts_decimal : 0,
+          projected_pts: typeof rawStats.projected_pts === 'number' ? rawStats.projected_pts : 0
+        };
+        
+        // Calculate fantasy points based on Sleeper API format
+        const fpts = weekStats.fpts || 0;
+        const fptsDecimal = weekStats.fpts_decimal || 0;
+        const totalFpts = fpts + (fptsDecimal / 100);
         
         return {
-          playerId,
-          player,
-          projectedPoints: weekStats.projected_pts || 0,
-          totalPoints: weekStats.pts_ppr || 0
-        };
+          ...player,
+          stats: weekStats,
+          projected_pts: weekStats.projected_pts || 0,
+          pts_ppr: totalFpts,
+          full_name: `${player.first_name} ${player.last_name}`,
+          position: player.position || '',
+          team: player.team || '',
+          player_id: player.player_id || ''
+        } as TradePlayer;
       })
-      .filter((p: TradePlayer | null): p is TradePlayer => p !== null);
+      .filter((p): p is NonNullable<typeof p> => p !== null);
   }, [currentRoster, players, selectedWeek]);
 
   const selectedTeamPlayers = useMemo(() => {
