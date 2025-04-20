@@ -180,21 +180,45 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const fetchPlayerStats = useCallback(async (season: string, week: string) => {
-    if (!season || !week) {
-      console.log('Missing season or week for player stats fetch');
-      return;
-    }
     try {
-      console.log('Fetching player stats for season:', season, 'week:', week);
-      const response = await axios.get(`/api/player-stats?season=${season}&week=${week}`);
-      if (response.data) {
-        setPlayerStats(response.data);
+      // Validate season and week
+      const currentYear = new Date().getFullYear();
+      const seasonNum = parseInt(season);
+      
+      // Don't fetch stats for future seasons
+      if (seasonNum > currentYear) {
+        console.log('Skipping player stats fetch for future season:', season);
+        setPlayerStats({});
+        return;
       }
+
+      // For current season, validate week
+      if (seasonNum === currentYear) {
+        const currentWeek = getCurrentWeek();
+        const weekNum = parseInt(week);
+        if (weekNum > currentWeek) {
+          console.log('Skipping player stats fetch for future week:', week);
+          setPlayerStats({});
+          return;
+        }
+      }
+
+      const response = await axios.get(`/api/player-stats?season=${season}&week=${week}`);
+      setPlayerStats(response.data);
     } catch (error) {
       console.error('Error fetching player stats:', error);
-      // Don't set error state here, just log it
+      setPlayerStats({});
     }
   }, []);
+
+  // Add helper function to get current week
+  const getCurrentWeek = () => {
+    const now = new Date();
+    const startDate = new Date(now.getFullYear(), 8, 1); // September 1st
+    const diffTime = Math.abs(now.getTime() - startDate.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return Math.min(Math.ceil(diffDays / 7), 18); // Max 18 weeks
+  };
 
   const login = async (username: string) => {
     setIsLoading(true);
