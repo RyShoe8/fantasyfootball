@@ -76,11 +76,14 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const fetchUserByUsername = async (username: string) => {
     try {
+      console.log('Fetching user data for username:', username);
       // Try to fetch user by username from Sleeper API
       const response = await axios.get(`https://api.sleeper.app/v1/user/${username}`);
+      console.log('Sleeper API response:', response.data);
       const userData = response.data;
       
       // Save to database
+      console.log('Saving user data to database');
       await saveUserData(userData);
       
       setUser(userData);
@@ -88,6 +91,13 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
       return userData;
     } catch (err) {
       console.error('Error fetching user data:', err);
+      if (axios.isAxiosError(err)) {
+        console.error('Axios error details:', {
+          status: err.response?.status,
+          statusText: err.response?.statusText,
+          data: err.response?.data
+        });
+      }
       throw new Error('User not found. Please check your username and try again.');
     }
   };
@@ -260,6 +270,7 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
       
       // Fetch league data
       const currentSeason = getCurrentSeason();
+      console.log('Fetching leagues for season:', currentSeason);
       setSelectedYearState(currentSeason.toString());
       localStorage.setItem('sleeperSelectedYear', currentSeason.toString());
       
@@ -268,18 +279,27 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
       let leaguesData: SleeperLeague[] = [];
       
       if (dbLeague) {
-        console.log('Using cached league data');
+        console.log('Using cached league data:', dbLeague);
         leaguesData = [dbLeague];
       } else {
         console.log('Fetching fresh league data from API');
         try {
           const leaguesResponse = await axios.get(`https://api.sleeper.app/v1/user/${userData.user_id}/leagues/nfl/${currentSeason}`);
+          console.log('Leagues API response:', leaguesResponse.data);
           leaguesData = leaguesResponse.data;
           
           // Save leagues to database
+          console.log('Saving leagues to database');
           await Promise.all(leaguesData.map(league => saveLeagueData(league)));
         } catch (err) {
           console.error('Error fetching leagues:', err);
+          if (axios.isAxiosError(err)) {
+            console.error('Axios error details:', {
+              status: err.response?.status,
+              statusText: err.response?.statusText,
+              data: err.response?.data
+            });
+          }
           throw new Error('Failed to fetch leagues. Please check your internet connection and try again.');
         }
       }
