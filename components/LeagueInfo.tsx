@@ -161,4 +161,3 @@ const LeagueInfo: React.FC = () => {
 };
 
 export default LeagueInfo; 
-} 
