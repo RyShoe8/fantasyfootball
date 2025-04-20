@@ -278,14 +278,17 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
             const sameNameLeague = leaguesResponse.data.find(
               (l: SleeperLeague) => l.name === currentLeague.name
             );
-            if (sameNameLeague) {
+            if (sameNameLeague && sameNameLeague.league_id !== currentLeague.league_id) {
               await setCurrentLeague(sameNameLeague);
               return;
             }
           }
           
-          // If no matching league found, use the first one
-          await setCurrentLeague(leaguesResponse.data[0]);
+          // If no matching league found or same league, use the first one
+          const newLeague = leaguesResponse.data[0];
+          if (!currentLeague || newLeague.league_id !== currentLeague.league_id) {
+            await setCurrentLeague(newLeague);
+          }
         } else {
           setError('No leagues found for this year');
           setLeagues([]);
@@ -364,10 +367,7 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
             console.log('Leagues response:', leaguesResponse.data);
             
             if (leaguesResponse.data && leaguesResponse.data.length > 0) {
-              const leagueId = leaguesResponse.data[0].league_id;
-              console.log('Selected league ID:', leagueId);
-              
-              // Set leagues and current league
+              // Set leagues first
               setLeagues(leaguesResponse.data);
               
               // Set current league from localStorage if available
@@ -376,32 +376,14 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
                 // Verify the league exists in the fetched leagues
                 const leagueExists = leaguesResponse.data.some((l: SleeperLeague) => l.league_id === parsedLeague.league_id);
                 if (leagueExists) {
-                  setCurrentLeagueState(parsedLeague);
+                  await setCurrentLeague(parsedLeague);
                 } else {
-                  setCurrentLeagueState(leaguesResponse.data[0]);
+                  await setCurrentLeague(leaguesResponse.data[0]);
                 }
               } else {
-                setCurrentLeagueState(leaguesResponse.data[0]);
+                await setCurrentLeague(leaguesResponse.data[0]);
               }
-              
-              // Fetch all data in parallel
-              console.log('Fetching league data...');
-              const [rostersResponse, usersResponse, playersResponse] = await Promise.all([
-                axios.get(`https://api.sleeper.app/v1/league/${leagueId}/rosters`),
-                axios.get(`https://api.sleeper.app/v1/league/${leagueId}/users`),
-                axios.get('https://api.sleeper.app/v1/players/nfl')
-              ]);
-              
-              console.log('Setting rosters...');
-              setRosters(rostersResponse.data);
-              console.log('Setting users...');
-              setUsers(usersResponse.data);
-              console.log('Setting players...');
-              setPlayers(playersResponse.data);
-              
-              console.log('All data loaded successfully');
             } else {
-              console.log('No leagues found');
               setError('No leagues found for this user');
               setLeagues([]);
               setCurrentLeagueState(null);
