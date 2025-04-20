@@ -298,16 +298,27 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
           setCurrentLeagueState(leaguesData[0]);
           localStorage.setItem('sleeperCurrentLeague', JSON.stringify(leaguesData[0]));
           
-          // Fetch additional data with timeout
-          const timeout = 5000; // 5 seconds timeout
+          // Fetch additional data with increased timeout
+          const timeout = 15000; // 15 seconds timeout
           try {
             console.log('Fetching additional data (rosters, users, players)');
+            const fetchPromises = [
+              fetchRosters(leagueId).catch(err => {
+                console.error('Error fetching rosters:', err);
+                return [];
+              }),
+              fetchUsers(leagueId).catch(err => {
+                console.error('Error fetching users:', err);
+                return [];
+              }),
+              fetchPlayers().catch(err => {
+                console.error('Error fetching players:', err);
+                return {};
+              })
+            ];
+
             await Promise.race([
-              Promise.all([
-                fetchRosters(leagueId),
-                fetchUsers(leagueId),
-                fetchPlayers()
-              ]),
+              Promise.all(fetchPromises),
               new Promise((_, reject) => 
                 setTimeout(() => reject(new Error('Request timed out')), timeout)
               )
@@ -316,7 +327,7 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
           } catch (err) {
             console.error('Error fetching additional data:', err);
             // Don't throw here, we still want to show the basic league data
-            setError('Some data could not be loaded. Please refresh the page to try again.');
+            setError('Some data could not be loaded. You can refresh the page to try loading it again.');
           }
         } else {
           console.log('No leagues found for user');
