@@ -132,23 +132,44 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
       try {
         setIsLoading(true);
-        console.log('SleeperProvider mounted, checking for stored user...');
+        setError(null);
+        
+        // Check if we're in a browser environment
+        if (typeof window === 'undefined') {
+          setIsLoading(false);
+          setIsInitialized(true);
+          return;
+        }
+
         const storedUser = localStorage.getItem('sleeperUser');
         
         if (storedUser) {
           try {
             const userData = JSON.parse(storedUser);
+            
+            // Validate user data
+            if (!userData || !userData.user_id) {
+              throw new Error('Invalid user data');
+            }
+            
             setUser(userData);
             
             // Fetch league data
             const leaguesResponse = await axios.get(`https://api.sleeper.app/v1/user/${userData.user_id}/leagues/nfl/2023`);
-            if (leaguesResponse.data.length > 0) {
+            
+            if (leaguesResponse.data && leaguesResponse.data.length > 0) {
               const leagueId = leaguesResponse.data[0].league_id;
-              await Promise.all([
-                fetchRosters(leagueId),
-                fetchUsers(leagueId),
-                fetchPlayers()
+              
+              // Fetch all data in parallel
+              const [rostersResponse, usersResponse, playersResponse] = await Promise.all([
+                axios.get(`https://api.sleeper.app/v1/league/${leagueId}/rosters`),
+                axios.get(`https://api.sleeper.app/v1/league/${leagueId}/users`),
+                axios.get('https://api.sleeper.app/v1/players/nfl')
               ]);
+              
+              setRosters(rostersResponse.data);
+              setUsers(usersResponse.data);
+              setPlayers(playersResponse.data);
             }
           } catch (err) {
             console.error('Error initializing context:', err);

@@ -13,26 +13,31 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const { user, isLoading, error } = useSleeper();
   const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isClient, setIsClient] = useState(false);
+  const [isHydrated, setIsHydrated] = useState(false);
 
   // Check if current page requires authentication
   const requiresAuth = !['/login'].includes(router.pathname);
 
+  // Handle hydration
   useEffect(() => {
-    setIsClient(true);
+    setIsHydrated(true);
   }, []);
 
+  // Handle authentication
   useEffect(() => {
-    if (!isLoading && requiresAuth && !user) {
+    if (isHydrated && !isLoading && requiresAuth && !user) {
       router.push('/login');
     }
-  }, [router.pathname, user, isLoading, requiresAuth]);
+  }, [router.pathname, user, isLoading, requiresAuth, isHydrated]);
 
-  // Show loading spinner while checking auth state or during initial load
-  if (isLoading || !isClient) {
+  // Show loading spinner during initial load or hydration
+  if (!isHydrated || isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
-        <Spinner />
+        <div className="text-center">
+          <Spinner />
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
       </div>
     );
   }
