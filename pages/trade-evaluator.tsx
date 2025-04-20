@@ -14,7 +14,7 @@
  */
 
 /** @jsxImportSource react */
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, ChangeEvent } from 'react';
 import { useSleeper } from '../contexts/SleeperContext';
 import { useRouter } from 'next/router';
 import { SleeperRoster, SleeperPlayer } from '../types/sleeper';
@@ -70,6 +70,7 @@ export default function TradeEvaluator() {
   const [mySide, setMySide] = useState<TradePlayer[]>([]);
   const [theirSide, setTheirSide] = useState<TradePlayer[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedTeamRoster, setSelectedTeamRoster] = useState<SleeperRoster | null>(null);
 
   // Check if we have the necessary data, redirect if not
   useEffect(() => {
@@ -91,63 +92,83 @@ export default function TradeEvaluator() {
 
   const availablePlayers = useMemo(() => {
     if (!currentRoster || !players) return [];
-    const allPlayers = [...currentRoster.starters, ...currentRoster.reserves];
-    return allPlayers.map((playerId: string) => {
-      const player = players[playerId as keyof typeof players] as Player | undefined;
-      return {
-        playerId,
-        player,
-        projectedPoints: player?.stats?.[selectedWeek]?.projected_pts || 0,
-        totalPoints: player?.stats?.[selectedWeek]?.pts_ppr || 0
-      };
-    }).filter((p): p is TradePlayer => p.player !== undefined);
-  }, [currentRoster, players, selectedWeek]);
+    
+    // Get all players from the roster
+    return currentRoster.players
+      .map((playerId: string) => {
+        const player = players[playerId as keyof typeof players] as Player | undefined;
+        if (!player) return null;
 
-  const selectedTeamRoster = useMemo(() => {
-    if (!rosters || !selectedTeam) return null;
-    return rosters.find((r: Roster) => r.roster_id.toString() === selectedTeam);
-  }, [rosters, selectedTeam]);
+        // Get stats for the selected week
+        const weekStats = player.stats?.[selectedWeek] || {};
+        
+        return {
+          playerId,
+          player,
+          projectedPoints: weekStats.projected_pts || 0,
+          totalPoints: weekStats.pts_ppr || 0
+        };
+      })
+      .filter((p: TradePlayer | null): p is TradePlayer => p !== null);
+  }, [currentRoster, players, selectedWeek]);
 
   const selectedTeamPlayers = useMemo(() => {
     if (!selectedTeamRoster || !players) return [];
-    const allPlayers = [...selectedTeamRoster.starters, ...selectedTeamRoster.reserves];
-    return allPlayers.map((playerId: string) => {
-      const player = players[playerId as keyof typeof players] as Player | undefined;
-      return {
-        playerId,
-        player,
-        projectedPoints: player?.stats?.[selectedWeek]?.projected_pts || 0,
-        totalPoints: player?.stats?.[selectedWeek]?.pts_ppr || 0
-      };
-    }).filter((p): p is TradePlayer => p.player !== undefined);
+    
+    // Get all players from the selected team's roster
+    return selectedTeamRoster.players
+      .map((playerId: string) => {
+        const player = players[playerId as keyof typeof players] as Player | undefined;
+        if (!player) return null;
+
+        // Get stats for the selected week
+        const weekStats = player.stats?.[selectedWeek] || {};
+        
+        return {
+          playerId,
+          player,
+          projectedPoints: weekStats.projected_pts || 0,
+          totalPoints: weekStats.pts_ppr || 0
+        };
+      })
+      .filter((p: TradePlayer | null): p is TradePlayer => p !== null);
   }, [selectedTeamRoster, players, selectedWeek]);
 
-  const handleAddToMySide = (player: TradePlayer) => {
-    setMySide([...mySide, player]);
+  const handleAddPlayer = (player: TradePlayer, side: 'my' | 'their') => {
+    if (side === 'my') {
+      setMySide([...mySide, player]);
+    } else {
+      setTheirSide([...theirSide, player]);
+    }
   };
 
-  const handleAddToTheirSide = (player: TradePlayer) => {
-    setTheirSide([...theirSide, player]);
+  const handleRemovePlayer = (player: TradePlayer, side: 'my' | 'their') => {
+    if (side === 'my') {
+      setMySide(mySide.filter((p: TradePlayer) => p.playerId !== player.playerId));
+    } else {
+      setTheirSide(theirSide.filter((p: TradePlayer) => p.playerId !== player.playerId));
+    }
   };
 
-  const handleRemoveFromMySide = (playerId: string) => {
-    setMySide(mySide.filter(p => p.playerId !== playerId));
+  const handleWeekChange = (e: ChangeEvent<HTMLSelectElement>) => {
+    setSelectedWeek(parseInt(e.target.value));
   };
 
-  const handleRemoveFromTheirSide = (playerId: string) => {
-    setTheirSide(theirSide.filter(p => p.playerId !== playerId));
+  const handleTeamChange = (e: ChangeEvent<HTMLSelectElement>) => {
+    const roster = rosters.find((r: SleeperRoster) => r.roster_id === e.target.value);
+    setSelectedTeamRoster(roster || null);
   };
 
   const mySideStats: TradeSide = {
     players: mySide,
-    totalProjectedPoints: mySide.reduce((sum, p) => sum + p.projectedPoints, 0),
-    totalPoints: mySide.reduce((sum, p) => sum + p.totalPoints, 0)
+    totalProjectedPoints: mySide.reduce((sum: number, p: TradePlayer) => sum + p.projectedPoints, 0),
+    totalPoints: mySide.reduce((sum: number, p: TradePlayer) => sum + p.totalPoints, 0)
   };
 
   const theirSideStats: TradeSide = {
     players: theirSide,
-    totalProjectedPoints: theirSide.reduce((sum, p) => sum + p.projectedPoints, 0),
-    totalPoints: theirSide.reduce((sum, p) => sum + p.totalPoints, 0)
+    totalProjectedPoints: theirSide.reduce((sum: number, p: TradePlayer) => sum + p.projectedPoints, 0),
+    totalPoints: theirSide.reduce((sum: number, p: TradePlayer) => sum + p.totalPoints, 0)
   };
 
   // Show loading state if data is not available
@@ -181,7 +202,7 @@ export default function TradeEvaluator() {
               <div key={player.playerId} className="flex justify-between items-center">
                 <span>{player.player.full_name}</span>
                 <button
-                  onClick={() => handleRemoveFromMySide(player.playerId)}
+                  onClick={() => handleRemovePlayer(player, 'my')}
                   className="text-red-500"
                 >
                   Remove
@@ -203,7 +224,7 @@ export default function TradeEvaluator() {
               <div key={player.playerId} className="flex justify-between items-center">
                 <span>{player.player.full_name}</span>
                 <button
-                  onClick={() => handleRemoveFromTheirSide(player.playerId)}
+                  onClick={() => handleRemovePlayer(player, 'their')}
                   className="text-red-500"
                 >
                   Remove
@@ -219,56 +240,54 @@ export default function TradeEvaluator() {
       </div>
 
       {/* Player Selection */}
-      <div className="mt-8">
-        <h2 className="text-xl font-semibold mb-4">Available Players</h2>
-        <select
-          className="w-full p-2 border rounded"
-          value={selectedTeam}
-          onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedTeam(e.target.value)}
-        >
-          <option value="">Select a team</option>
-          {rosters?.map(roster => (
-            <option key={roster.roster_id} value={roster.roster_id.toString()}>
-              {roster.metadata?.team_name || `Team ${roster.roster_id}`}
-            </option>
-          ))}
-        </select>
-
-        <div className="mt-4 grid grid-cols-2 gap-4">
-          {/* My Players */}
-          <div>
-            <h3 className="font-semibold mb-2">My Players</h3>
-            <div className="space-y-2">
-              {availablePlayers.map(player => (
-                <div key={player.playerId} className="flex justify-between items-center">
-                  <span>{player.player.full_name}</span>
-                  <button
-                    onClick={() => handleAddToMySide(player)}
-                    className="text-blue-500"
-                  >
-                    Add
-                  </button>
-                </div>
-              ))}
-            </div>
+      <div className="mt-6 grid grid-cols-2 gap-6">
+        {/* My Players */}
+        <div className="bg-white rounded-lg shadow p-4">
+          <h2 className="text-xl font-semibold mb-4">My Players</h2>
+          <div className="space-y-2">
+            {availablePlayers.map(player => (
+              <div key={player.playerId} className="flex justify-between items-center">
+                <span>{player.player.full_name}</span>
+                <button
+                  onClick={() => handleAddPlayer(player, 'my')}
+                  className="text-blue-500"
+                >
+                  Add
+                </button>
+              </div>
+            ))}
           </div>
+        </div>
 
-          {/* Their Players */}
-          <div>
-            <h3 className="font-semibold mb-2">Their Players</h3>
-            <div className="space-y-2">
-              {selectedTeamPlayers.map(player => (
-                <div key={player.playerId} className="flex justify-between items-center">
-                  <span>{player.player.full_name}</span>
-                  <button
-                    onClick={() => handleAddToTheirSide(player)}
-                    className="text-blue-500"
-                  >
-                    Add
-                  </button>
-                </div>
+        {/* Their Players */}
+        <div className="bg-white rounded-lg shadow p-4">
+          <h2 className="text-xl font-semibold mb-4">Their Players</h2>
+          <select
+            className="w-full mb-4 p-2 border rounded"
+            value={selectedTeam}
+            onChange={handleTeamChange}
+          >
+            <option value="">Select a team</option>
+            {rosters
+              .filter(r => r.owner_id !== user?.user_id)
+              .map(team => (
+                <option key={team.roster_id} value={team.roster_id}>
+                  {team.metadata?.team_name || `Team ${team.roster_id}`}
+                </option>
               ))}
-            </div>
+          </select>
+          <div className="space-y-2">
+            {selectedTeamPlayers.map(player => (
+              <div key={player.playerId} className="flex justify-between items-center">
+                <span>{player.player.full_name}</span>
+                <button
+                  onClick={() => handleAddPlayer(player, 'their')}
+                  className="text-blue-500"
+                >
+                  Add
+                </button>
+              </div>
+            ))}
           </div>
         </div>
       </div>
