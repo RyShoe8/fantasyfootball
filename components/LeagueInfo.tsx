@@ -2,6 +2,17 @@ import React, { ChangeEvent, useState } from 'react';
 import { useSleeper } from '../contexts/SleeperContext';
 import { SleeperLeague } from '../types/sleeper';
 
+// Helper function to format dates
+const formatDate = (timestamp: number): string => {
+  if (!timestamp) return 'Not set';
+  const date = new Date(timestamp);
+  return date.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  });
+};
+
 // Helper function to format roster positions
 const formatRosterPositions = (positions: string[]) => {
   const positionCounts: Record<string, number> = {};
