@@ -40,6 +40,7 @@ interface Player extends SleeperPlayer {
 
 interface RosterPlayer extends Player {
   isStarter: boolean;
+  owner_id: string;
 }
 
 interface TeamStats {
@@ -103,10 +104,11 @@ const Roster: React.FC = () => {
           projected_pts: weekStats.projected_pts || 0,
           pts_ppr: totalFpts,
           isStarter: userRoster.starters?.includes(playerId) || false,
-          full_name: player.full_name || '',
+          full_name: `${player.first_name} ${player.last_name}`,
           position: player.position || '',
           team: player.team || '',
-          player_id: player.player_id || ''
+          player_id: player.player_id || '',
+          owner_id: userRoster.owner_id
         } as RosterPlayer;
       })
       .filter((p): p is NonNullable<typeof p> => p !== null);
