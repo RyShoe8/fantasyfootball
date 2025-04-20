@@ -136,40 +136,58 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
         
         // Check if we're in a browser environment
         if (typeof window === 'undefined') {
+          console.log('Not in browser environment, skipping initialization');
           setIsLoading(false);
           setIsInitialized(true);
           return;
         }
 
+        console.log('Starting initialization...');
         const storedUser = localStorage.getItem('sleeperUser');
+        console.log('Stored user:', storedUser ? 'Found' : 'Not found');
         
         if (storedUser) {
           try {
             const userData = JSON.parse(storedUser);
+            console.log('Parsed user data:', userData);
             
             // Validate user data
             if (!userData || !userData.user_id) {
+              console.error('Invalid user data:', userData);
               throw new Error('Invalid user data');
             }
             
+            console.log('Setting user data...');
             setUser(userData);
             
             // Fetch league data
+            console.log('Fetching leagues...');
             const leaguesResponse = await axios.get(`https://api.sleeper.app/v1/user/${userData.user_id}/leagues/nfl/2023`);
+            console.log('Leagues response:', leaguesResponse.data);
             
             if (leaguesResponse.data && leaguesResponse.data.length > 0) {
               const leagueId = leaguesResponse.data[0].league_id;
+              console.log('Selected league ID:', leagueId);
               
               // Fetch all data in parallel
+              console.log('Fetching league data...');
               const [rostersResponse, usersResponse, playersResponse] = await Promise.all([
                 axios.get(`https://api.sleeper.app/v1/league/${leagueId}/rosters`),
                 axios.get(`https://api.sleeper.app/v1/league/${leagueId}/users`),
                 axios.get('https://api.sleeper.app/v1/players/nfl')
               ]);
               
+              console.log('Setting rosters...');
               setRosters(rostersResponse.data);
+              console.log('Setting users...');
               setUsers(usersResponse.data);
+              console.log('Setting players...');
               setPlayers(playersResponse.data);
+              
+              console.log('All data loaded successfully');
+            } else {
+              console.log('No leagues found');
+              setError('No leagues found for this user');
             }
           } catch (err) {
             console.error('Error initializing context:', err);
@@ -177,11 +195,14 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
             localStorage.removeItem('sleeperUser');
             setUser(null);
           }
+        } else {
+          console.log('No stored user found');
         }
       } catch (err) {
         console.error('Error during initialization:', err);
         setError('Failed to initialize application');
       } finally {
+        console.log('Initialization complete');
         setIsLoading(false);
         setIsInitialized(true);
       }
@@ -189,6 +210,19 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     initializeContext();
   }, [isInitialized]);
+
+  // Add a debug effect to log state changes
+  useEffect(() => {
+    console.log('State updated:', {
+      user: user ? 'Present' : 'Not present',
+      rosters: rosters.length,
+      users: users.length,
+      players: Object.keys(players).length,
+      isLoading,
+      error,
+      isInitialized
+    });
+  }, [user, rosters, users, players, isLoading, error, isInitialized]);
 
   return (
     <SleeperContext.Provider

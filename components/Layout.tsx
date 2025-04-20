@@ -20,18 +20,29 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   // Handle hydration
   useEffect(() => {
+    console.log('Layout: Hydrating...');
     setIsHydrated(true);
   }, []);
 
   // Handle authentication
   useEffect(() => {
+    console.log('Layout: Auth state changed', {
+      isHydrated,
+      isLoading,
+      requiresAuth,
+      hasUser: !!user,
+      path: router.pathname
+    });
+
     if (isHydrated && !isLoading && requiresAuth && !user) {
+      console.log('Layout: Redirecting to login...');
       router.push('/login');
     }
   }, [router.pathname, user, isLoading, requiresAuth, isHydrated]);
 
   // Show loading spinner during initial load or hydration
   if (!isHydrated || isLoading) {
+    console.log('Layout: Showing loading state', { isHydrated, isLoading });
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
         <div className="text-center">
@@ -44,6 +55,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   // Show error state if there's an error
   if (error) {
+    console.log('Layout: Showing error state', { error });
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
         <div className="text-center">
@@ -62,13 +74,20 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   // Show login page if not authenticated and on login page
   if (!user && router.pathname === '/login') {
+    console.log('Layout: Showing login page');
     return <Login />;
   }
 
   // Show nothing while redirecting
   if (!user && requiresAuth) {
+    console.log('Layout: Waiting for redirect');
     return null;
   }
+
+  console.log('Layout: Rendering main layout', {
+    hasUser: !!user,
+    path: router.pathname
+  });
 
   return (
     <div className="min-h-screen bg-gray-100">
