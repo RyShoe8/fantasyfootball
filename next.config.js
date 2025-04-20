@@ -49,7 +49,9 @@ const nextConfig = {
         'gcp-metadata': false,
         snappy: false,
         socks: false,
-        aws4: false
+        aws4: false,
+        // Add empty implementations for browser
+        mongodb: false
       };
     }
     return config;
