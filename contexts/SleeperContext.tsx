@@ -591,86 +591,87 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
   // Add initialization effect
   useEffect(() => {
     const initializeContext = async () => {
-      if (isInitialized) return;
-
       try {
         setIsLoading(true);
         setError(null);
-
-        // Check if we're in a browser environment
-        if (typeof window === 'undefined') {
-          console.log('Not in browser environment, skipping initialization');
-          setIsLoading(false);
-          setIsInitialized(true);
-          setHasInitialized(true);
-          return;
-        }
-
+        
+        // Get user from localStorage
         const storedUser = localStorage.getItem('sleeperUser');
         if (!storedUser) {
           console.log('No stored user found');
           setIsLoading(false);
-          setIsInitialized(true);
-          setHasInitialized(true);
           return;
         }
 
-        try {
-          const userData = JSON.parse(storedUser);
-          if (!userData || !userData.user_id) {
-            throw new Error('Invalid user data');
+        const userData = JSON.parse(storedUser);
+        setUser(userData);
+
+        // Set a timeout for the entire initialization process
+        const initTimeout = setTimeout(() => {
+          if (isLoading) {
+            console.error('Initialization timed out');
+            setError('Initialization timed out. Please try refreshing the page.');
+            setIsLoading(false);
           }
+        }, 10000); // 10 second timeout
 
-          setUser(userData);
-          
-          // Set stored preferences
-          const storedYear = localStorage.getItem('sleeperSelectedYear') || getCurrentSeason().toString();
-          setSelectedYearState(storedYear);
-          
-          const storedWeek = localStorage.getItem('sleeperSelectedWeek') || '1';
-          setSelectedWeekState(storedWeek);
+        // Fetch leagues with timeout
+        const leaguesPromise = axios.get(`https://api.sleeper.app/v1/user/${userData.user_id}/leagues/nfl/${selectedYear}`);
+        const leaguesTimeout = setTimeout(() => {
+          console.error('Leagues fetch timed out');
+          setError('Failed to fetch leagues. Please try refreshing the page.');
+        }, 5000);
 
-          // Fetch leagues with timeout
-          const timeout = 5000;
-          try {
-            const leaguesResponse = await Promise.race([
-              axios.get<SleeperLeague[]>(`https://api.sleeper.app/v1/user/${userData.user_id}/leagues/nfl/${storedYear}`),
-              new Promise((_, reject) => setTimeout(() => reject(new Error('Request timed out')), timeout))
-            ]) as { data: SleeperLeague[] };
+        try {
+          const leaguesResponse = await leaguesPromise;
+          clearTimeout(leaguesTimeout);
+          const leaguesData = leaguesResponse.data;
+          setLeagues(leaguesData);
 
-            if (leaguesResponse.data?.length > 0) {
-              setLeagues(leaguesResponse.data);
-              
-              // Set current league
-              const storedCurrentLeague = localStorage.getItem('sleeperCurrentLeague');
-              if (storedCurrentLeague) {
-                const parsedLeague = JSON.parse(storedCurrentLeague);
-                const leagueExists = leaguesResponse.data.some(l => l.league_id === parsedLeague.league_id);
-                await setCurrentLeague(leagueExists ? parsedLeague : leaguesResponse.data[0]);
-              } else {
-                await setCurrentLeague(leaguesResponse.data[0]);
-              }
-            } else {
-              setError('No leagues found');
-              setLeagues([]);
-              setCurrentLeagueState(null);
+          if (leaguesData.length > 0) {
+            const currentLeagueData = leaguesData[0];
+            setCurrentLeagueState(currentLeagueData);
+
+            // Fetch rosters and users in parallel with timeouts
+            const rostersPromise = fetchRosters(currentLeagueData.league_id);
+            const usersPromise = fetchUsers(currentLeagueData.league_id);
+            const playersPromise = fetchPlayers();
+
+            const rostersTimeout = setTimeout(() => {
+              console.error('Rosters fetch timed out');
+              setError('Failed to fetch rosters. Some data may be incomplete.');
+            }, 5000);
+
+            const usersTimeout = setTimeout(() => {
+              console.error('Users fetch timed out');
+              setError('Failed to fetch users. Some data may be incomplete.');
+            }, 5000);
+
+            try {
+              await Promise.all([
+                rostersPromise,
+                usersPromise,
+                playersPromise
+              ]);
+              clearTimeout(rostersTimeout);
+              clearTimeout(usersTimeout);
+            } catch (error) {
+              console.error('Error fetching data:', error);
+              setError('Some data could not be loaded. Please try refreshing the page.');
             }
-          } catch (error) {
-            console.error('Error fetching leagues:', error);
-            setError('Failed to load leagues. Please refresh to try again.');
           }
         } catch (error) {
-          console.error('Error parsing user data:', error);
-          localStorage.removeItem('sleeperUser');
-          setUser(null);
-          setError('Invalid user data. Please log in again.');
+          console.error('Error fetching leagues:', error);
+          setError('Failed to fetch leagues. Please try refreshing the page.');
         }
-      } catch (error) {
-        console.error('Error during initialization:', error);
-        setError('Failed to initialize application');
-      } finally {
+
+        clearTimeout(initTimeout);
         setIsLoading(false);
-        setIsInitialized(true);
+        setHasInitialized(true);
+      } catch (error) {
+        console.error('Initialization error:', error);
+        setError('An error occurred during initialization. Please try refreshing the page.');
+        setIsLoading(false);
         setHasInitialized(true);
       }
     };

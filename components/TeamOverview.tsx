@@ -22,6 +22,7 @@ interface TeamStats {
     points: number;
   }>;
   players: ExtendedPlayer[];
+  streak: string;
 }
 
 type SortableFields = 'teamName' | 'wins' | 'losses' | 'ties' | 'totalPoints';
@@ -184,6 +185,14 @@ export const TeamOverview: React.FC = () => {
       username: userData?.username
     });
 
+    // Calculate streak
+    const calculateStreak = (roster: SleeperRoster) => {
+      const wins = roster.settings?.wins || 0;
+      const losses = roster.settings?.losses || 0;
+      const streak = wins > losses ? `W${wins}` : losses > wins ? `L${losses}` : 'T1';
+      return streak;
+    };
+
     const stats: TeamStats = {
       teamId: userRoster.roster_id.toString(),
       ownerId: userRoster.owner_id,
@@ -202,7 +211,8 @@ export const TeamOverview: React.FC = () => {
         DEF: { count: 0, points: 0 },
         K: { count: 0, points: 0 }
       },
-      players: []
+      players: [],
+      streak: calculateStreak(userRoster)
     };
 
     userRoster.starters.forEach((playerId: string) => {
