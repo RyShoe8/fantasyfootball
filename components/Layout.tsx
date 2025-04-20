@@ -84,16 +84,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     );
   }
 
-  // Show login page if not authenticated and on login page
-  if (!user && router.pathname === '/login') {
+  // Show login page if not authenticated
+  if (!user) {
     console.log('Layout: Showing login page', { isMobile });
     return <Login />;
-  }
-
-  // Show nothing while redirecting
-  if (!user && requiresAuth) {
-    console.log('Layout: Waiting for redirect', { isMobile });
-    return null;
   }
 
   // Show loading state if we don't have league data yet
