@@ -9,6 +9,10 @@ interface PlayerStats {
   pts_half_ppr?: number;
   pts_std?: number;
   projected_pts?: number;
+  fpts?: number;
+  fpts_decimal?: number;
+  fpts_against?: number;
+  fpts_against_decimal?: number;
   [key: string]: any;
 }
 
@@ -61,11 +65,16 @@ const TeamOverview: React.FC = () => {
         // Get stats for the selected week
         const weekStats = player.stats?.[selectedWeek] || {};
         
+        // Calculate fantasy points based on Sleeper API format
+        const fpts = weekStats.fpts || 0;
+        const fptsDecimal = weekStats.fpts_decimal || 0;
+        const totalFpts = fpts + (fptsDecimal / 100);
+        
         return {
           ...player,
           stats: weekStats,
           projected_pts: weekStats.projected_pts || 0,
-          pts_ppr: weekStats.pts_ppr || 0
+          pts_ppr: totalFpts
         } as Player;
       })
       .filter((p): p is NonNullable<typeof p> => p !== null);
