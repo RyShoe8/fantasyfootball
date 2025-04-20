@@ -162,7 +162,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                   <span className="text-sm text-gray-600">{user?.display_name}</span>
                   {user?.avatar && (
                     <img
-                      src={user.avatar}
+                      src={`https://sleepercdn.com/avatars/${user.avatar}`}
                       alt={user.display_name}
                       className="h-8 w-8 rounded-full"
                     />
@@ -196,7 +196,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 <span className="text-sm text-gray-600">{user?.display_name}</span>
                 {user?.avatar && (
                   <img
-                    src={user.avatar}
+                    src={`https://sleepercdn.com/avatars/${user.avatar}`}
                     alt={user.display_name}
                     className="h-8 w-8 rounded-full"
                   />
