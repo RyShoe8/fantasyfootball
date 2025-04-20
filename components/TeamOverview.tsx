@@ -42,106 +42,83 @@ interface TeamStats {
   players: Player[];
 }
 
-type SortConfig = {
-  key: keyof TeamStats;
-  direction: 'asc' | 'desc';
-};
+type SortableFields = 'teamName' | 'wins' | 'losses' | 'ties' | 'totalPoints';
 
 const TeamOverview: React.FC = () => {
-  const { currentLeague, rosters, players } = useSleeper();
-  const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'wins', direction: 'desc' });
-  const [selectedWeek, setSelectedWeek] = useState<number>(1);
+  const { user, rosters, players } = useSleeper();
+  const [selectedWeek, setSelectedWeek] = useState('0');
+  const [sortField, setSortField] = useState<SortableFields>('totalPoints');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
   const teamStats = useMemo(() => {
-    if (!rosters || !players) return [];
+    if (!user || !rosters) return null;
 
-    return rosters.map((roster: SleeperRoster) => {
-      const rosterPlayers = [...(roster.starters || []), ...(roster.reserves || [])]
-        .map(playerId => {
-          const player = players[playerId as keyof typeof players] as Player | undefined;
-          return player ? {
-            ...player,
-            stats: (player?.stats?.[selectedWeek] || {}) as PlayerStats,
-            projected_pts: player?.stats?.[selectedWeek]?.projected_pts || 0,
-            pts_ppr: player?.stats?.[selectedWeek]?.pts_ppr || 0
-          } : null;
-        })
-        .filter((p): p is NonNullable<typeof p> => p !== null);
+    const userRoster = rosters.find(r => r.owner_id === user.user_id);
+    if (!userRoster) return null;
 
-      const totalPoints = rosterPlayers.reduce((sum, player) => 
-        sum + ((player.pts_ppr as number) || 0), 0);
+    const rosterPlayers = [...(userRoster.starters || []), ...(userRoster.reserves || [])]
+      .map(playerId => {
+        const player = players[playerId as keyof typeof players] as Player | undefined;
+        return player ? {
+          ...player,
+          stats: (player?.stats?.[selectedWeek] || {}) as PlayerStats,
+          projected_pts: player?.stats?.[selectedWeek]?.projected_pts || 0,
+          pts_ppr: player?.stats?.[selectedWeek]?.pts_ppr || 0
+        } : null;
+      })
+      .filter((p): p is NonNullable<typeof p> => p !== null);
 
-      const positionStats = rosterPlayers.reduce((acc, player) => {
-        const pos = player.position;
-        if (!acc[pos]) {
-          acc[pos] = {
-            count: 0,
-            points: 0,
-            projected: 0
-          };
-        }
-        acc[pos].count++;
-        acc[pos].points += ((player.pts_ppr as number) || 0);
-        acc[pos].projected += ((player.projected_pts as number) || 0);
-        return acc;
-      }, {} as Record<string, { count: number; points: number; projected: number }>);
+    const totalPoints = rosterPlayers.reduce((sum, player) => 
+      sum + ((player.pts_ppr as number) || 0), 0);
 
-      return {
-        teamId: roster.roster_id.toString(),
-        ownerId: roster.owner_id,
-        teamName: `Team ${roster.roster_id}`,
-        wins: roster.settings.wins,
-        losses: roster.settings.losses,
-        ties: 0, // Sleeper API doesn't provide ties in settings
-        totalPoints: totalPoints,
-        positionStats,
-        players: rosterPlayers
-      };
-    });
-  }, [rosters, players, selectedWeek]);
-
-  const sortedTeams = useMemo(() => {
-    const sorted = [...teamStats].sort((a, b) => {
-      const aValue = a[sortConfig.key];
-      const bValue = b[sortConfig.key];
-
-      // Handle numeric values
-      if (typeof aValue === 'number' && typeof bValue === 'number') {
-        return sortConfig.direction === 'asc' ? aValue - bValue : bValue - aValue;
+    const positionStats = rosterPlayers.reduce((acc, player) => {
+      const pos = player.position;
+      if (!acc[pos]) {
+        acc[pos] = {
+          count: 0,
+          points: 0,
+          projected: 0
+        };
       }
+      acc[pos].count++;
+      acc[pos].points += ((player.pts_ppr as number) || 0);
+      acc[pos].projected += ((player.projected_pts as number) || 0);
+      return acc;
+    }, {} as Record<string, { count: number; points: number; projected: number }>);
 
-      // Handle string values
-      if (typeof aValue === 'string' && typeof bValue === 'string') {
-        return sortConfig.direction === 'asc' 
-          ? aValue.localeCompare(bValue)
-          : bValue.localeCompare(aValue);
-      }
+    return {
+      teamId: userRoster.roster_id.toString(),
+      ownerId: userRoster.owner_id,
+      teamName: userRoster.metadata?.team_name || `Team ${userRoster.roster_id}`,
+      wins: 0, // These would come from actual league data
+      losses: 0,
+      ties: 0,
+      totalPoints,
+      positionStats,
+      players: rosterPlayers
+    } as TeamStats;
+  }, [user, rosters, players, selectedWeek]);
 
-      // Fallback for other types
-      if (aValue < bValue) {
-        return sortConfig.direction === 'asc' ? -1 : 1;
-      }
-      if (aValue > bValue) {
-        return sortConfig.direction === 'asc' ? 1 : -1;
-      }
-      return 0;
-    });
-    return sorted;
-  }, [teamStats, sortConfig]);
+  if (!teamStats) {
+    return <div>Loading...</div>;
+  }
 
-  const handleSort = (key: keyof TeamStats) => {
-    setSortConfig((current: SortConfig) => ({
-      key,
-      direction: current.key === key && current.direction === 'asc' ? 'desc' : 'asc'
-    }));
+  const handleSort = (field: SortableFields) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('desc');
+    }
   };
 
-  if (!currentLeague) return null;
-
-  const weeks = Array.from(
-    { length: currentLeague.settings.playoff_week_start - currentLeague.settings.start_week + 1 },
-    (_, i) => i + currentLeague.settings.start_week
-  );
+  const sortedTeams = [teamStats].sort((a, b) => {
+    const aValue = a[sortField];
+    const bValue = b[sortField];
+    return sortDirection === 'asc' ? 
+      (aValue < bValue ? -1 : 1) : 
+      (aValue > bValue ? -1 : 1);
+  });
 
   return (
     <div className="bg-white shadow rounded-lg p-6">
@@ -150,10 +127,12 @@ const TeamOverview: React.FC = () => {
         <select
           className="mt-1 block w-32 pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
           value={selectedWeek}
-          onChange={(e: ChangeEvent<HTMLSelectElement>) => setSelectedWeek(Number(e.target.value))}
+          onChange={(e) => setSelectedWeek(e.target.value)}
         >
-          {weeks.map(week => (
-            <option key={week} value={week}>Week {week}</option>
+          {Array.from({ length: 18 }, (_, i) => (
+            <option key={i} value={i.toString()}>
+              Week {i}
+            </option>
           ))}
         </select>
       </div>
@@ -188,7 +167,7 @@ const TeamOverview: React.FC = () => {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {sortedTeams.map((team) => (
+            {sortedTeams.map((team: TeamStats) => (
               <tr key={team.teamId}>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                   {team.teamName}
