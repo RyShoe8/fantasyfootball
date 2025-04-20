@@ -105,16 +105,15 @@ export default function Home() {
   console.log('Home - players:', players ? Object.keys(players).length : 0, 'players loaded');
 
   return (
-    <div className="space-y-6">
+    <div className="container mx-auto px-4 py-8 space-y-6">
       {/* League Info */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <LeagueInfo />
       </div>
 
-      {/* Team Overview */}
+      {/* Team Overview and Trade Evaluator */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-semibold mb-4">Team Overview</h2>
           <TeamOverview />
         </div>
 
