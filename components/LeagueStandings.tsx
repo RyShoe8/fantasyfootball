@@ -40,9 +40,19 @@ const LeagueStandings: React.FC = () => {
     const leagueRosters = rosters.filter((r: SleeperRoster) => r.league_id === currentLeague.league_id);
     console.log('League rosters:', leagueRosters);
     
+    if (leagueRosters.length === 0) {
+      console.log('No rosters found for league:', currentLeague.league_id);
+      return [];
+    }
+
     // Calculate standings for each team
     const teamStandings: TeamStanding[] = leagueRosters.map((roster: SleeperRoster) => {
-      console.log('Processing roster:', roster);
+      console.log('Processing roster:', {
+        rosterId: roster.roster_id,
+        ownerId: roster.owner_id,
+        metadata: roster.metadata,
+        settings: roster.settings
+      });
       
       // Calculate streak (this would come from actual league data in a real app)
       const streak = roster.settings.wins > roster.settings.losses 
@@ -54,6 +64,18 @@ const LeagueStandings: React.FC = () => {
       const teamName = roster.metadata?.team_name || `Team ${roster.roster_id}`;
       console.log('Team name resolved:', { rosterId: roster.roster_id, teamName });
 
+      const totalPoints = (roster.settings.fpts || 0) + (roster.settings.fpts_decimal || 0);
+      const pointsAgainst = (roster.settings.fpts_against || 0) + (roster.settings.fpts_against_decimal || 0);
+
+      console.log('Team stats calculated:', {
+        rosterId: roster.roster_id,
+        wins: roster.settings.wins || 0,
+        losses: roster.settings.losses || 0,
+        totalPoints,
+        pointsAgainst,
+        streak
+      });
+
       return {
         teamId: roster.roster_id,
         ownerId: roster.owner_id,
@@ -61,8 +83,8 @@ const LeagueStandings: React.FC = () => {
         wins: roster.settings.wins || 0,
         losses: roster.settings.losses || 0,
         ties: 0, // This would come from actual league data if available
-        totalPoints: (roster.settings.fpts || 0) + (roster.settings.fpts_decimal || 0),
-        pointsAgainst: (roster.settings.fpts_against || 0) + (roster.settings.fpts_against_decimal || 0),
+        totalPoints,
+        pointsAgainst,
         streak
       };
     });
@@ -70,16 +92,26 @@ const LeagueStandings: React.FC = () => {
     console.log('Calculated standings:', teamStandings);
 
     // Sort standings by wins, then by total points
-    return teamStandings.sort((a, b) => {
+    const sortedStandings = teamStandings.sort((a, b) => {
       if (a.wins !== b.wins) return b.wins - a.wins;
       if (a.losses !== b.losses) return a.losses - b.losses;
       return b.totalPoints - a.totalPoints;
     });
+
+    console.log('Sorted standings:', sortedStandings);
+    return sortedStandings;
   }, [rosters, currentLeague]);
 
   if (!currentLeague) {
     return <div>Loading...</div>;
   }
+
+  console.log('Rendering standings with:', {
+    leagueName: currentLeague.name,
+    leagueStatus: currentLeague.status,
+    formattedStatus: formatStatus(currentLeague.status),
+    standingsCount: standings.length
+  });
 
   return (
     <div className="bg-white shadow rounded-lg p-6">
