@@ -42,13 +42,16 @@ const TeamOverview: React.FC = () => {
 
     return rosters.map((roster: SleeperRoster) => {
       const rosterPlayers = [...(roster.starters || []), ...(roster.reserves || [])]
-        .map(playerId => ({
-          ...players[playerId],
-          stats: players[playerId]?.stats?.[selectedWeek] || {} as PlayerStats
-        }));
+        .map(playerId => {
+          const player = players[playerId];
+          return {
+            ...player,
+            stats: (player?.stats?.[selectedWeek] || {}) as PlayerStats
+          };
+        });
 
       const totalPoints = rosterPlayers.reduce((sum, player) => 
-        sum + (player.stats?.points || 0), 0);
+        sum + ((player.stats?.points as number) || 0), 0);
 
       const positionStats = rosterPlayers.reduce((acc, player) => {
         const pos = player.position;
@@ -60,8 +63,8 @@ const TeamOverview: React.FC = () => {
           };
         }
         acc[pos].count++;
-        acc[pos].points += player.stats?.points || 0;
-        acc[pos].projected += player.stats?.projected || 0;
+        acc[pos].points += ((player.stats?.points as number) || 0);
+        acc[pos].projected += ((player.stats?.projected as number) || 0);
         return acc;
       }, {} as Record<string, { count: number; points: number; projected: number }>);
 
