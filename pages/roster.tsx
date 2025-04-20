@@ -156,18 +156,28 @@ const Roster: React.FC = () => {
 
     // Calculate position ranks
     const playersByPosition = rosterPlayers.reduce((acc, player) => {
-      if (!acc[player.position]) {
-        acc[player.position] = [];
+      // Normalize position for IDP players
+      const normalizedPosition = player.position === 'LB' ? 'IDP' : player.position;
+      if (!acc[normalizedPosition]) {
+        acc[normalizedPosition] = [];
       }
-      acc[player.position].push(player);
+      acc[normalizedPosition].push(player);
       return acc;
     }, {} as Record<string, RosterPlayer[]>);
 
+    // Calculate position ranks
     Object.values(playersByPosition).forEach(positionPlayers => {
       positionPlayers.sort((a, b) => (b.pts_ppr || 0) - (a.pts_ppr || 0));
       positionPlayers.forEach((player, index) => {
         player.position_rank = index + 1;
       });
+    });
+
+    // Calculate overall ranks across all players
+    const allPlayers = [...rosterPlayers];
+    allPlayers.sort((a, b) => (b.pts_ppr || 0) - (a.pts_ppr || 0));
+    allPlayers.forEach((player, index) => {
+      player.overall_rank = index + 1;
     });
 
     // Sort players by roster slot (starters first, then bench, then others)
@@ -274,57 +284,42 @@ const Roster: React.FC = () => {
 
   const getPlayerStats = (playerId: string) => {
     const stats = playerStats[playerId];
-    if (!stats) return <div className="text-sm text-gray-500">Loading stats...</div>;
+    if (!stats) return 'Loading stats...';
 
     const position = players[playerId]?.position;
-    if (!position) return <div className="text-sm text-gray-500">Position not found</div>;
+    if (!position) return 'Position not found';
 
     try {
       switch (position) {
         case 'QB':
-          return {
-            passing: `${stats.passing_yards || 0} yds, ${stats.passing_tds || 0} TD, ${stats.passing_ints || 0} INT`,
-            rushing: `${stats.rushing_yards || 0} yds, ${stats.rushing_tds || 0} TD`
-          };
+          return `Passing: ${stats.passing_yards || 0} yds, ${stats.passing_tds || 0} TD, ${stats.passing_ints || 0} INT\nRushing: ${stats.rushing_yards || 0} yds, ${stats.rushing_tds || 0} TD`;
         case 'RB':
-          return {
-            rushing: `${stats.rushing_yards || 0} yds, ${stats.rushing_tds || 0} TD`,
-            receiving: `${stats.receiving_yards || 0} yds, ${stats.receiving_tds || 0} TD, ${stats.receptions || 0} rec`
-          };
+          return `Rushing: ${stats.rushing_yards || 0} yds, ${stats.rushing_tds || 0} TD\nReceiving: ${stats.receiving_yards || 0} yds, ${stats.receiving_tds || 0} TD, ${stats.receptions || 0} rec`;
         case 'WR':
         case 'TE':
-          return {
-            receiving: `${stats.receiving_yards || 0} yds, ${stats.receiving_tds || 0} TD, ${stats.receptions || 0} rec`,
-            targets: `${stats.receiving_targets || 0} targets`
-          };
+          return `Receiving: ${stats.receiving_yards || 0} yds, ${stats.receiving_tds || 0} TD, ${stats.receptions || 0} rec\nTargets: ${stats.receiving_targets || 0}`;
         case 'K':
-          return {
-            kicking: `${stats.fg_made || 0}/${stats.fg_attempts || 0} FG, ${stats.xp_made || 0}/${stats.xp_attempts || 0} XP`
-          };
+          return `Kicking: ${stats.fg_made || 0}/${stats.fg_attempts || 0} FG, ${stats.xp_made || 0}/${stats.xp_attempts || 0} XP`;
         case 'DEF':
-          return {
-            defense: `${stats.sacks || 0} sacks, ${stats.interceptions || 0} INT, ${stats.fumbles_recovered || 0} FR`
-          };
+          return `Defense: ${stats.sacks || 0} sacks, ${stats.interceptions || 0} INT, ${stats.fumbles_recovered || 0} FR`;
+        case 'LB':
+        case 'DB':
+        case 'DL':
+          return `Tackles: ${stats.tackles || 0}, Sacks: ${stats.sacks || 0}, INT: ${stats.interceptions || 0}, FF: ${stats.fumbles_forced || 0}, FR: ${stats.fumbles_recovered || 0}`;
         default:
-          return <div className="text-sm text-gray-500">No stats available</div>;
+          return 'No stats available';
       }
     } catch (error) {
       console.error('Error formatting player stats:', error);
-      return <div className="text-sm text-gray-500">Error loading stats</div>;
+      return 'Error loading stats';
     }
   };
 
   const renderPlayerStats = (playerId: string) => {
     const stats = getPlayerStats(playerId);
-    if (!stats) return <div className="text-sm text-gray-500">No stats available</div>;
-
     return (
-      <div className="text-sm text-gray-600">
-        {Object.entries(stats).map(([key, value]) => (
-          <div key={key} className="capitalize">
-            {key}: {value}
-          </div>
-        ))}
+      <div className="text-sm text-gray-600 whitespace-pre-line">
+        {stats}
       </div>
     );
   };
