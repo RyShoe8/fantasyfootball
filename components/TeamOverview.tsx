@@ -1,7 +1,6 @@
 import React, { useState, useMemo, ChangeEvent, useEffect } from 'react';
 import { useSleeper } from '../contexts/SleeperContext';
 import { SleeperRoster, SleeperPlayer } from '../types/sleeper';
-import LeagueStandings from './LeagueStandings';
 
 interface PlayerStats {
   pts_ppr?: number;
@@ -570,8 +569,6 @@ export const TeamOverview: React.FC = () => {
           </div>
         )}
       </div>
-
-      <LeagueStandings />
     </div>
   );
 };
