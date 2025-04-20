@@ -201,6 +201,30 @@ export const LeagueInfo: React.FC = () => {
           </div>
         </div>
       )}
+
+      {currentLeague && (
+        <div className="mt-4">
+          <h3 className="text-sm font-medium text-gray-500 mb-2">Roster Positions</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div>
+              <h4 className="text-sm font-medium text-gray-500">Starting Positions</h4>
+              <p className="mt-1">{formatRosterPositions(currentLeague.roster_positions).positions}</p>
+            </div>
+            <div>
+              <h4 className="text-sm font-medium text-gray-500">Bench Slots</h4>
+              <p className="mt-1">{formatRosterPositions(currentLeague.roster_positions).benchSlots}</p>
+            </div>
+            <div>
+              <h4 className="text-sm font-medium text-gray-500">IR Slots</h4>
+              <p className="mt-1">{formatRosterPositions(currentLeague.roster_positions).irSlots}</p>
+            </div>
+            <div>
+              <h4 className="text-sm font-medium text-gray-500">Taxi Slots</h4>
+              <p className="mt-1">{formatRosterPositions(currentLeague.roster_positions).taxiSlots}</p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
