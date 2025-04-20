@@ -237,30 +237,6 @@ export default function TradeEvaluator() {
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold mb-6">Trade Evaluator</h1>
       
-      {/* Team Selection */}
-      <div className="bg-white rounded-lg shadow p-4 mb-6">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Select Team to Trade With</label>
-          <select
-            className="w-full p-2 border rounded"
-            value={selectedTeam}
-            onChange={handleTeamChange}
-          >
-            <option value="">Select a team</option>
-            {rosters
-              .filter((r: SleeperRoster) => r.owner_id !== user?.user_id)
-              .map((team: SleeperRoster) => {
-                const teamUser = users?.find(u => u.user_id === team.owner_id);
-                return (
-                  <option key={team.roster_id} value={team.roster_id}>
-                    {teamUser?.metadata?.team_name || teamUser?.display_name || teamUser?.username || `Team ${team.roster_id}`}
-                  </option>
-                );
-              })}
-          </select>
-        </div>
-      </div>
-
       {/* Trade Overview */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         {/* My Side */}
@@ -269,9 +245,9 @@ export default function TradeEvaluator() {
             My Side {currentRoster && (
               <span className="text-gray-600">
                 - {currentRoster.metadata?.team_name || 
+                  users?.find(u => u.user_id === currentRoster.owner_id)?.metadata?.team_name || 
                   users?.find(u => u.user_id === currentRoster.owner_id)?.display_name || 
-                  users?.find(u => u.user_id === currentRoster.owner_id)?.username || 
-                  `Team ${currentRoster.roster_id}`})
+                  `Team ${currentRoster.roster_id}`}
               </span>
             )}
           </h2>
@@ -317,8 +293,32 @@ export default function TradeEvaluator() {
 
         {/* Their Side */}
         <div className="bg-white rounded-lg shadow p-4">
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Select Team to Trade With</label>
+            <select
+              className="w-full p-2 border rounded"
+              value={selectedTeam}
+              onChange={handleTeamChange}
+            >
+              <option value="">Select a team</option>
+              {rosters
+                .filter((r: SleeperRoster) => r.owner_id !== user?.user_id)
+                .map((team: SleeperRoster) => {
+                  const teamUser = users?.find(u => u.user_id === team.owner_id);
+                  return (
+                    <option key={team.roster_id} value={team.roster_id}>
+                      {teamUser?.metadata?.team_name || teamUser?.display_name || teamUser?.username || `Team ${team.roster_id}`}
+                    </option>
+                  );
+                })}
+            </select>
+          </div>
+
           <h2 className="text-xl font-semibold mb-4">
-            Their Side {selectedTeamRoster && `- ${selectedTeamRoster.metadata?.team_name || `Team ${selectedTeamRoster.roster_id}`}`}
+            Their Side {selectedTeamRoster && `- ${selectedTeamRoster.metadata?.team_name || 
+              users?.find(u => u.user_id === selectedTeamRoster.owner_id)?.metadata?.team_name || 
+              users?.find(u => u.user_id === selectedTeamRoster.owner_id)?.display_name || 
+              `Team ${selectedTeamRoster.roster_id}`}`}
           </h2>
           <div className="space-y-4">
             <div>
