@@ -75,7 +75,6 @@ export default function Home() {
     setPlayers
   } = useSleeper();
   const router = useRouter();
-  const [showDebug, setShowDebug] = useState(false);
   const [apiResponse, setApiResponse] = useState<any>(null);
   const [apiResponseType, setApiResponseType] = useState<string>('');
   
@@ -189,139 +188,129 @@ export default function Home() {
       <div className="bg-white shadow rounded-lg p-6">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-2xl font-bold text-gray-900">API Debug</h2>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <button
-            onClick={() => setShowDebug(!showDebug)}
-            className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600"
+            onClick={async () => {
+              if (!currentLeague?.league_id) {
+                console.error('No league selected');
+                return;
+              }
+              try {
+                const response = await fetch(`https://api.sleeper.app/v1/league/${currentLeague.league_id}/rosters`);
+                const data = await response.json();
+                console.log('Rosters API Response:', data);
+                setApiResponse(data);
+                setApiResponseType('rosters');
+                // Update the rosters in the context
+                const formattedRosters = data.map((roster: any) => ({
+                  roster_id: roster.roster_id,
+                  owner_id: roster.owner_id,
+                  team_name: roster.metadata?.team_name || `Team ${roster.roster_id}`,
+                  starters: roster.starters || [],
+                  reserves: roster.reserve || [],
+                  taxi: roster.taxi || [],
+                  ir: roster.ir || [],
+                  players: roster.players || [],
+                  settings: roster.settings || {}
+                }));
+                console.log('Formatted Rosters:', formattedRosters);
+                // Update the context
+                setRosters(formattedRosters);
+              } catch (err) {
+                console.error('Error fetching rosters:', err);
+              }
+            }}
+            className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
           >
-            {showDebug ? 'Hide Debug Data' : 'Show Debug Data'}
+            Fetch Rosters
+          </button>
+          <button
+            onClick={async () => {
+              if (!currentLeague?.league_id) {
+                console.error('No league selected');
+                return;
+              }
+              try {
+                const response = await fetch(`https://api.sleeper.app/v1/league/${currentLeague.league_id}/users`);
+                const data = await response.json();
+                console.log('Users API Response:', data);
+                setApiResponse(data);
+                setApiResponseType('users');
+                // Update the users in the context
+                const formattedUsers = data.map((user: any) => ({
+                  user_id: user.user_id,
+                  username: user.username,
+                  display_name: user.display_name,
+                  avatar: user.avatar,
+                  metadata: user.metadata || {},
+                  is_owner: user.is_owner || false
+                }));
+                console.log('Formatted Users:', formattedUsers);
+                // Update the context
+                setUsers(formattedUsers);
+              } catch (err) {
+                console.error('Error fetching users:', err);
+              }
+            }}
+            className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600"
+          >
+            Fetch Users
+          </button>
+          <button
+            onClick={async () => {
+              try {
+                const response = await fetch('https://api.sleeper.app/v1/players/nfl');
+                const data = await response.json();
+                console.log('Players API Response:', data);
+                setApiResponse(data);
+                setApiResponseType('players');
+                // Update the players in the context
+                console.log('Total Players:', Object.keys(data).length);
+                // Update the context
+                setPlayers(data);
+              } catch (err) {
+                console.error('Error fetching players:', err);
+              }
+            }}
+            className="px-4 py-2 bg-purple-500 text-white rounded-md hover:bg-purple-600"
+          >
+            Fetch Players
+          </button>
+          <button
+            onClick={async () => {
+              if (!currentLeague?.league_id) {
+                console.error('No league selected');
+                return;
+              }
+              try {
+                const response = await fetch(`https://api.sleeper.app/v1/league/${currentLeague.league_id}`);
+                const data = await response.json();
+                console.log('League API Response:', data);
+                setApiResponse(data);
+                setApiResponseType('league');
+                // Update the league in the context
+                console.log('League Settings:', data.settings);
+                // Update the context
+                setCurrentLeague(data);
+              } catch (err) {
+                console.error('Error fetching league:', err);
+              }
+            }}
+            className="px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600"
+          >
+            Fetch League
           </button>
         </div>
 
-        {showDebug && (
-          <>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-              <button
-                onClick={async () => {
-                  if (!currentLeague?.league_id) {
-                    console.error('No league selected');
-                    return;
-                  }
-                  try {
-                    const response = await fetch(`https://api.sleeper.app/v1/league/${currentLeague.league_id}/rosters`);
-                    const data = await response.json();
-                    console.log('Rosters API Response:', data);
-                    setApiResponse(data);
-                    setApiResponseType('rosters');
-                    // Update the rosters in the context
-                    const formattedRosters = data.map((roster: any) => ({
-                      roster_id: roster.roster_id,
-                      owner_id: roster.owner_id,
-                      team_name: roster.metadata?.team_name || `Team ${roster.roster_id}`,
-                      starters: roster.starters || [],
-                      reserves: roster.reserve || [],
-                      taxi: roster.taxi || [],
-                      ir: roster.ir || [],
-                      players: roster.players || [],
-                      settings: roster.settings || {}
-                    }));
-                    console.log('Formatted Rosters:', formattedRosters);
-                    // Update the context
-                    setRosters(formattedRosters);
-                  } catch (err) {
-                    console.error('Error fetching rosters:', err);
-                  }
-                }}
-                className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-              >
-                Fetch Rosters
-              </button>
-              <button
-                onClick={async () => {
-                  if (!currentLeague?.league_id) {
-                    console.error('No league selected');
-                    return;
-                  }
-                  try {
-                    const response = await fetch(`https://api.sleeper.app/v1/league/${currentLeague.league_id}/users`);
-                    const data = await response.json();
-                    console.log('Users API Response:', data);
-                    setApiResponse(data);
-                    setApiResponseType('users');
-                    // Update the users in the context
-                    const formattedUsers = data.map((user: any) => ({
-                      user_id: user.user_id,
-                      username: user.username,
-                      display_name: user.display_name,
-                      avatar: user.avatar,
-                      metadata: user.metadata || {},
-                      is_owner: user.is_owner || false
-                    }));
-                    console.log('Formatted Users:', formattedUsers);
-                    // Update the context
-                    setUsers(formattedUsers);
-                  } catch (err) {
-                    console.error('Error fetching users:', err);
-                  }
-                }}
-                className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600"
-              >
-                Fetch Users
-              </button>
-              <button
-                onClick={async () => {
-                  try {
-                    const response = await fetch('https://api.sleeper.app/v1/players/nfl');
-                    const data = await response.json();
-                    console.log('Players API Response:', data);
-                    setApiResponse(data);
-                    setApiResponseType('players');
-                    // Update the players in the context
-                    console.log('Total Players:', Object.keys(data).length);
-                    // Update the context
-                    setPlayers(data);
-                  } catch (err) {
-                    console.error('Error fetching players:', err);
-                  }
-                }}
-                className="px-4 py-2 bg-purple-500 text-white rounded-md hover:bg-purple-600"
-              >
-                Fetch Players
-              </button>
-              <button
-                onClick={async () => {
-                  if (!currentLeague?.league_id) {
-                    console.error('No league selected');
-                    return;
-                  }
-                  try {
-                    const response = await fetch(`https://api.sleeper.app/v1/league/${currentLeague.league_id}`);
-                    const data = await response.json();
-                    console.log('League API Response:', data);
-                    setApiResponse(data);
-                    setApiResponseType('league');
-                    // Update the league in the context
-                    console.log('League Settings:', data.settings);
-                    // Update the context
-                    setCurrentLeague(data);
-                  } catch (err) {
-                    console.error('Error fetching league:', err);
-                  }
-                }}
-                className="px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600"
-              >
-                Fetch League
-              </button>
+        {apiResponse && (
+          <div className="mt-6">
+            <h3 className="text-xl font-semibold mb-2">API Response ({apiResponseType})</h3>
+            <div className="bg-gray-100 p-4 rounded-md overflow-auto max-h-96">
+              <pre className="text-sm">{formatJSON(apiResponse)}</pre>
             </div>
-
-            {apiResponse && (
-              <div className="mt-6">
-                <h3 className="text-xl font-semibold mb-2">API Response ({apiResponseType})</h3>
-                <div className="bg-gray-100 p-4 rounded-md overflow-auto max-h-96">
-                  <pre className="text-sm">{formatJSON(apiResponse)}</pre>
-                </div>
-              </div>
-            )}
-          </>
+          </div>
         )}
       </div>
     </div>
