@@ -1,6 +1,7 @@
 import React, { ChangeEvent } from 'react';
 import { useSleeper } from '../contexts/SleeperContext';
 import { SleeperLeague } from '../types/sleeper';
+import axios from 'axios';
 
 // Helper function to format dates
 const formatDate = (timestamp: number): string => {
@@ -83,12 +84,25 @@ const getSeasonNumber = (season: string, leagues: SleeperLeague[]) => {
 };
 
 const LeagueInfo: React.FC = () => {
-  const { currentLeague, leagues, setCurrentLeague } = useSleeper();
+  const { currentLeague, leagues, setCurrentLeague, setRosters, setUsers } = useSleeper();
 
-  const handleLeagueChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleLeagueChange = async (event: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedLeague = leagues.find(league => league.league_id === event.target.value);
     if (selectedLeague) {
       setCurrentLeague(selectedLeague);
+      
+      // Fetch new league data
+      try {
+        const [rostersResponse, usersResponse] = await Promise.all([
+          axios.get(`https://api.sleeper.app/v1/league/${selectedLeague.league_id}/rosters`),
+          axios.get(`https://api.sleeper.app/v1/league/${selectedLeague.league_id}/users`)
+        ]);
+        
+        setRosters(rostersResponse.data);
+        setUsers(usersResponse.data);
+      } catch (err) {
+        console.error('Error fetching league data:', err);
+      }
     }
   };
 
@@ -102,7 +116,7 @@ const LeagueInfo: React.FC = () => {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col space-y-2">
+      <div className="flex flex-col items-center space-y-2">
         <label htmlFor="league-select" className="text-sm font-medium text-gray-700">
           Select League
         </label>
@@ -110,7 +124,7 @@ const LeagueInfo: React.FC = () => {
           id="league-select"
           value={currentLeague.league_id}
           onChange={handleLeagueChange}
-          className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+          className="mt-1 block w-64 pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
         >
           {leagues.map((league: SleeperLeague) => (
             <option key={league.league_id} value={league.league_id}>
