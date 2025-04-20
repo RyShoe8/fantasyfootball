@@ -145,11 +145,11 @@ export default function LeagueInfo() {
             </div>
             <div>
               <p className="text-gray-600">Roster Positions</p>
-              <p className="font-medium">{formatRosterPositions(currentLeague.roster_positions)}</p>
+              <p className="font-medium">{formatRosterPositions(currentLeague.roster_positions).positions}</p>
             </div>
             <div>
               <p className="text-gray-600">Bench Slots</p>
-              <p className="font-medium">{countBenchSlots(currentLeague.roster_positions)}</p>
+              <p className="font-medium">{formatRosterPositions(currentLeague.roster_positions).benchSlots}</p>
             </div>
           </div>
         </div>
