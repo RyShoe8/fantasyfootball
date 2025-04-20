@@ -39,9 +39,6 @@ export default function Home() {
 
   return (
     <div className="space-y-6">
-      {/* League Information Component */}
-      {currentLeague && <LeagueInfo />}
-      
       {/* Dashboard Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {/* Team Overview Card */}
@@ -119,6 +116,9 @@ export default function Home() {
           )}
         </div>
       </div>
+
+      {/* League Information Component */}
+      {currentLeague && <LeagueInfo />}
     </div>
   );
 }
