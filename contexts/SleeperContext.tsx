@@ -707,10 +707,21 @@ export function SleeperProvider({ children }: { children: React.ReactNode }) {
       }
     };
 
+    // Set a timeout for initialization
+    const initTimeout = setTimeout(() => {
+      if (mounted) {
+        console.error('Initialization timed out');
+        setError('Initialization timed out. Please try refreshing the page.');
+        setHasInitialized(true);
+        setIsLoading(false);
+      }
+    }, 10000); // 10 second timeout
+
     initializeContext();
 
     return () => {
       mounted = false;
+      clearTimeout(initTimeout);
     };
   }, []);
 
