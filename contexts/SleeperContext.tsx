@@ -37,6 +37,11 @@ interface SleeperContextType {
 const SleeperContext = createContext<SleeperContextType | undefined>(undefined);
 
 export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  // Get current season
+  const getCurrentSeason = () => {
+    return 2025;
+  };
+
   const [user, setUser] = useState<SleeperUser | null>(null);
   const [users, setUsers] = useState<SleeperUser[]>([]);
   const [leagues, setLeagues] = useState<SleeperLeague[]>([]);
@@ -49,11 +54,6 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
-
-  // Get current season
-  const getCurrentSeason = () => {
-    return 2025;
-  };
 
   const fetchUserData = async (userId: string) => {
     try {
