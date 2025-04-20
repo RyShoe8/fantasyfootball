@@ -1,4 +1,4 @@
-import React, { ChangeEvent, useState } from 'react';
+import React, { ChangeEvent, useState, useMemo } from 'react';
 import { useSleeper } from '../contexts/SleeperContext';
 import { SleeperLeague } from '../types/sleeper';
 import axios from 'axios';
@@ -120,14 +120,14 @@ export const LeagueInfo: React.FC = () => {
         if (leaguesResponse.data.length > 0) {
           setLeagues(leaguesResponse.data);
           
-          // Try to find a league with the same name in the new year's leagues
+          // Try to find a league with the same ID in the new year's leagues
           let newLeague = leaguesResponse.data[0];
           if (currentLeague) {
-            const sameNameLeague = leaguesResponse.data.find(
-              (l: SleeperLeague) => l.name === currentLeague.name
+            const sameIdLeague = leaguesResponse.data.find(
+              (l: SleeperLeague) => l.league_id === currentLeague.league_id
             );
-            if (sameNameLeague) {
-              newLeague = sameNameLeague;
+            if (sameIdLeague) {
+              newLeague = sameIdLeague;
             }
           }
           
@@ -151,8 +151,7 @@ export const LeagueInfo: React.FC = () => {
           console.log('No leagues found for year:', year);
           setError('No leagues found for this year');
           setLeagues([]);
-          // Clear current league by setting it to the first league (which will be undefined since leagues is empty)
-          setCurrentLeague(leagues[0]);
+          setCurrentLeague(null);
           setRosters([]);
           setUsers([]);
           setPlayers({});
@@ -165,6 +164,16 @@ export const LeagueInfo: React.FC = () => {
       setIsLoading(false);
     }
   };
+
+  const years = useMemo(() => {
+    const currentYear = new Date().getFullYear();
+    const years = [];
+    // Start from 2023 (your first year) and go up to current year + 1
+    for (let year = 2023; year <= currentYear + 1; year++) {
+      years.push(year.toString());
+    }
+    return years;
+  }, []);
 
   if (contextLoading || isLoading) {
     return <div>Loading...</div>;
@@ -188,7 +197,7 @@ export const LeagueInfo: React.FC = () => {
             <option value="">Select a league</option>
             {leagues.map((league: SleeperLeague) => (
               <option key={league.league_id} value={league.league_id}>
-                {league.name}
+                {league.name} ({league.league_id})
               </option>
             ))}
           </select>
@@ -200,11 +209,11 @@ export const LeagueInfo: React.FC = () => {
             value={selectedYear}
             onChange={(e: ChangeEvent<HTMLSelectElement>) => handleYearChange(e.target.value)}
           >
-            <option value="2025">2025</option>
-            <option value="2024">2024</option>
-            <option value="2023">2023</option>
-            <option value="2022">2022</option>
-            <option value="2021">2021</option>
+            {years.map((year: string) => (
+              <option key={year} value={year}>
+                {year}
+              </option>
+            ))}
           </select>
         </div>
       </div>
