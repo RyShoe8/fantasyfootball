@@ -36,7 +36,7 @@ interface SleeperContextType {
   error: string | null;
   login: (username: string) => Promise<void>;
   logout: () => void;
-  setCurrentLeague: (league: SleeperLeague) => void;
+  setCurrentLeague: (league: SleeperLeague | null) => void;
   setSelectedWeek: (week: string) => void;
   setSelectedYear: (year: string) => void;
   setRosters: (rosters: SleeperRoster[]) => void;
@@ -219,26 +219,34 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
     localStorage.removeItem('sleeperUser');
   };
 
-  const setCurrentLeague = async (league: SleeperLeague) => {
+  const setCurrentLeague = async (league: SleeperLeague | null) => {
     try {
       setIsLoading(true);
       setError(null);
       
       // Set the current league first
       setCurrentLeagueState(league);
-      localStorage.setItem('sleeperCurrentLeague', JSON.stringify(league));
-      
-      // Fetch all necessary data for the new league
-      const [rostersResponse, usersResponse, playersResponse] = await Promise.all([
-        axios.get(`https://api.sleeper.app/v1/league/${league.league_id}/rosters`),
-        axios.get(`https://api.sleeper.app/v1/league/${league.league_id}/users`),
-        axios.get('https://api.sleeper.app/v1/players/nfl')
-      ]);
-      
-      // Update all the necessary state
-      setRosters(rostersResponse.data);
-      setUsers(usersResponse.data);
-      setPlayers(playersResponse.data);
+      if (league) {
+        localStorage.setItem('sleeperCurrentLeague', JSON.stringify(league));
+        
+        // Fetch all necessary data for the new league
+        const [rostersResponse, usersResponse, playersResponse] = await Promise.all([
+          axios.get(`https://api.sleeper.app/v1/league/${league.league_id}/rosters`),
+          axios.get(`https://api.sleeper.app/v1/league/${league.league_id}/users`),
+          axios.get('https://api.sleeper.app/v1/players/nfl')
+        ]);
+        
+        // Update all the necessary state
+        setRosters(rostersResponse.data);
+        setUsers(usersResponse.data);
+        setPlayers(playersResponse.data);
+      } else {
+        // Clear all league-related data
+        setRosters([]);
+        setUsers([]);
+        setPlayers({});
+        localStorage.removeItem('sleeperCurrentLeague');
+      }
     } catch (error) {
       console.error('Error setting current league:', error);
       setError('Failed to load league data');
