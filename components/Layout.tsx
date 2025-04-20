@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, type ReactNode } from 'react';
 import { useRouter } from 'next/router';
 import { useSleeper } from '../contexts/SleeperContext';
 import Login from './Login';
@@ -6,11 +6,11 @@ import Spinner from './Spinner';
 import Link from 'next/link';
 
 interface LayoutProps {
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
-  const { user, isLoading, error, currentLeague } = useSleeper();
+  const { user, isLoading, error, currentLeague, logout } = useSleeper();
   const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
