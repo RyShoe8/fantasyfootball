@@ -2,7 +2,10 @@ import LeagueInfo from '../components/LeagueInfo';
 import { useSleeper } from '../contexts/SleeperContext';
 
 export default function Home() {
-  const { currentLeague, currentRoster, players } = useSleeper();
+  const { currentLeague, rosters, players } = useSleeper();
+  
+  // Find the current roster (assuming it's the first one for now)
+  const currentRoster = rosters.length > 0 ? rosters[0] : null;
 
   console.log('Home - currentLeague:', currentLeague);
   console.log('Home - currentRoster:', currentRoster);
