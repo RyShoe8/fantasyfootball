@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useSleeper } from '../contexts/SleeperContext';
 import { SleeperLeague } from '../types/sleeper';
 
@@ -14,8 +14,6 @@ const LeagueInfo: React.FC = () => {
     players,
     playerStats
   } = useSleeper();
-
-  const [isDebugOpen, setIsDebugOpen] = useState(false);
 
   const handleLeagueChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedLeague = leagues.find(league => league.league_id === e.target.value);
@@ -100,29 +98,6 @@ const LeagueInfo: React.FC = () => {
             {rosters.length}
           </p>
         </div>
-      </div>
-
-      <div className="mt-6">
-        <button
-          onClick={() => setIsDebugOpen(!isDebugOpen)}
-          className="text-sm text-gray-500 hover:text-gray-700"
-        >
-          {isDebugOpen ? 'Hide Debug Info' : 'Show Debug Info'}
-        </button>
-        {isDebugOpen && (
-          <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-            <h3 className="text-sm font-medium text-gray-900 mb-2">Debug Information</h3>
-            <div className="space-y-2 text-sm">
-              <p><span className="font-medium">User ID:</span> {currentLeague.user_id}</p>
-              <p><span className="font-medium">League ID:</span> {currentLeague.league_id}</p>
-              <p><span className="font-medium">Selected Year:</span> {selectedYear}</p>
-              <p><span className="font-medium">Rosters:</span> {rosters.length}</p>
-              <p><span className="font-medium">Users:</span> {users.length}</p>
-              <p><span className="font-medium">Players:</span> {Object.keys(players).length}</p>
-              <p><span className="font-medium">Player Stats:</span> {Object.keys(playerStats).length}</p>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
