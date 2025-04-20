@@ -76,7 +76,7 @@ interface TradeSide {
 }
 
 export default function TradeEvaluator() {
-  const { user, rosters, players, currentLeague } = useSleeper();
+  const { user, rosters, players, currentLeague, users } = useSleeper();
   const router = useRouter();
   const [selectedWeek, setSelectedWeek] = useState('0');
   const [selectedTeam, setSelectedTeam] = useState<string>('');
@@ -107,10 +107,20 @@ export default function TradeEvaluator() {
 
   const availablePlayers = useMemo(() => {
     if (!currentRoster || !players) return [];
+    
+    // Get all player IDs that are already in either side of the trade
+    const tradedPlayerIds = new Set([
+      ...mySide.map(p => p.player_id),
+      ...theirSide.map(p => p.player_id)
+    ]);
+    
     return [...(currentRoster.starters || []), ...(currentRoster.reserves || [])]
       .map(playerId => {
         const player = players[playerId as keyof typeof players];
         if (!player) return null;
+
+        // Skip if player is already in the trade
+        if (tradedPlayerIds.has(player.player_id)) return null;
 
         // Get stats for the selected week
         const rawStats = (player.stats?.[selectedWeek] || {}) as Partial<PlayerStats>;
@@ -138,16 +148,25 @@ export default function TradeEvaluator() {
         } as TradePlayer;
       })
       .filter((p): p is NonNullable<typeof p> => p !== null);
-  }, [currentRoster, players, selectedWeek]);
+  }, [currentRoster, players, selectedWeek, mySide, theirSide]);
 
   const selectedTeamPlayers = useMemo(() => {
     if (!selectedTeamRoster || !players) return [];
+    
+    // Get all player IDs that are already in either side of the trade
+    const tradedPlayerIds = new Set([
+      ...mySide.map(p => p.player_id),
+      ...theirSide.map(p => p.player_id)
+    ]);
     
     return [...(selectedTeamRoster.starters || []), ...(selectedTeamRoster.reserves || [])]
       .map(playerId => {
         const player = players[playerId as keyof typeof players];
         if (!player) return null;
 
+        // Skip if player is already in the trade
+        if (tradedPlayerIds.has(player.player_id)) return null;
+
         // Get stats for the selected week
         const rawStats = (player.stats?.[selectedWeek] || {}) as Partial<PlayerStats>;
         const weekStats: PlayerStats = {
@@ -174,7 +193,7 @@ export default function TradeEvaluator() {
         } as TradePlayer;
       })
       .filter((p): p is NonNullable<typeof p> => p !== null);
-  }, [selectedTeamRoster, players, selectedWeek]);
+  }, [selectedTeamRoster, players, selectedWeek, mySide, theirSide]);
 
   const handleAddPlayer = (player: TradePlayer, side: 'my' | 'their') => {
     if (side === 'my') {
@@ -301,7 +320,9 @@ export default function TradeEvaluator() {
 
         {/* Their Side */}
         <div className="bg-white rounded-lg shadow p-4">
-          <h2 className="text-xl font-semibold mb-4">Their Side</h2>
+          <h2 className="text-xl font-semibold mb-4">
+            Their Side {selectedTeamRoster && `- ${selectedTeamRoster.metadata?.team_name || `Team ${selectedTeamRoster.roster_id}`}`}
+          </h2>
           <div className="space-y-4">
             <div>
               <h3 className="font-medium mb-2">Players</h3>
@@ -365,17 +386,28 @@ export default function TradeEvaluator() {
             <div className="mt-4 pt-4 border-t">
               <h3 className="font-medium mb-2">My Draft Picks</h3>
               <div className="space-y-2">
-                {currentRoster.draft_picks.map((pick, index) => (
-                  <div key={index} className="flex justify-between items-center">
-                    <span>{pick.season} Round {pick.round} Pick {pick.pick}</span>
-                    <button
-                      onClick={() => handleAddDraftPick(pick, 'my')}
-                      className="text-blue-500"
-                    >
-                      Add
-                    </button>
-                  </div>
-                ))}
+                {currentRoster.draft_picks
+                  .filter(pick => {
+                    // Check if this pick is already in either side of the trade
+                    const isInMySide = myDraftPicks.some(p => 
+                      p.season === pick.season && p.round === pick.round && p.pick === pick.pick
+                    );
+                    const isInTheirSide = theirDraftPicks.some(p => 
+                      p.season === pick.season && p.round === pick.round && p.pick === pick.pick
+                    );
+                    return !isInMySide && !isInTheirSide;
+                  })
+                  .map((pick, index) => (
+                    <div key={index} className="flex justify-between items-center">
+                      <span>{pick.season} Round {pick.round} Pick {pick.pick}</span>
+                      <button
+                        onClick={() => handleAddDraftPick(pick, 'my')}
+                        className="text-blue-500"
+                      >
+                        Add
+                      </button>
+                    </div>
+                  ))}
               </div>
             </div>
           )}
@@ -392,11 +424,14 @@ export default function TradeEvaluator() {
             <option value="">Select a team</option>
             {rosters
               .filter((r: SleeperRoster) => r.owner_id !== user?.user_id)
-              .map((team: SleeperRoster) => (
-                <option key={team.roster_id} value={team.roster_id}>
-                  {team.metadata?.team_name || `Team ${team.roster_id}`}
-                </option>
-              ))}
+              .map((team: SleeperRoster) => {
+                const teamUser = users?.find(u => u.user_id === team.owner_id);
+                return (
+                  <option key={team.roster_id} value={team.roster_id}>
+                    {teamUser?.metadata?.team_name || teamUser?.display_name || `Team ${team.roster_id}`}
+                  </option>
+                );
+              })}
           </select>
           {selectedTeamRoster && (
             <>
@@ -413,24 +448,28 @@ export default function TradeEvaluator() {
                   </div>
                 ))}
               </div>
-              {selectedTeamRoster.draft_picks && (
-                <div className="mt-4 pt-4 border-t">
-                  <h3 className="font-medium mb-2">Their Draft Picks</h3>
-                  <div className="space-y-2">
-                    {selectedTeamRoster.draft_picks.map((pick, index) => (
-                      <div key={index} className="flex justify-between items-center">
-                        <span>{pick.season} Round {pick.round} Pick {pick.pick}</span>
-                        <button
-                          onClick={() => handleAddDraftPick(pick, 'their')}
-                          className="text-blue-500"
-                        >
-                          Add
-                        </button>
-                      </div>
-                    ))}
+              {selectedTeamRoster.draft_picks
+                .filter(pick => {
+                  // Check if this pick is already in either side of the trade
+                  const isInMySide = myDraftPicks.some(p => 
+                    p.season === pick.season && p.round === pick.round && p.pick === pick.pick
+                  );
+                  const isInTheirSide = theirDraftPicks.some(p => 
+                    p.season === pick.season && p.round === pick.round && p.pick === pick.pick
+                  );
+                  return !isInMySide && !isInTheirSide;
+                })
+                .map((pick, index) => (
+                  <div key={index} className="flex justify-between items-center">
+                    <span>{pick.season} Round {pick.round} Pick {pick.pick}</span>
+                    <button
+                      onClick={() => handleAddDraftPick(pick, 'their')}
+                      className="text-blue-500"
+                    >
+                      Add
+                    </button>
                   </div>
-                </div>
-              )}
+                ))}
             </>
           )}
         </div>
