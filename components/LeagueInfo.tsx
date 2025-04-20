@@ -1,4 +1,4 @@
-import React, { ChangeEvent } from 'react';
+import React, { ChangeEvent, useState } from 'react';
 import { useSleeper } from '../contexts/SleeperContext';
 import { SleeperLeague } from '../types/sleeper';
 import axios from 'axios';
@@ -99,13 +99,13 @@ export const LeagueInfo: React.FC = () => {
     setCurrentLeague, 
     selectedYear,
     setSelectedYear,
-    isLoading,
+    isLoading: contextLoading,
     user,
-    setLeagues,
-    setIsLoading,
-    setError
+    setLeagues
   } = useSleeper();
   const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleLeagueChange = async (leagueId: string) => {
     const league = leagues.find((l: SleeperLeague) => l.league_id === leagueId);
@@ -118,6 +118,7 @@ export const LeagueInfo: React.FC = () => {
   const handleYearChange = async (year: string) => {
     try {
       setIsLoading(true);
+      setError(null);
       setSelectedYear(year);
       // Refresh leagues for the selected year
       if (user) {
@@ -141,12 +142,17 @@ export const LeagueInfo: React.FC = () => {
     }
   };
 
-  if (isLoading) {
+  if (contextLoading || isLoading) {
     return <div>Loading...</div>;
   }
 
   return (
     <div className="bg-white shadow rounded-lg p-4 mb-4">
+      {error && (
+        <div className="mb-4 p-4 bg-red-50 text-red-700 rounded-md">
+          {error}
+        </div>
+      )}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div className="flex-1">
           <label className="block text-sm font-medium text-gray-700 mb-1">Select League</label>
