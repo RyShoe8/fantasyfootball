@@ -11,7 +11,21 @@ interface TeamStanding {
   ties: number;
   totalPoints: number;
   pointsAgainst: number;
+  streak: string;
 }
+
+// Helper function to format status
+const formatStatus = (status: string) => {
+  const statusMap: Record<string, string> = {
+    'pre_draft': 'Pre-Draft',
+    'drafting': 'Drafting',
+    'in_season': 'In Season',
+    'complete': 'Complete',
+    'off_season': 'Off Season'
+  };
+  
+  return statusMap[status] || status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+};
 
 const LeagueStandings: React.FC = () => {
   const { rosters, currentLeague } = useSleeper();
@@ -23,16 +37,26 @@ const LeagueStandings: React.FC = () => {
     const leagueRosters = rosters.filter((r: SleeperRoster) => r.league_id === currentLeague.league_id);
     
     // Calculate standings for each team
-    const teamStandings: TeamStanding[] = leagueRosters.map(roster => ({
-      teamId: roster.roster_id,
-      ownerId: roster.owner_id,
-      teamName: roster.metadata?.team_name || `Team ${roster.roster_id}`,
-      wins: roster.settings.wins,
-      losses: roster.settings.losses,
-      ties: 0, // This would come from actual league data if available
-      totalPoints: roster.settings.fpts + (roster.settings.fpts_decimal || 0),
-      pointsAgainst: roster.settings.fpts_against + (roster.settings.fpts_against_decimal || 0)
-    }));
+    const teamStandings: TeamStanding[] = leagueRosters.map((roster: SleeperRoster) => {
+      // Calculate streak (this would come from actual league data in a real app)
+      const streak = roster.settings.wins > roster.settings.losses 
+        ? `W${roster.settings.wins}`
+        : roster.settings.losses > roster.settings.wins
+          ? `L${roster.settings.losses}`
+          : '';
+
+      return {
+        teamId: roster.roster_id,
+        ownerId: roster.owner_id,
+        teamName: roster.metadata?.team_name || `Team ${roster.roster_id}`,
+        wins: roster.settings.wins,
+        losses: roster.settings.losses,
+        ties: 0, // This would come from actual league data if available
+        totalPoints: roster.settings.fpts + (roster.settings.fpts_decimal || 0),
+        pointsAgainst: roster.settings.fpts_against + (roster.settings.fpts_against_decimal || 0),
+        streak
+      };
+    });
 
     // Sort standings by wins, then by total points
     return teamStandings.sort((a, b) => {
@@ -52,7 +76,7 @@ const LeagueStandings: React.FC = () => {
         <h2 className="text-2xl font-bold text-gray-900">League Standings</h2>
         <p className="text-gray-600">{currentLeague.name}</p>
         <p className="text-gray-600">Season: {currentLeague.season}</p>
-        <p className="text-gray-600">Status: {currentLeague.status}</p>
+        <p className="text-gray-600">Status: {formatStatus(currentLeague.status)}</p>
       </div>
 
       <div className="overflow-x-auto">
@@ -66,13 +90,10 @@ const LeagueStandings: React.FC = () => {
                 Team
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                W
+                Record
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                L
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                T
+                Streak
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 PF
@@ -83,7 +104,7 @@ const LeagueStandings: React.FC = () => {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {standings.map((team, index) => (
+            {standings.map((team: TeamStanding, index: number) => (
               <tr key={team.teamId}>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   {index + 1}
@@ -92,13 +113,10 @@ const LeagueStandings: React.FC = () => {
                   {team.teamName}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {team.wins}
+                  {team.wins}-{team.losses}{team.ties > 0 ? `-${team.ties}` : ''}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {team.losses}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {team.ties}
+                  {team.streak}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   {team.totalPoints.toFixed(2)}
