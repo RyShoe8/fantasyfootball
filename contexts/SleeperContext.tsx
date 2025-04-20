@@ -533,11 +533,11 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
             try {
               const timeout = 10000; // 10 second timeout
               const leaguesResponse = await Promise.race([
-                axios.get(`https://api.sleeper.app/v1/user/${userData.user_id}/leagues/nfl/${yearToFetch}`),
+                axios.get<SleeperLeague[]>(`https://api.sleeper.app/v1/user/${userData.user_id}/leagues/nfl/${yearToFetch}`),
                 new Promise((_, reject) => 
                   setTimeout(() => reject(new Error('Request timed out')), timeout)
                 )
-              ]);
+              ]) as { data: SleeperLeague[] };
 
               if (leaguesResponse.data && leaguesResponse.data.length > 0) {
                 // Set leagues first
