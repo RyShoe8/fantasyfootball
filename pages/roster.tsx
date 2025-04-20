@@ -12,7 +12,7 @@
  */
 
 /** @jsxImportSource react */
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, SyntheticEvent } from 'react';
 import { useSleeper } from '../contexts/SleeperContext';
 import { SleeperRoster, SleeperPlayer } from '../types/sleeper';
 
@@ -80,7 +80,7 @@ interface RosterData {
 }
 
 const Roster: React.FC = () => {
-  const { user, rosters, players, currentLeague } = useSleeper();
+  const { user, rosters, players, currentLeague, playerStats } = useSleeper();
   const [selectedWeek, setSelectedWeek] = useState('0');
   const [sortField, setSortField] = useState<keyof PlayerStats>('pts_ppr');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
@@ -97,10 +97,10 @@ const Roster: React.FC = () => {
 
     // Get all players from the roster including all roster spots
     const rosterPlayers = [
-      ...(userRoster.starters || []).map(id => ({ id, slot: 'starter' as const })),
-      ...(userRoster.reserves || []).map(id => ({ id, slot: 'bench' as const })),
-      ...(userRoster.taxi || []).map(id => ({ id, slot: 'taxi' as const })),
-      ...(userRoster.ir || []).map(id => ({ id, slot: 'ir' as const }))
+      ...(userRoster.starters || []).map((id: string) => ({ id, slot: 'starter' as const })),
+      ...(userRoster.reserves || []).map((id: string) => ({ id, slot: 'bench' as const })),
+      ...(userRoster.taxi || []).map((id: string) => ({ id, slot: 'taxi' as const })),
+      ...(userRoster.ir || []).map((id: string) => ({ id, slot: 'ir' as const }))
     ].map(({ id, slot }) => {
       const player = players[id as keyof typeof players];
       if (!player) return null;
@@ -255,6 +255,58 @@ const Roster: React.FC = () => {
       (aValue > bValue ? -1 : 1);
   });
 
+  const getPlayerStats = (playerId: string) => {
+    const stats = playerStats[playerId];
+    if (!stats) return null;
+
+    const position = players[playerId]?.position;
+    if (!position) return null;
+
+    switch (position) {
+      case 'QB':
+        return {
+          passing: `${stats.passing_yards || 0} yds, ${stats.passing_tds || 0} TD, ${stats.passing_ints || 0} INT`,
+          rushing: `${stats.rushing_yards || 0} yds, ${stats.rushing_tds || 0} TD`
+        };
+      case 'RB':
+        return {
+          rushing: `${stats.rushing_yards || 0} yds, ${stats.rushing_tds || 0} TD`,
+          receiving: `${stats.receiving_yards || 0} yds, ${stats.receiving_tds || 0} TD`
+        };
+      case 'WR':
+      case 'TE':
+        return {
+          receiving: `${stats.receiving_yards || 0} yds, ${stats.receiving_tds || 0} TD`,
+          targets: `${stats.receiving_targets || 0} targets`
+        };
+      case 'K':
+        return {
+          kicking: `${stats.fg_made || 0}/${stats.fg_attempts || 0} FG, ${stats.xp_made || 0}/${stats.xp_attempts || 0} XP`
+        };
+      case 'DEF':
+        return {
+          defense: `${stats.sacks || 0} sacks, ${stats.interceptions || 0} INT, ${stats.fumbles_recovered || 0} FR`
+        };
+      default:
+        return null;
+    }
+  };
+
+  const renderPlayerStats = (playerId: string) => {
+    const stats = getPlayerStats(playerId);
+    if (!stats) return null;
+
+    return (
+      <div className="text-sm text-gray-600">
+        {Object.entries(stats).map(([key, value]) => (
+          <div key={key} className="capitalize">
+            {key}: {value}
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-6">
       <div className="bg-white shadow rounded-lg p-6">
@@ -316,7 +368,7 @@ const Roster: React.FC = () => {
                           src={`https://sleepercdn.com/avatars/${player.player_id}`}
                           alt={player.full_name}
                           loading="lazy"
-                          onError={(e) => {
+                          onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
                             const target = e.target as HTMLImageElement;
                             target.style.display = 'none';
                             const parent = target.parentElement;
@@ -327,7 +379,7 @@ const Roster: React.FC = () => {
                               parent.appendChild(fallback);
                             }
                           }}
-                          onLoad={(e) => {
+                          onLoad={(e: React.SyntheticEvent<HTMLImageElement>) => {
                             const target = e.target as HTMLImageElement;
                             target.style.opacity = '1';
                           }}
@@ -351,7 +403,7 @@ const Roster: React.FC = () => {
                     <div>Position: #{player.position_rank}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {getPositionStats(player)}
+                    {renderPlayerStats(player.player_id)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {player.pts_ppr?.toFixed(2) || '0.00'}
@@ -455,7 +507,7 @@ const Roster: React.FC = () => {
       </div>
 
       {/* IR Players Section */}
-      {rosterData.players.some(p => p.roster_slot === 'ir') && (
+      {rosterData.players.some((p: RosterPlayer) => p.roster_slot === 'ir') && (
         <div className="bg-white shadow rounded-lg p-6 mt-6">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Injured Reserve</h2>
           <div className="overflow-x-auto">
@@ -471,7 +523,7 @@ const Roster: React.FC = () => {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {rosterData.players
-                  .filter(player => player.roster_slot === 'ir')
+                  .filter((player: RosterPlayer) => player.roster_slot === 'ir')
                   .map((player: RosterPlayer) => (
                     <tr key={player.player_id}>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -482,7 +534,7 @@ const Roster: React.FC = () => {
                               src={`https://sleepercdn.com/avatars/${player.player_id}`}
                               alt={player.full_name}
                               loading="lazy"
-                              onError={(e) => {
+                              onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
                                 const target = e.target as HTMLImageElement;
                                 target.style.display = 'none';
                                 const parent = target.parentElement;
@@ -493,7 +545,7 @@ const Roster: React.FC = () => {
                                   parent.appendChild(fallback);
                                 }
                               }}
-                              onLoad={(e) => {
+                              onLoad={(e: React.SyntheticEvent<HTMLImageElement>) => {
                                 const target = e.target as HTMLImageElement;
                                 target.style.opacity = '1';
                               }}
@@ -524,7 +576,7 @@ const Roster: React.FC = () => {
       )}
 
       {/* Taxi Squad Section */}
-      {rosterData.players.some(p => p.roster_slot === 'taxi') && (
+      {rosterData.players.some((p: RosterPlayer) => p.roster_slot === 'taxi') && (
         <div className="bg-white shadow rounded-lg p-6 mt-6">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Taxi Squad</h2>
           <div className="overflow-x-auto">
@@ -540,7 +592,7 @@ const Roster: React.FC = () => {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {rosterData.players
-                  .filter(player => player.roster_slot === 'taxi')
+                  .filter((player: RosterPlayer) => player.roster_slot === 'taxi')
                   .map((player: RosterPlayer) => (
                     <tr key={player.player_id}>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -551,7 +603,7 @@ const Roster: React.FC = () => {
                               src={`https://sleepercdn.com/avatars/${player.player_id}`}
                               alt={player.full_name}
                               loading="lazy"
-                              onError={(e) => {
+                              onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
                                 const target = e.target as HTMLImageElement;
                                 target.style.display = 'none';
                                 const parent = target.parentElement;
@@ -562,7 +614,7 @@ const Roster: React.FC = () => {
                                   parent.appendChild(fallback);
                                 }
                               }}
-                              onLoad={(e) => {
+                              onLoad={(e: React.SyntheticEvent<HTMLImageElement>) => {
                                 const target = e.target as HTMLImageElement;
                                 target.style.opacity = '1';
                               }}
@@ -593,48 +645,6 @@ const Roster: React.FC = () => {
       )}
     </div>
   );
-};
-
-// Helper function to get position-specific stats
-const getPositionStats = (player: RosterPlayer) => {
-  const stats = player.stats || {};
-  switch (player.position) {
-    case 'QB':
-      return (
-        <div className="space-y-1">
-          <div>Pass: {stats.passing_yards?.toLocaleString() || 0} yds</div>
-          <div>TD: {stats.passing_tds || 0}</div>
-          <div>INT: {stats.passing_ints || 0}</div>
-        </div>
-      );
-    case 'RB':
-      return (
-        <div className="space-y-1">
-          <div>Rush: {stats.rushing_yards?.toLocaleString() || 0} yds</div>
-          <div>TD: {stats.rushing_tds || 0}</div>
-          <div>Rec: {stats.receptions || 0}</div>
-        </div>
-      );
-    case 'WR':
-    case 'TE':
-      return (
-        <div className="space-y-1">
-          <div>Rec: {stats.receptions || 0}</div>
-          <div>Yds: {stats.receiving_yards?.toLocaleString() || 0}</div>
-          <div>TD: {stats.receiving_tds || 0}</div>
-        </div>
-      );
-    case 'IDP':
-      return (
-        <div className="space-y-1">
-          <div>Tackles: {stats.tackles || 0}</div>
-          <div>Sacks: {stats.sacks || 0}</div>
-          <div>INT: {stats.interceptions || 0}</div>
-        </div>
-      );
-    default:
-      return null;
-  }
 };
 
 export default Roster; 

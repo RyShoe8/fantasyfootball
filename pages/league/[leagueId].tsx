@@ -73,10 +73,14 @@ export default function LeaguePage() {
       </div>
 
       {/* League Standings and Trade Evaluator */}
-      <div className="space-y-6">
-        {/* League Standings */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-semibold mb-4">League Standings</h2>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-white shadow rounded-lg p-6">
+          <div className="mb-4">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-gray-900">League Standings</h2>
+              <span className="text-gray-600">Season: {currentLeague.season}</span>
+            </div>
+          </div>
           <LeagueStandings />
         </div>
       </div>

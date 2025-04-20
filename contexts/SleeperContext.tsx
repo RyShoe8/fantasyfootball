@@ -6,7 +6,7 @@
  * Updated to include users state management.
  */
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import axios, { AxiosError, AxiosResponse } from 'axios';
 import { SleeperUser, SleeperLeague, SleeperRoster, SleeperPlayer, SleeperDraftPick } from '../types/sleeper';
 import { 
@@ -28,6 +28,7 @@ interface SleeperContextType {
   leagues: SleeperLeague[];
   rosters: SleeperRoster[];
   players: Record<string, SleeperPlayer>;
+  playerStats: Record<string, any>;
   draftPicks: SleeperDraftPick[];
   currentLeague: SleeperLeague | null;
   selectedWeek: string;
@@ -46,6 +47,7 @@ interface SleeperContextType {
   setLeagues: (leagues: SleeperLeague[]) => void;
   setIsLoading: (isLoading: boolean) => void;
   setError: (error: string | null) => void;
+  fetchPlayerStats: (season: string, week: string) => Promise<void>;
 }
 
 const SleeperContext = createContext<SleeperContextType | undefined>(undefined);
@@ -61,6 +63,7 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [leagues, setLeagues] = useState<SleeperLeague[]>([]);
   const [rosters, setRosters] = useState<SleeperRoster[]>([]);
   const [players, setPlayers] = useState<Record<string, SleeperPlayer>>({});
+  const [playerStats, setPlayerStats] = useState<Record<string, any>>({});
   const [draftPicks, setDraftPicks] = useState<SleeperDraftPick[]>([]);
   const [currentLeague, setCurrentLeagueState] = useState<SleeperLeague | null>(null);
   const [selectedWeek, setSelectedWeekState] = useState<string>('1');
@@ -154,6 +157,15 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
       console.error('Error fetching players:', error);
     }
   };
+
+  const fetchPlayerStats = useCallback(async (season: string, week: string) => {
+    try {
+      const response = await axios.get(`/api/player-stats?season=${season}&week=${week}`);
+      setPlayerStats(response.data);
+    } catch (error) {
+      console.error('Error fetching player stats:', error);
+    }
+  }, []);
 
   const login = async (username: string) => {
     setIsLoading(true);
@@ -410,6 +422,12 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
     initializeContext();
   }, [isInitialized]);
 
+  useEffect(() => {
+    if (selectedYear && selectedWeek) {
+      fetchPlayerStats(selectedYear, selectedWeek);
+    }
+  }, [selectedYear, selectedWeek, fetchPlayerStats]);
+
   // Add a debug effect to log state changes
   useEffect(() => {
     console.log('State updated:', {
@@ -433,6 +451,7 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
         leagues,
         rosters,
         players,
+        playerStats,
         draftPicks,
         currentLeague,
         selectedWeek,
@@ -450,7 +469,8 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
         setDraftPicks,
         setLeagues,
         setIsLoading,
-        setError
+        setError,
+        fetchPlayerStats
       }}
     >
       {children}

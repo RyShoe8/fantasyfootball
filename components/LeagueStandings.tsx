@@ -98,14 +98,7 @@ const LeagueStandings: React.FC = () => {
   });
 
   return (
-    <div className="bg-white shadow rounded-lg p-6">
-      <div className="mb-4">
-        <div className="flex justify-between items-center">
-          <h2 className="text-2xl font-bold text-gray-900">League Standings</h2>
-          <span className="text-gray-600">Season: {currentLeague.season}</span>
-        </div>
-      </div>
-
+    <div>
       {standings.length === 0 ? (
         <div className="text-center py-4 text-gray-500">
           No standings available yet
