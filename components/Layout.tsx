@@ -1,22 +1,43 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { useRouter } from 'next/router';
 import { useSleeper } from '../contexts/SleeperContext';
 import Login from './Login';
+import Spinner from './Spinner';
 
 interface LayoutProps {
   children: React.ReactNode;
 }
 
-export default function Layout({ children }: LayoutProps) {
+const Layout: React.FC<LayoutProps> = ({ children }) => {
   const { user, isLoading } = useSleeper();
+  const router = useRouter();
 
+  // Check if current page requires authentication
+  const requiresAuth = !['/'].includes(router.pathname);
+
+  useEffect(() => {
+    // Log current path and auth state for debugging
+    console.log('Current path:', router.pathname);
+    console.log('User authenticated:', !!user);
+    console.log('Requires auth:', requiresAuth);
+
+    // Redirect to home if not authenticated and trying to access protected page
+    if (requiresAuth && !user && !isLoading) {
+      console.log('Redirecting to home page - not authenticated');
+      router.push('/');
+    }
+  }, [router.pathname, user, isLoading, requiresAuth]);
+
+  // Show loading spinner while checking auth state
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+        <Spinner />
       </div>
     );
   }
 
+  // Show login page if not authenticated
   if (!user) {
     return <Login />;
   }
@@ -34,7 +55,7 @@ export default function Layout({ children }: LayoutProps) {
             <div className="flex items-center">
               <div className="flex items-center space-x-4">
                 <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
-                  {user.avatar ? (
+                  {user?.avatar ? (
                     <img
                       className="h-8 w-8 rounded-full"
                       src={user.avatar}
@@ -53,11 +74,11 @@ export default function Layout({ children }: LayoutProps) {
                     />
                   ) : (
                     <span className="text-indigo-600 font-semibold">
-                      {user.display_name.charAt(0).toUpperCase()}
+                      {user?.display_name.charAt(0).toUpperCase()}
                     </span>
                   )}
                 </div>
-                <span className="text-gray-700">{user.display_name}</span>
+                <span className="text-gray-700">{user?.display_name}</span>
               </div>
             </div>
           </div>
@@ -68,4 +89,6 @@ export default function Layout({ children }: LayoutProps) {
       </main>
     </div>
   );
-} 
+};
+
+export default Layout; 

@@ -35,8 +35,14 @@ export function SleeperProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const storedUser = localStorage.getItem('sleeperUser');
     if (storedUser) {
-      setUser(JSON.parse(storedUser));
-      fetchUserData(JSON.parse(storedUser).user_id);
+      const userData = JSON.parse(storedUser);
+      setUser(userData);
+      fetchUserData(userData.user_id).catch(err => {
+        console.error('Failed to fetch user data:', err);
+        setError('Failed to load user data. Please try logging in again.');
+        setUser(null);
+        localStorage.removeItem('sleeperUser');
+      });
     } else {
       setIsLoading(false);
     }
@@ -55,25 +61,27 @@ export function SleeperProvider({ children }: { children: React.ReactNode }) {
       setError(null);
 
       // Fetch user's leagues
-      const leaguesResponse = await axios.get(`https://api.sleeper.app/user/${userId}/leagues/nfl/2023`);
+      const leaguesResponse = await axios.get(`https://api.sleeper.app/v1/user/${userId}/leagues/nfl/2023`);
       setLeagues(leaguesResponse.data);
 
       // Fetch rosters for each league
       const rostersPromises = leaguesResponse.data.map((league: any) =>
-        axios.get(`https://api.sleeper.app/league/${league.league_id}/rosters`)
+        axios.get(`https://api.sleeper.app/v1/league/${league.league_id}/rosters`)
       );
       const rostersResponses = await Promise.all(rostersPromises);
       const allRosters = rostersResponses.flatMap((response) => response.data);
       setRosters(allRosters);
 
       // Fetch players data
-      const playersResponse = await axios.get('https://api.sleeper.app/players/nfl');
+      const playersResponse = await axios.get('https://api.sleeper.app/v1/players/nfl');
       setPlayers(playersResponse.data);
 
       setIsLoading(false);
     } catch (err) {
-      setError('Failed to fetch user data');
+      console.error('Failed to fetch user data:', err);
+      setError('Failed to fetch user data. Please try again.');
       setIsLoading(false);
+      throw err;
     }
   };
 
@@ -83,7 +91,11 @@ export function SleeperProvider({ children }: { children: React.ReactNode }) {
       setError(null);
 
       // Fetch user data
-      const userResponse = await axios.get(`https://api.sleeper.app/user/${username}`);
+      const userResponse = await axios.get(`https://api.sleeper.app/v1/user/${username}`);
+      if (!userResponse.data) {
+        throw new Error('User not found');
+      }
+      
       const userData = userResponse.data;
       setUser(userData);
       localStorage.setItem('sleeperUser', JSON.stringify(userData));
@@ -91,8 +103,12 @@ export function SleeperProvider({ children }: { children: React.ReactNode }) {
       // Fetch user's leagues and other data
       await fetchUserData(userData.user_id);
     } catch (err) {
+      console.error('Login failed:', err);
       setError('Failed to login. Please check your username and try again.');
+      setUser(null);
+      localStorage.removeItem('sleeperUser');
       setIsLoading(false);
+      throw err;
     }
   };
 
@@ -101,6 +117,8 @@ export function SleeperProvider({ children }: { children: React.ReactNode }) {
     setLeagues([]);
     setRosters([]);
     setPlayers([]);
+    setCurrentLeague(null);
+    setError(null);
     localStorage.removeItem('sleeperUser');
   };
 

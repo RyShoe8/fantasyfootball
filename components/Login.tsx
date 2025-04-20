@@ -8,12 +8,16 @@ export default function Login() {
   const { login, error } = useSleeper();
   const router = useRouter();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!username.trim()) return;
+    
     setIsLoading(true);
     try {
-      await login(username);
-      router.push('/');
+      await login(username.trim());
+      if (!error) {
+        router.push('/');
+      }
     } catch (err) {
       console.error('Login failed:', err);
     } finally {
@@ -58,7 +62,7 @@ export default function Login() {
           <div>
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || !username.trim()}
               className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
             >
               {isLoading ? (
