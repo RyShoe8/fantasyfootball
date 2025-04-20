@@ -148,22 +148,10 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const fetchPlayers = async () => {
     try {
-      // For players, we'll fetch from API and update database
-      // This is because player data changes frequently
-      const response = await axios.get('https://api.sleeper.app/v1/players/nfl');
-      const players = response.data;
-      
-      // Save each player to database
-      await Promise.all(
-        Object.entries(players).map(([id, player]) => 
-          savePlayerData(player as SleeperPlayer)
-        )
-      );
-      
-      setPlayers(players);
-    } catch (err) {
-      console.error('Error fetching players:', err);
-      setError('Failed to fetch players');
+      const response = await axios.get('/api/players');
+      setPlayers(response.data);
+    } catch (error) {
+      console.error('Error fetching players:', error);
     }
   };
 
