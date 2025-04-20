@@ -253,4 +253,10 @@ export function useSleeper() {
     throw new Error('useSleeper must be used within a SleeperProvider');
   }
   return context;
-} 
+}
+
+// API Debug Section
+// This section contains debug logging for API responses and data processing
+// It helps track the flow of data through the application and identify potential issues
+// The logs are organized by feature area (user, leagues, rosters, players)
+// Each log includes relevant context and data for debugging purposes
