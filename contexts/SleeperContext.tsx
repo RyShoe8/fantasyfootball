@@ -6,10 +6,12 @@ interface SleeperContextType {
   leagues: any[];
   rosters: any[];
   players: any[];
+  currentLeague: any;
   isLoading: boolean;
   error: string | null;
   login: (username: string) => Promise<void>;
   logout: () => void;
+  setCurrentLeague: (league: any) => void;
 }
 
 const SleeperContext = createContext<SleeperContextType | undefined>(undefined);
@@ -19,6 +21,7 @@ export function SleeperProvider({ children }: { children: React.ReactNode }) {
   const [leagues, setLeagues] = useState<any[]>([]);
   const [rosters, setRosters] = useState<any[]>([]);
   const [players, setPlayers] = useState<any[]>([]);
+  const [currentLeague, setCurrentLeague] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -31,6 +34,13 @@ export function SleeperProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(false);
     }
   }, []);
+
+  useEffect(() => {
+    // Set the first league as current league when leagues are loaded
+    if (leagues.length > 0 && !currentLeague) {
+      setCurrentLeague(leagues[0]);
+    }
+  }, [leagues, currentLeague]);
 
   const fetchUserData = async (userId: string) => {
     try {
@@ -94,10 +104,12 @@ export function SleeperProvider({ children }: { children: React.ReactNode }) {
         leagues,
         rosters,
         players,
+        currentLeague,
         isLoading,
         error,
         login,
         logout,
+        setCurrentLeague,
       }}
     >
       {children}
