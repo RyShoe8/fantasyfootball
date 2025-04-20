@@ -107,9 +107,13 @@ export const TeamOverview: React.FC = () => {
     }
 
     // Get team name from users array
-    const userData = users.find((u: { user_id: string }) => u.user_id === user.user_id);
-    const teamName = userData?.metadata?.team_name || userData?.display_name || 'Your Team';
-    console.log('Team name from users array:', teamName);
+    const userData = users.find((u: { user_id: string }) => u.user_id === userRoster.owner_id);
+    const teamName = userData?.metadata?.team_name || userData?.display_name || `Team ${userRoster.roster_id}`;
+    console.log('Team name from users array:', { 
+      userId: userRoster.owner_id, 
+      userData, 
+      teamName 
+    });
 
     // Get all players from the roster
     const allPlayers = [
@@ -188,9 +192,13 @@ export const TeamOverview: React.FC = () => {
     console.log('User roster settings:', userRoster.settings);
 
     // Get team name from users array
-    const userData = users.find((u: { user_id: string }) => u.user_id === user.user_id);
-    const teamName = userData?.metadata?.team_name || 'Your Team';
-    console.log('Team name from users array:', teamName);
+    const userData = users.find((u: { user_id: string }) => u.user_id === userRoster.owner_id);
+    const teamName = userData?.metadata?.team_name || userData?.display_name || `Team ${userRoster.roster_id}`;
+    console.log('Team name from users array:', { 
+      userId: userRoster.owner_id, 
+      userData, 
+      teamName 
+    });
 
     // Calculate team stats
     const stats: TeamStats = {
@@ -371,80 +379,21 @@ export const TeamOverview: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="bg-white shadow rounded-lg p-6">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-bold text-gray-900">
-            {teamStats.teamName}
-            {currentLeague && (
-              <span className="text-sm text-gray-500 ml-2">
-                {getSeasonNumber(currentLeague.season)}
-              </span>
-            )}
-          </h2>
-          <select
-            className="mt-1 block w-32 pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-            value={selectedWeek}
-            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedWeek(e.target.value)}
-          >
-            {Array.from({ length: 18 }, (_, i) => (
-              <option key={i} value={i.toString()}>
-                Week {i}
-              </option>
-            ))}
-          </select>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="bg-gray-50 p-4 rounded-lg">
+          <h3 className="text-lg font-semibold mb-2">Team Name</h3>
+          <p className="text-gray-700">{teamStats.teamName}</p>
         </div>
-
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Player
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Position
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Team
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                    onClick={() => handleSort('totalPoints')}>
-                  Points
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                    onClick={() => handleSort('totalPoints')}>
-                  Projected
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {rosterData.players.map((player: RosterPlayer) => (
-                <tr key={player.player_id} className={player.isStarter ? 'bg-green-50' : ''}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {player.full_name}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {formatPosition(player.position)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {player.team}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {player.pts_ppr?.toFixed(2) || '0.00'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {player.projected_pts?.toFixed(2) || '0.00'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {player.isStarter ? 'Starter' : 'Bench'}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="bg-gray-50 p-4 rounded-lg">
+          <h3 className="text-lg font-semibold mb-2">Team Stats</h3>
+          <div className="grid grid-cols-2 gap-2">
+            <p className="text-gray-700">Total Points: {teamStats.totalPoints}</p>
+            <p className="text-gray-700">QB: {teamStats.positionStats.QB.count} players</p>
+            <p className="text-gray-700">RB: {teamStats.positionStats.RB.count} players</p>
+            <p className="text-gray-700">WR: {teamStats.positionStats.WR.count} players</p>
+            <p className="text-gray-700">TE: {teamStats.positionStats.TE.count} players</p>
+            <p className="text-gray-700">FLEX: {teamStats.positionStats.FLEX.count} players</p>
+          </div>
         </div>
       </div>
 
