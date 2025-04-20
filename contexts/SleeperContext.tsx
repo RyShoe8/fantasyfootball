@@ -48,9 +48,9 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [rosters, setRosters] = useState<SleeperRoster[]>([]);
   const [players, setPlayers] = useState<Record<string, SleeperPlayer>>({});
   const [draftPicks, setDraftPicks] = useState<SleeperDraftPick[]>([]);
-  const [currentLeague, setCurrentLeague] = useState<SleeperLeague | null>(null);
-  const [selectedWeek, setSelectedWeek] = useState<string>("1");
-  const [selectedYear, setSelectedYear] = useState<string>(getCurrentSeason().toString());
+  const [currentLeague, setCurrentLeagueState] = useState<SleeperLeague | null>(null);
+  const [selectedWeek, setSelectedWeekState] = useState<string>('1');
+  const [selectedYear, setSelectedYearState] = useState<string>(getCurrentSeason().toString());
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -110,7 +110,7 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
       
       // Fetch league data
       const currentSeason = getCurrentSeason();
-      setSelectedYear(currentSeason.toString());
+      setSelectedYearState(currentSeason.toString());
       const leaguesResponse = await axios.get(`https://api.sleeper.app/v1/user/${userData.user_id}/leagues/nfl/${currentSeason}`);
       
       if (leaguesResponse.data.length > 0) {
@@ -119,7 +119,7 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
         
         // Set current league
         const leagueId = leaguesResponse.data[0].league_id;
-        setCurrentLeague(leaguesResponse.data[0]);
+        setCurrentLeagueState(leaguesResponse.data[0]);
         
         // Fetch additional data
         await Promise.all([
@@ -143,8 +143,23 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setRosters([]);
     setUsers([]);
     setPlayers({});
-    setCurrentLeague(null);
+    setCurrentLeagueState(null);
     localStorage.removeItem('sleeperUser');
+  };
+
+  const setCurrentLeague = (league: SleeperLeague) => {
+    setCurrentLeagueState(league);
+    localStorage.setItem('sleeperCurrentLeague', JSON.stringify(league));
+  };
+
+  const setSelectedWeek = (week: string) => {
+    setSelectedWeekState(week);
+    localStorage.setItem('sleeperSelectedWeek', week);
+  };
+
+  const setSelectedYear = (year: string) => {
+    setSelectedYearState(year);
+    localStorage.setItem('sleeperSelectedYear', year);
   };
 
   useEffect(() => {
@@ -165,7 +180,16 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
         console.log('Starting initialization...');
         const storedUser = localStorage.getItem('sleeperUser');
-        console.log('Stored user:', storedUser ? 'Found' : 'Not found');
+        const storedCurrentLeague = localStorage.getItem('sleeperCurrentLeague');
+        const storedSelectedYear = localStorage.getItem('sleeperSelectedYear');
+        const storedSelectedWeek = localStorage.getItem('sleeperSelectedWeek');
+        
+        console.log('Stored data:', { 
+          user: storedUser ? 'Found' : 'Not found',
+          currentLeague: storedCurrentLeague ? 'Found' : 'Not found',
+          selectedYear: storedSelectedYear ? 'Found' : 'Not found',
+          selectedWeek: storedSelectedWeek ? 'Found' : 'Not found'
+        });
         
         if (storedUser) {
           try {
@@ -181,11 +205,21 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
             console.log('Setting user data...');
             setUser(userData);
             
+            // Set selected year if available
+            if (storedSelectedYear) {
+              setSelectedYearState(storedSelectedYear);
+            }
+            
+            // Set selected week if available
+            if (storedSelectedWeek) {
+              setSelectedWeekState(storedSelectedWeek);
+            }
+            
             // Fetch league data
             console.log('Fetching leagues...');
-            const currentSeason = getCurrentSeason();
-            setSelectedYear(currentSeason.toString());
-            const leaguesResponse = await axios.get(`https://api.sleeper.app/v1/user/${userData.user_id}/leagues/nfl/${currentSeason}`);
+            const yearToFetch = storedSelectedYear || getCurrentSeason().toString();
+            setSelectedYearState(yearToFetch);
+            const leaguesResponse = await axios.get(`https://api.sleeper.app/v1/user/${userData.user_id}/leagues/nfl/${yearToFetch}`);
             console.log('Leagues response:', leaguesResponse.data);
             
             if (leaguesResponse.data && leaguesResponse.data.length > 0) {
@@ -194,7 +228,20 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
               
               // Set leagues and current league
               setLeagues(leaguesResponse.data);
-              setCurrentLeague(leaguesResponse.data[0]);
+              
+              // Set current league from localStorage if available
+              if (storedCurrentLeague) {
+                const parsedLeague = JSON.parse(storedCurrentLeague);
+                // Verify the league exists in the fetched leagues
+                const leagueExists = leaguesResponse.data.some((l: SleeperLeague) => l.league_id === parsedLeague.league_id);
+                if (leagueExists) {
+                  setCurrentLeagueState(parsedLeague);
+                } else {
+                  setCurrentLeagueState(leaguesResponse.data[0]);
+                }
+              } else {
+                setCurrentLeagueState(leaguesResponse.data[0]);
+              }
               
               // Fetch all data in parallel
               console.log('Fetching league data...');

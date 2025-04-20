@@ -97,8 +97,6 @@ export const LeagueInfo: React.FC = () => {
     currentLeague, 
     leagues, 
     setCurrentLeague, 
-    selectedWeek, 
-    setSelectedWeek, 
     selectedYear,
     setSelectedYear,
     isLoading,
@@ -166,20 +164,6 @@ export const LeagueInfo: React.FC = () => {
             <option value="2023">2023</option>
             <option value="2022">2022</option>
             <option value="2021">2021</option>
-          </select>
-        </div>
-        <div className="flex-1">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Select Week</label>
-          <select
-            className="w-full p-2 border rounded"
-            value={selectedWeek}
-            onChange={(e: ChangeEvent<HTMLSelectElement>) => setSelectedWeek(e.target.value)}
-          >
-            {Array.from({ length: 18 }, (_, i) => i + 1).map((week) => (
-              <option key={week} value={week.toString()}>
-                Week {week}
-              </option>
-            ))}
           </select>
         </div>
       </div>
