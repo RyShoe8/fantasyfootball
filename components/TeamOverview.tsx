@@ -3,13 +3,15 @@ import React, { useState, useMemo, ChangeEvent } from 'react';
 import { useSleeper } from '../contexts/SleeperContext';
 import { SleeperRoster, SleeperPlayer } from '../types/sleeper';
 
+interface PlayerStats {
+  points?: number;
+  projected?: number;
+  [key: string]: any;
+}
+
 interface Player {
   position: string;
-  stats?: {
-    points?: number;
-    projected?: number;
-    [key: string]: any;
-  };
+  stats?: PlayerStats;
   [key: string]: any;
 }
 
@@ -42,7 +44,7 @@ const TeamOverview: React.FC = () => {
       const rosterPlayers = [...(roster.starters || []), ...(roster.reserves || [])]
         .map(playerId => ({
           ...players[playerId],
-          stats: players[playerId]?.stats?.[selectedWeek] || {}
+          stats: players[playerId]?.stats?.[selectedWeek] || {} as PlayerStats
         }));
 
       const totalPoints = rosterPlayers.reduce((sum, player) => 
