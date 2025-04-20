@@ -67,6 +67,50 @@ export function SleeperProvider({ children }: { children: React.ReactNode }) {
     }
   }, [leagues, currentLeague]);
 
+  // API Debug Section
+  // This section contains debug logging for API responses and data processing
+  // It helps track the flow of data through the application and identify potential issues
+
+  // Helper function to format API responses for logging
+  const formatApiResponse = (data: any, type: string) => {
+    switch (type) {
+      case 'user':
+        return {
+          username: data.username,
+          display_name: data.display_name,
+          user_id: data.user_id,
+          avatar: data.avatar
+        };
+      case 'league':
+        return {
+          name: data.name,
+          league_id: data.league_id,
+          season: data.season,
+          status: data.status,
+          total_rosters: data.total_rosters,
+          roster_positions: data.roster_positions,
+          settings: {
+            num_teams: data.settings.num_teams,
+            playoff_teams: data.settings.playoff_teams,
+            waiver_type: data.settings.waiver_type,
+            waiver_budget: data.settings.waiver_budget
+          }
+        };
+      case 'rosters':
+        return data.map((roster: any) => ({
+          roster_id: roster.roster_id,
+          owner_id: roster.owner_id,
+          team_name: roster.metadata?.team_name || `Team ${roster.roster_id}`,
+          starters: roster.starters,
+          players: roster.players?.length || 0
+        }));
+      case 'players':
+        return `Total players: ${Object.keys(data).length}`;
+      default:
+        return data;
+    }
+  };
+
   const fetchUserData = async (userId: string) => {
     try {
       console.log('Starting fetchUserData for user ID:', userId);
@@ -85,19 +129,19 @@ export function SleeperProvider({ children }: { children: React.ReactNode }) {
         throw new Error('Invalid leagues data received from API');
       }
 
-      console.log(`Found ${leaguesResponse.data.length} leagues:`, leaguesResponse.data);
+      console.log('Leagues data:', formatApiResponse(leaguesResponse.data, 'league'));
       setLeagues(leaguesResponse.data);
 
       // Set initial current league if none selected
       if (leaguesResponse.data.length > 0 && !currentLeague) {
-        console.log('Setting initial current league:', leaguesResponse.data[0]);
+        console.log('Setting initial current league:', formatApiResponse(leaguesResponse.data[0], 'league'));
         setCurrentLeague(leaguesResponse.data[0]);
       }
 
       // Only fetch rosters and players if we have a current league
       if (currentLeague) {
         // Fetch rosters for current league only
-        console.log(`Fetching rosters for league ${currentLeague.league_id} (${currentLeague.name})`);
+        console.log(`Fetching rosters for league ${currentLeague.league_id}`);
         const rostersResponse = await axios.get<SleeperRoster[]>(
           `https://api.sleeper.app/v1/league/${currentLeague.league_id}/rosters`
         );
@@ -107,40 +151,8 @@ export function SleeperProvider({ children }: { children: React.ReactNode }) {
           throw new Error('Invalid roster data received from API');
         }
 
-        console.log(`Received ${rostersResponse.data.length} rosters for league ${currentLeague.league_id}`);
-        
-        // Process rosters and extract team names from metadata
-        const processedRosters = rostersResponse.data.map((roster: SleeperRoster) => {
-          // Extract team name from metadata
-          let teamName = `Team ${roster.roster_id}`;
-          
-          if (roster.metadata) {
-            // Try to get team name from metadata
-            const metadata = roster.metadata as { team_name?: string };
-            if (metadata.team_name) {
-              teamName = metadata.team_name;
-            } else {
-              // Try to get team name from player nicknames
-              const playerNicknames = Object.values(roster.metadata).filter(
-                (value): value is string => typeof value === 'string' && value.includes('Team')
-              );
-              if (playerNicknames.length > 0) {
-                teamName = playerNicknames[0];
-              }
-            }
-          }
-
-          return {
-            ...roster,
-            metadata: {
-              ...roster.metadata,
-              team_name: teamName
-            }
-          };
-        });
-
-        console.log('Processed rosters:', processedRosters);
-        setRosters(processedRosters);
+        console.log('Rosters data:', formatApiResponse(rostersResponse.data, 'rosters'));
+        setRosters(rostersResponse.data);
 
         // Fetch players data
         console.log('Fetching players data...');
@@ -153,7 +165,7 @@ export function SleeperProvider({ children }: { children: React.ReactNode }) {
           throw new Error('Invalid players data received from API');
         }
 
-        console.log('Players data fetched successfully');
+        console.log('Players data:', formatApiResponse(playersResponse.data, 'players'));
         setPlayers(playersResponse.data);
       }
 
@@ -183,7 +195,7 @@ export function SleeperProvider({ children }: { children: React.ReactNode }) {
       const userResponse: AxiosResponse<SleeperUser> = await axios.get(
         `https://api.sleeper.app/v1/user/${username}`
       );
-      console.log('User API response:', userResponse.data);
+      console.log('User data:', formatApiResponse(userResponse.data, 'user'));
 
       if (!userResponse.data || !userResponse.data.user_id) {
         console.error('Invalid user data received:', userResponse.data);
@@ -191,7 +203,7 @@ export function SleeperProvider({ children }: { children: React.ReactNode }) {
       }
       
       const userData = userResponse.data;
-      console.log('Setting user data and storing in localStorage:', userData);
+      console.log('Setting user data and storing in localStorage:', formatApiResponse(userData, 'user'));
       setUser(userData);
       localStorage.setItem('sleeperUser', JSON.stringify(userData));
 
@@ -254,9 +266,3 @@ export function useSleeper() {
   }
   return context;
 }
-
-// API Debug Section
-// This section contains debug logging for API responses and data processing
-// It helps track the flow of data through the application and identify potential issues
-// The logs are organized by feature area (user, leagues, rosters, players)
-// Each log includes relevant context and data for debugging purposes
