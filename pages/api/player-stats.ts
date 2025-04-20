@@ -8,36 +8,49 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const { db } = await connectToDatabase();
-    const statsCollection = db.collection('player_stats');
-
     // Get the current season and week from the request
     const season = req.query.season || new Date().getFullYear();
     const week = req.query.week || '1';
 
-    // Check if we have recent data (within last hour)
-    const lastUpdate = await statsCollection.findOne({ season, week }, { sort: { updatedAt: -1 } });
-    const now = new Date();
-    const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
+    // Try to get data from MongoDB first
+    try {
+      const { db } = await connectToDatabase();
+      const statsCollection = db.collection('player_stats');
 
-    if (lastUpdate && lastUpdate.updatedAt > oneHourAgo) {
-      // Return cached data if it's less than an hour old
-      const stats = await statsCollection.findOne({ season, week }, { projection: { _id: 0, updatedAt: 0 } });
-      return res.status(200).json(stats?.stats || {});
+      // Check if we have recent data (within last hour)
+      const lastUpdate = await statsCollection.findOne({ season, week }, { sort: { updatedAt: -1 } });
+      const now = new Date();
+      const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
+
+      if (lastUpdate && lastUpdate.updatedAt > oneHourAgo) {
+        // Return cached data if it's less than an hour old
+        const stats = await statsCollection.findOne({ season, week }, { projection: { _id: 0, updatedAt: 0 } });
+        return res.status(200).json(stats?.stats || {});
+      }
+    } catch (dbError) {
+      console.error('MongoDB error:', dbError);
+      // Continue to fetch from Sleeper API if MongoDB fails
     }
 
     // Fetch fresh data from Sleeper API
     const response = await axios.get(`https://api.sleeper.app/v1/stats/nfl/regular/${season}/${week}`);
     const stats = response.data;
 
-    // Store in MongoDB with timestamp
-    await statsCollection.deleteMany({ season, week }); // Clear old data
-    await statsCollection.insertOne({
-      season,
-      week,
-      stats,
-      updatedAt: now
-    });
+    // Try to store in MongoDB if available
+    try {
+      const { db } = await connectToDatabase();
+      const statsCollection = db.collection('player_stats');
+      await statsCollection.deleteMany({ season, week }); // Clear old data
+      await statsCollection.insertOne({
+        season,
+        week,
+        stats,
+        updatedAt: new Date()
+      });
+    } catch (dbError) {
+      console.error('MongoDB storage error:', dbError);
+      // Continue even if MongoDB storage fails
+    }
 
     return res.status(200).json(stats);
   } catch (error) {

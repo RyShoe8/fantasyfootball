@@ -274,38 +274,43 @@ const Roster: React.FC = () => {
 
   const getPlayerStats = (playerId: string) => {
     const stats = playerStats[playerId];
-    if (!stats) return null;
+    if (!stats) return <div className="text-sm text-gray-500">Loading stats...</div>;
 
     const position = players[playerId]?.position;
-    if (!position) return null;
+    if (!position) return <div className="text-sm text-gray-500">Position not found</div>;
 
-    switch (position) {
-      case 'QB':
-        return {
-          passing: `${stats.passing_yards || 0} yds, ${stats.passing_tds || 0} TD, ${stats.passing_ints || 0} INT`,
-          rushing: `${stats.rushing_yards || 0} yds, ${stats.rushing_tds || 0} TD`
-        };
-      case 'RB':
-        return {
-          rushing: `${stats.rushing_yards || 0} yds, ${stats.rushing_tds || 0} TD`,
-          receiving: `${stats.receiving_yards || 0} yds, ${stats.receiving_tds || 0} TD, ${stats.receptions || 0} rec`
-        };
-      case 'WR':
-      case 'TE':
-        return {
-          receiving: `${stats.receiving_yards || 0} yds, ${stats.receiving_tds || 0} TD, ${stats.receptions || 0} rec`,
-          targets: `${stats.receiving_targets || 0} targets`
-        };
-      case 'K':
-        return {
-          kicking: `${stats.fg_made || 0}/${stats.fg_attempts || 0} FG, ${stats.xp_made || 0}/${stats.xp_attempts || 0} XP`
-        };
-      case 'DEF':
-        return {
-          defense: `${stats.sacks || 0} sacks, ${stats.interceptions || 0} INT, ${stats.fumbles_recovered || 0} FR`
-        };
-      default:
-        return null;
+    try {
+      switch (position) {
+        case 'QB':
+          return {
+            passing: `${stats.passing_yards || 0} yds, ${stats.passing_tds || 0} TD, ${stats.passing_ints || 0} INT`,
+            rushing: `${stats.rushing_yards || 0} yds, ${stats.rushing_tds || 0} TD`
+          };
+        case 'RB':
+          return {
+            rushing: `${stats.rushing_yards || 0} yds, ${stats.rushing_tds || 0} TD`,
+            receiving: `${stats.receiving_yards || 0} yds, ${stats.receiving_tds || 0} TD, ${stats.receptions || 0} rec`
+          };
+        case 'WR':
+        case 'TE':
+          return {
+            receiving: `${stats.receiving_yards || 0} yds, ${stats.receiving_tds || 0} TD, ${stats.receptions || 0} rec`,
+            targets: `${stats.receiving_targets || 0} targets`
+          };
+        case 'K':
+          return {
+            kicking: `${stats.fg_made || 0}/${stats.fg_attempts || 0} FG, ${stats.xp_made || 0}/${stats.xp_attempts || 0} XP`
+          };
+        case 'DEF':
+          return {
+            defense: `${stats.sacks || 0} sacks, ${stats.interceptions || 0} INT, ${stats.fumbles_recovered || 0} FR`
+          };
+        default:
+          return <div className="text-sm text-gray-500">No stats available</div>;
+      }
+    } catch (error) {
+      console.error('Error formatting player stats:', error);
+      return <div className="text-sm text-gray-500">Error loading stats</div>;
     }
   };
 
@@ -415,7 +420,7 @@ const Roster: React.FC = () => {
                       <div className="flex-shrink-0 h-10 w-10">
                         <img
                           className="h-10 w-10 rounded-full object-cover"
-                          src={`https://sleepercdn.com/avatars/${player.player_id}`}
+                          src={`https://sleepercdn.com/players/avatar/${player.player_id}`}
                           alt={player.full_name}
                           onError={(e) => {
                             const target = e.target as HTMLImageElement;
@@ -578,7 +583,7 @@ const Roster: React.FC = () => {
                           <div className="flex-shrink-0 h-10 w-10">
                             <img
                               className="h-10 w-10 rounded-full object-cover"
-                              src={`https://sleepercdn.com/avatars/${player.player_id}`}
+                              src={`https://sleepercdn.com/players/avatar/${player.player_id}`}
                               alt={player.full_name}
                               onError={(e) => {
                                 const target = e.target as HTMLImageElement;
@@ -641,7 +646,7 @@ const Roster: React.FC = () => {
                           <div className="flex-shrink-0 h-10 w-10">
                             <img
                               className="h-10 w-10 rounded-full object-cover"
-                              src={`https://sleepercdn.com/avatars/${player.player_id}`}
+                              src={`https://sleepercdn.com/players/avatar/${player.player_id}`}
                               alt={player.full_name}
                               onError={(e) => {
                                 const target = e.target as HTMLImageElement;
