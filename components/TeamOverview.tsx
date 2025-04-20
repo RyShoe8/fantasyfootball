@@ -180,7 +180,7 @@ const TeamOverview: React.FC = () => {
       teamName: userRoster.metadata?.team_name || 'Your Team',
       wins: userRoster.settings?.wins || 0,
       losses: userRoster.settings?.losses || 0,
-      ties: userRoster.settings?.ties || 0,
+      ties: 0, // Ties are not tracked in Sleeper API
       totalPoints: 0,
       positionStats: {},
       players: []
