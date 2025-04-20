@@ -140,12 +140,8 @@ export default function LeagueInfo() {
               <p className="font-medium">{currentLeague.settings.num_teams}</p>
             </div>
             <div>
-              <p className="text-gray-600">Season Start</p>
-              <p className="font-medium">{formatDate(currentLeague.season_start)}</p>
-            </div>
-            <div>
               <p className="text-gray-600">Start Week</p>
-              <p className="font-medium">{currentLeague.start_week} ({formatDate(currentLeague.start_week_date)})</p>
+              <p className="font-medium">Week {currentLeague.settings.start_week}</p>
             </div>
             <div>
               <p className="text-gray-600">Roster Positions</p>
