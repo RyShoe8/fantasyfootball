@@ -12,12 +12,7 @@ interface PlayerStats {
   [key: string]: any;
 }
 
-interface Player {
-  player_id: string;
-  full_name: string;
-  position: string;
-  team: string;
-  injury_status?: string;
+interface Player extends SleeperPlayer {
   stats?: PlayerStats;
   projected_pts?: number;
   pts_ppr?: number;
@@ -60,7 +55,7 @@ const TeamOverview: React.FC = () => {
     // Get all players from the roster
     const rosterPlayers = [...(userRoster.starters || []), ...(userRoster.reserves || [])]
       .map(playerId => {
-        const player = players[playerId as keyof typeof players] as Player | undefined;
+        const player = players[playerId as keyof typeof players];
         if (!player) return null;
 
         // Get stats for the selected week
@@ -71,7 +66,7 @@ const TeamOverview: React.FC = () => {
           stats: weekStats,
           projected_pts: weekStats.projected_pts || 0,
           pts_ppr: weekStats.pts_ppr || 0
-        };
+        } as Player;
       })
       .filter((p): p is NonNullable<typeof p> => p !== null);
 
