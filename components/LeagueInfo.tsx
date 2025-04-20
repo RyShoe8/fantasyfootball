@@ -126,7 +126,7 @@ export default function LeagueInfo() {
             </div>
             <div>
               <p className="text-gray-600">Total Rosters</p>
-              <p className="font-medium">{currentLeague.total_rosters}</p>
+              <p className="font-medium">{currentLeague.settings.num_teams}</p>
             </div>
             <div>
               <p className="text-gray-600">Draft ID</p>
