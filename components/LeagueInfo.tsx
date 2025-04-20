@@ -79,7 +79,8 @@ const formatApiResponse = (data: any, type: string) => {
         username: data.username,
         display_name: data.display_name,
         user_id: data.user_id,
-        avatar: data.avatar
+        avatar: data.avatar,
+        metadata: data.metadata || {}
       };
     case 'league':
       return {
@@ -101,8 +102,12 @@ const formatApiResponse = (data: any, type: string) => {
         roster_id: roster.roster_id,
         owner_id: roster.owner_id,
         team_name: roster.metadata?.team_name || `Team ${roster.roster_id}`,
-        starters: roster.starters,
-        players: roster.players?.length || 0
+        starters: roster.starters || [],
+        reserves: roster.reserve || [],
+        taxi: roster.taxi || [],
+        ir: roster.ir || [],
+        players: roster.players || [],
+        settings: roster.settings || {}
       }));
     case 'players':
       return `Total players: ${Object.keys(data).length}`;
@@ -260,6 +265,88 @@ export default function LeagueInfo() {
             </dl>
           </div>
         </div>
+      </div>
+
+      {/* API Debug Section */}
+      <div className="bg-white shadow rounded-lg p-6">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-2xl font-bold text-gray-900">API Debug</h2>
+          <button
+            onClick={() => setShowDebug(!showDebug)}
+            className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200"
+          >
+            {showDebug ? 'Hide Debug' : 'Show Debug'}
+          </button>
+        </div>
+
+        {showDebug && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">League Data</h3>
+                <pre className="bg-gray-100 p-4 rounded-md overflow-auto max-h-96">
+                  {formatJSON(formatApiResponse(currentLeague, 'league'))}
+                </pre>
+              </div>
+              <div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">User Data</h3>
+                <pre className="bg-gray-100 p-4 rounded-md overflow-auto max-h-96">
+                  {formatJSON(formatApiResponse(user, 'user'))}
+                </pre>
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Rosters Data</h3>
+              <pre className="bg-gray-100 p-4 rounded-md overflow-auto max-h-96">
+                {formatJSON(formatApiResponse(rosters, 'rosters'))}
+              </pre>
+            </div>
+
+            <div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Players Data</h3>
+              <pre className="bg-gray-100 p-4 rounded-md overflow-auto max-h-96">
+                {formatJSON(formatApiResponse(players, 'players'))}
+              </pre>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <button
+                onClick={() => {
+                  fetch(`https://api.sleeper.app/v1/league/${currentLeague.league_id}/rosters`)
+                    .then(res => res.json())
+                    .then(data => console.log('Rosters API Response:', data))
+                    .catch(err => console.error('Error fetching rosters:', err));
+                }}
+                className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+              >
+                Fetch Rosters
+              </button>
+              <button
+                onClick={() => {
+                  fetch(`https://api.sleeper.app/v1/league/${currentLeague.league_id}/users`)
+                    .then(res => res.json())
+                    .then(data => console.log('Users API Response:', data))
+                    .catch(err => console.error('Error fetching users:', err));
+                }}
+                className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600"
+              >
+                Fetch Users
+              </button>
+              <button
+                onClick={() => {
+                  fetch('https://api.sleeper.app/v1/players/nfl')
+                    .then(res => res.json())
+                    .then(data => console.log('Players API Response:', data))
+                    .catch(err => console.error('Error fetching players:', err));
+                }}
+                className="px-4 py-2 bg-purple-500 text-white rounded-md hover:bg-purple-600"
+              >
+                Fetch Players
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
