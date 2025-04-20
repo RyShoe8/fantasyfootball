@@ -525,34 +525,46 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
               setSelectedWeekState(storedSelectedWeek);
             }
 
-            // Fetch league data
+            // Fetch league data with timeout
             console.log('Fetching leagues...');
             const yearToFetch = storedSelectedYear || getCurrentSeason().toString();
             setSelectedYearState(yearToFetch);
-            const leaguesResponse = await axios.get(`https://api.sleeper.app/v1/user/${userData.user_id}/leagues/nfl/${yearToFetch}`);
-            console.log('Leagues response:', leaguesResponse.data);
 
-            if (leaguesResponse.data && leaguesResponse.data.length > 0) {
-              // Set leagues first
-              setLeagues(leaguesResponse.data);
-              
-              // Set current league from localStorage if available
-              if (storedCurrentLeague) {
-                const parsedLeague = JSON.parse(storedCurrentLeague);
-                // Verify the league exists in the fetched leagues
-                const leagueExists = leaguesResponse.data.some((l: SleeperLeague) => l.league_id === parsedLeague.league_id);
-                if (leagueExists) {
-                  await setCurrentLeague(parsedLeague);
+            try {
+              const timeout = 10000; // 10 second timeout
+              const leaguesResponse = await Promise.race([
+                axios.get(`https://api.sleeper.app/v1/user/${userData.user_id}/leagues/nfl/${yearToFetch}`),
+                new Promise((_, reject) => 
+                  setTimeout(() => reject(new Error('Request timed out')), timeout)
+                )
+              ]);
+
+              if (leaguesResponse.data && leaguesResponse.data.length > 0) {
+                // Set leagues first
+                setLeagues(leaguesResponse.data);
+                
+                // Set current league from localStorage if available
+                if (storedCurrentLeague) {
+                  const parsedLeague = JSON.parse(storedCurrentLeague);
+                  // Verify the league exists in the fetched leagues
+                  const leagueExists = leaguesResponse.data.some((l: SleeperLeague) => l.league_id === parsedLeague.league_id);
+                  if (leagueExists) {
+                    await setCurrentLeague(parsedLeague);
+                  } else {
+                    await setCurrentLeague(leaguesResponse.data[0]);
+                  }
                 } else {
                   await setCurrentLeague(leaguesResponse.data[0]);
                 }
               } else {
-                await setCurrentLeague(leaguesResponse.data[0]);
+                setError('No leagues found for this user');
+                setLeagues([]);
+                setCurrentLeagueState(null);
               }
-            } else {
-              setError('No leagues found for this user');
-              setLeagues([]);
-              setCurrentLeagueState(null);
+            } catch (err) {
+              console.error('Error fetching leagues:', err);
+              // Don't throw here, we still want to show the basic user data
+              setError('Failed to fetch leagues. Please check your internet connection and try again.');
             }
           } catch (err) {
             console.error('Error initializing context:', err);
