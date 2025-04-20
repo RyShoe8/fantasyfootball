@@ -33,7 +33,7 @@ interface SleeperContextType {
 
 const SleeperContext = createContext<SleeperContextType | undefined>(undefined);
 
-export function SleeperProvider({ children }: { children: React.ReactNode }) {
+export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<SleeperUser | null>(null);
   const [users, setUsers] = useState<SleeperUser[]>([]);
   const [leagues, setLeagues] = useState<SleeperLeague[]>([]);
@@ -44,263 +44,123 @@ export function SleeperProvider({ children }: { children: React.ReactNode }) {
   const [selectedWeek, setSelectedWeek] = useState<string>("1");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    console.log('SleeperProvider mounted, checking for stored user...');
-    const storedUser = localStorage.getItem('sleeperUser');
-    if (storedUser) {
-      console.log('Found stored user data:', storedUser);
-      try {
-        const userData = JSON.parse(storedUser);
-        console.log('Parsed user data:', userData);
-        setUser(userData);
-        fetchUserData(userData.user_id).catch(err => {
-          console.error('Failed to fetch user data:', err);
-          console.log('Clearing stored user data due to error');
-          setError('Failed to load user data. Please try logging in again.');
-          setUser(null);
-          localStorage.removeItem('sleeperUser');
-        });
-      } catch (err) {
-        console.error('Failed to parse stored user data:', err);
-        localStorage.removeItem('sleeperUser');
-        setIsLoading(false);
-      }
-    } else {
-      console.log('No stored user data found');
-      setIsLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (leagues.length > 0 && !currentLeague) {
-      console.log('Setting initial current league:', leagues[0]);
-      setCurrentLeague(leagues[0]);
-    }
-  }, [leagues, currentLeague]);
-
-  // API Debug Section
-  // This section contains debug logging for API responses and data processing
-  // It helps track the flow of data through the application and identify potential issues
-
-  // Helper function to format API responses for logging
-  const formatApiResponse = (data: any, type: string) => {
-    switch (type) {
-      case 'user':
-        return {
-          username: data.username,
-          display_name: data.display_name,
-          user_id: data.user_id,
-          avatar: data.avatar,
-          metadata: data.metadata || {}
-        };
-      case 'league':
-        return {
-          name: data.name,
-          league_id: data.league_id,
-          season: data.season,
-          status: data.status,
-          total_rosters: data.total_rosters,
-          roster_positions: data.roster_positions,
-          settings: {
-            num_teams: data.settings.num_teams,
-            playoff_teams: data.settings.playoff_teams,
-            waiver_type: data.settings.waiver_type,
-            waiver_budget: data.settings.waiver_budget
-          }
-        };
-      case 'rosters':
-        return data.map((roster: any) => ({
-          roster_id: roster.roster_id,
-          owner_id: roster.owner_id,
-          team_name: roster.metadata?.team_name || `Team ${roster.roster_id}`,
-          starters: roster.starters || [],
-          reserves: roster.reserves || [],
-          taxi: roster.taxi || [],
-          ir: roster.ir || [],
-          players: roster.players?.length || 0
-        }));
-      case 'players':
-        return `Total players: ${Object.keys(data).length}`;
-      case 'draft_picks':
-        return data.map((pick: SleeperDraftPick) => ({
-          player: `${pick.metadata.first_name} ${pick.metadata.last_name}`,
-          position: pick.metadata.position,
-          team: pick.metadata.team,
-          round: pick.round,
-          pick_no: pick.pick_no,
-          roster_id: pick.roster_id,
-          picked_by: pick.picked_by
-        }));
-      default:
-        return data;
-    }
-  };
+  const [isInitialized, setIsInitialized] = useState(false);
 
   const fetchUserData = async (userId: string) => {
     try {
-      console.log('Starting fetchUserData for user ID:', userId);
-      setIsLoading(true);
-      setError(null);
-
-      // 1. Fetch user's leagues
-      const currentYear = new Date().getFullYear();
-      console.log(`Fetching leagues for user ${userId} and year ${currentYear}`);
-      const leaguesResponse: AxiosResponse<SleeperLeague[]> = await axios.get(
-        `https://api.sleeper.app/v1/user/${userId}/leagues/nfl/${currentYear}`
-      );
-      
-      if (!Array.isArray(leaguesResponse.data)) {
-        console.error('Invalid leagues data received:', leaguesResponse.data);
-        throw new Error('Invalid leagues data received from API');
-      }
-
-      // Sort leagues alphabetically by name
-      const sortedLeagues = [...leaguesResponse.data].sort((a, b) => 
-        a.name.localeCompare(b.name)
-      );
-
-      console.log('Sorted leagues:', sortedLeagues.map(l => ({
-        name: l.name,
-        league_id: l.league_id
-      })));
-
-      // 2. Get the last visited league from localStorage or default to first alphabetical
-      const lastVisitedLeagueId = localStorage.getItem('lastVisitedLeague');
-      console.log('Last visited league ID:', lastVisitedLeagueId);
-
-      const targetLeague = lastVisitedLeagueId && sortedLeagues.some(l => l.league_id === lastVisitedLeagueId)
-        ? sortedLeagues.find(l => l.league_id === lastVisitedLeagueId)
-        : sortedLeagues[0];
-
-      if (!targetLeague) {
-        console.log('No leagues found for user');
-        setError('No leagues found for this user. Please check your Sleeper account.');
-        setIsLoading(false);
-        return;
-      }
-
-      console.log('Selected target league:', {
-        name: targetLeague.name,
-        league_id: targetLeague.league_id
-      });
-
-      // 3. Set the leagues and current league
-      setLeagues(sortedLeagues);
-      setCurrentLeague(targetLeague);
-      localStorage.setItem('lastVisitedLeague', targetLeague.league_id);
-
-      // 4. Fetch league-specific data
-      console.log(`Fetching rosters for league ${targetLeague.league_id}`);
-      const rostersResponse = await axios.get<SleeperRoster[]>(
-        `https://api.sleeper.app/v1/league/${targetLeague.league_id}/rosters`
-      );
-      
-      if (!Array.isArray(rostersResponse.data)) {
-        console.error('Invalid roster data received:', rostersResponse.data);
-        throw new Error('Invalid roster data received from API');
-      }
-
-      console.log('Rosters data:', formatApiResponse(rostersResponse.data, 'rosters'));
-      setRosters(rostersResponse.data);
-
-      // 5. Fetch users for the league
-      console.log('Fetching users for the league...');
-      const usersResponse = await axios.get<SleeperUser[]>(
-        `https://api.sleeper.app/v1/league/${targetLeague.league_id}/users`
-      );
-      
-      if (!Array.isArray(usersResponse.data)) {
-        console.error('Invalid users data received:', usersResponse.data);
-        throw new Error('Invalid users data received from API');
-      }
-
-      console.log('Users data:', formatApiResponse(usersResponse.data, 'users'));
-      setUsers(usersResponse.data);
-
-      // Fetch players data
-      console.log('Fetching players data...');
-      const playersResponse: AxiosResponse<Record<string, SleeperPlayer>> = await axios.get(
-        'https://api.sleeper.app/v1/players/nfl'
-      );
-      
-      if (!playersResponse.data || typeof playersResponse.data !== 'object') {
-        console.error('Invalid players data received:', playersResponse.data);
-        throw new Error('Invalid players data received from API');
-      }
-
-      console.log('Players data:', formatApiResponse(playersResponse.data, 'players'));
-      setPlayers(playersResponse.data);
-
-      setIsLoading(false);
-      console.log('All user data fetched and stored successfully');
+      const response = await axios.get(`https://api.sleeper.app/v1/user/${userId}`);
+      const userData = response.data;
+      setUser(userData);
+      localStorage.setItem('sleeperUser', JSON.stringify(userData));
+      return userData;
     } catch (err) {
-      console.error('Failed to fetch user data:', err);
-      const error = err as AxiosError;
-      const errorMessage = error.response?.status === 404 
-        ? 'User data not found. Please try logging in again.'
-        : 'Failed to fetch user data. Please try again later.';
-      
-      setError(errorMessage);
-      setIsLoading(false);
-      throw err;
+      console.error('Error fetching user data:', err);
+      setError('Failed to fetch user data');
+      return null;
+    }
+  };
+
+  const fetchRosters = async (leagueId: string) => {
+    try {
+      const response = await axios.get(`https://api.sleeper.app/v1/league/${leagueId}/rosters`);
+      setRosters(response.data);
+    } catch (err) {
+      console.error('Error fetching rosters:', err);
+      setError('Failed to fetch rosters');
+    }
+  };
+
+  const fetchUsers = async (leagueId: string) => {
+    try {
+      const response = await axios.get(`https://api.sleeper.app/v1/league/${leagueId}/users`);
+      setUsers(response.data);
+    } catch (err) {
+      console.error('Error fetching users:', err);
+      setError('Failed to fetch users');
+    }
+  };
+
+  const fetchPlayers = async () => {
+    try {
+      const response = await axios.get('https://api.sleeper.app/v1/players/nfl');
+      setPlayers(response.data);
+    } catch (err) {
+      console.error('Error fetching players:', err);
+      setError('Failed to fetch players');
     }
   };
 
   const login = async (username: string) => {
+    setIsLoading(true);
+    setError(null);
     try {
-      console.log('Starting login process for username:', username);
-      setIsLoading(true);
-      setError(null);
-
-      // 1. Fetch user data
-      console.log('Fetching user data from API...');
-      const userResponse: AxiosResponse<SleeperUser> = await axios.get(
-        `https://api.sleeper.app/v1/user/${username}`
-      );
-      console.log('User data:', formatApiResponse(userResponse.data, 'user'));
-
-      if (!userResponse.data || !userResponse.data.user_id) {
-        console.error('Invalid user data received:', userResponse.data);
-        throw new Error('Invalid user data received from API');
-      }
-      
-      const userData = userResponse.data;
-      console.log('Setting user data and storing in localStorage:', formatApiResponse(userData, 'user'));
+      const response = await axios.get(`https://api.sleeper.app/v1/user/${username}`);
+      const userData = response.data;
       setUser(userData);
       localStorage.setItem('sleeperUser', JSON.stringify(userData));
-
-      // 2. Fetch user's leagues and other data
-      console.log('Fetching additional user data...');
-      await fetchUserData(userData.user_id);
-
-      console.log('Login process completed successfully');
-      setIsLoading(false);
-    } catch (err) {
-      console.error('Login process failed:', err);
-      const error = err as AxiosError;
-      const errorMessage = error.response?.status === 404 
-        ? 'User not found. Please check your username and try again.'
-        : 'Failed to login. Please try again later.';
       
-      setError(errorMessage);
-      setUser(null);
-      localStorage.removeItem('sleeperUser');
+      // Fetch league data
+      const leaguesResponse = await axios.get(`https://api.sleeper.app/v1/user/${userData.user_id}/leagues/nfl/2023`);
+      if (leaguesResponse.data.length > 0) {
+        const leagueId = leaguesResponse.data[0].league_id;
+        await Promise.all([
+          fetchRosters(leagueId),
+          fetchUsers(leagueId),
+          fetchPlayers()
+        ]);
+      }
+    } catch (err) {
+      console.error('Login error:', err);
+      setError('Failed to login');
+    } finally {
       setIsLoading(false);
-      throw err;
     }
   };
 
   const logout = () => {
-    console.log('Logging out user and clearing all data');
     setUser(null);
-    setLeagues([]);
     setRosters([]);
+    setUsers([]);
     setPlayers({});
     setCurrentLeague(null);
-    setError(null);
     localStorage.removeItem('sleeperUser');
   };
+
+  useEffect(() => {
+    const initializeContext = async () => {
+      if (isInitialized) return;
+
+      console.log('SleeperProvider mounted, checking for stored user...');
+      const storedUser = localStorage.getItem('sleeperUser');
+      
+      if (storedUser) {
+        try {
+          const userData = JSON.parse(storedUser);
+          setUser(userData);
+          
+          // Fetch league data
+          const leaguesResponse = await axios.get(`https://api.sleeper.app/v1/user/${userData.user_id}/leagues/nfl/2023`);
+          if (leaguesResponse.data.length > 0) {
+            const leagueId = leaguesResponse.data[0].league_id;
+            await Promise.all([
+              fetchRosters(leagueId),
+              fetchUsers(leagueId),
+              fetchPlayers()
+            ]);
+          }
+        } catch (err) {
+          console.error('Error initializing context:', err);
+          setError('Failed to initialize context');
+          localStorage.removeItem('sleeperUser');
+        }
+      }
+      
+      setIsLoading(false);
+      setIsInitialized(true);
+    };
+
+    initializeContext();
+  }, [isInitialized]);
 
   return (
     <SleeperContext.Provider

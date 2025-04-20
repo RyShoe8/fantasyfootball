@@ -15,7 +15,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Check if current page requires authentication
-  const requiresAuth = !['/'].includes(router.pathname);
+  const requiresAuth = !['/login'].includes(router.pathname);
 
   useEffect(() => {
     // Log current path and auth state for debugging
@@ -23,10 +23,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     console.log('User authenticated:', !!user);
     console.log('Requires auth:', requiresAuth);
 
-    // Redirect to home if not authenticated and trying to access protected page
+    // Redirect to login if not authenticated and trying to access protected page
     if (requiresAuth && !user && !isLoading) {
-      console.log('Redirecting to home page - not authenticated');
-      router.push('/');
+      console.log('Redirecting to login page - not authenticated');
+      router.push('/login');
     }
   }, [router.pathname, user, isLoading, requiresAuth]);
 
@@ -34,14 +34,18 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        <Spinner />
       </div>
     );
   }
 
-  // Show login page if not authenticated
-  if (!user) {
-    router.push('/login');
+  // Show login page if not authenticated and on login page
+  if (!user && router.pathname === '/login') {
+    return <Login />;
+  }
+
+  // Show nothing while redirecting
+  if (!user && requiresAuth) {
     return null;
   }
 
@@ -84,8 +88,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 Trade Evaluator
               </Link>
               <div className="flex items-center space-x-2">
-                <span className="text-sm text-gray-600">{user.display_name}</span>
-                {user.avatar && (
+                <span className="text-sm text-gray-600">{user?.display_name}</span>
+                {user?.avatar && (
                   <img
                     src={user.avatar}
                     alt={user.display_name}
@@ -110,8 +114,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               Trade Evaluator
             </Link>
             <div className="flex items-center space-x-2 px-3 py-2">
-              <span className="text-sm text-gray-600">{user.display_name}</span>
-              {user.avatar && (
+              <span className="text-sm text-gray-600">{user?.display_name}</span>
+              {user?.avatar && (
                 <img
                   src={user.avatar}
                   alt={user.display_name}
