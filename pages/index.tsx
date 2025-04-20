@@ -21,7 +21,7 @@ export default function Home() {
           <h2 className="text-xl font-semibold mb-4">Team Overview</h2>
           {currentRoster ? (
             <div className="space-y-2">
-              <p className="text-gray-600">Team Name: {currentRoster.metadata?.team_name || 'Unnamed Team'}</p>
+              <p className="text-gray-600">Team Name: {currentRoster.roster_id || 'Unnamed Team'}</p>
               <p className="text-gray-600">Record: {currentRoster.settings.wins}-{currentRoster.settings.losses}</p>
               <p className="text-gray-600">Total Points: {currentRoster.settings.fpts}</p>
             </div>
