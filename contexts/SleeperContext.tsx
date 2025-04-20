@@ -151,21 +151,64 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const fetchPlayers = async () => {
     try {
+      // Check if we have players in localStorage first
+      const cachedPlayers = localStorage.getItem('sleeperPlayers');
+      const cacheTimestamp = localStorage.getItem('sleeperPlayersTimestamp');
+      const now = Date.now();
+      const ONE_DAY = 24 * 60 * 60 * 1000;
+
+      // Use cached data if it's less than a day old
+      if (cachedPlayers && cacheTimestamp && (now - parseInt(cacheTimestamp)) < ONE_DAY) {
+        console.log('Using cached player data');
+        setPlayers(JSON.parse(cachedPlayers));
+        return;
+      }
+
+      console.log('Fetching fresh player data');
       const response = await axios.get('/api/players');
-      setPlayers(response.data);
+      const playerData = response.data;
+      
+      // Cache the data
+      localStorage.setItem('sleeperPlayers', JSON.stringify(playerData));
+      localStorage.setItem('sleeperPlayersTimestamp', now.toString());
+      
+      setPlayers(playerData);
     } catch (error) {
       console.error('Error fetching players:', error);
+      setError('Failed to fetch player data');
     }
   };
 
   const fetchPlayerStats = useCallback(async (season: string, week: string) => {
     try {
+      // Check if we have stats in localStorage first
+      const cacheKey = `sleeperPlayerStats_${season}_${week}`;
+      const cachedStats = localStorage.getItem(cacheKey);
+      const cacheTimestamp = localStorage.getItem(`${cacheKey}_timestamp`);
+      const now = Date.now();
+      const ONE_HOUR = 60 * 60 * 1000;
+
+      // Use cached data if it's less than an hour old
+      if (cachedStats && cacheTimestamp && (now - parseInt(cacheTimestamp)) < ONE_HOUR) {
+        console.log('Using cached player stats');
+        setPlayerStats(JSON.parse(cachedStats));
+        return;
+      }
+
+      console.log('Fetching fresh player stats');
       const response = await axios.get(`/api/player-stats?season=${season}&week=${week}`);
-      setPlayerStats(response.data);
+      const statsData = response.data;
+      
+      // Cache the data
+      localStorage.setItem(cacheKey, JSON.stringify(statsData));
+      localStorage.setItem(`${cacheKey}_timestamp`, now.toString());
+      
+      setPlayerStats(statsData);
     } catch (error) {
       console.error('Error fetching player stats:', error);
+      setError('Failed to fetch player stats');
     }
-  }, []);
+  }, [setError]);
 
   const login = async (username: string) => {
     setIsLoading(true);
