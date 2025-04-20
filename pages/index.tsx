@@ -111,6 +111,11 @@ export default function Home() {
         <LeagueInfo />
       </div>
 
+      {/* Team Overview */}
+      <div className="bg-white rounded-lg shadow p-6">
+        <TeamOverview />
+      </div>
+
       {/* League Standings and Trade Evaluator */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="space-y-6">
