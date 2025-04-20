@@ -1,4 +1,4 @@
-import React, { ChangeEvent } from 'react';
+import React, { ChangeEvent, useState } from 'react';
 import { useSleeper } from '../contexts/SleeperContext';
 import { SleeperLeague } from '../types/sleeper';
 
@@ -54,7 +54,7 @@ const getDateForWeek = (week: number, season: string) => {
 };
 
 // Helper function to determine season number
-const getSeasonNumber = (season: string, leagues: any[]) => {
+const getSeasonNumber = (season: string, leagues: SleeperLeague[]) => {
   // Sort leagues by season to determine which season number this is
   const sortedLeagues = [...leagues].sort((a, b) => parseInt(a.season) - parseInt(b.season));
   const seasonIndex = sortedLeagues.findIndex(l => l.season === season);
@@ -68,7 +68,8 @@ const getSeasonNumber = (season: string, leagues: any[]) => {
 };
 
 export default function LeagueInfo() {
-  const { currentLeague, leagues, setCurrentLeague } = useSleeper();
+  const { currentLeague, leagues, setCurrentLeague, user, rosters, players } = useSleeper();
+  const [showDebug, setShowDebug] = useState(false);
 
   console.log('LeagueInfo - currentLeague:', currentLeague);
   console.log('LeagueInfo - leagues:', leagues);
@@ -78,132 +79,207 @@ export default function LeagueInfo() {
     return null;
   }
 
+  // Helper function to format JSON for display
+  const formatJSON = (obj: any) => {
+    try {
+      return JSON.stringify(obj, null, 2);
+    } catch (err) {
+      return 'Error formatting JSON';
+    }
+  };
+
+  // Helper function to truncate long text
+  const truncateText = (text: string, maxLength: number = 1000) => {
+    if (text.length <= maxLength) return text;
+    return text.slice(0, maxLength) + '...';
+  };
+
   return (
-    <div className="bg-white shadow rounded-lg p-6">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-bold text-gray-900">{currentLeague.name}</h2>
-        <select
-          className="mt-1 block w-64 pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-          value={currentLeague.league_id}
-          onChange={(e: ChangeEvent<HTMLSelectElement>) => {
-            console.log('LeagueInfo - League selection changed:', e.target.value);
-            const league = leagues.find((l: SleeperLeague) => l.league_id === e.target.value);
-            if (league) {
-              console.log('LeagueInfo - Setting new current league:', league);
-              setCurrentLeague(league);
-            }
-          }}
-        >
-          {leagues.map((league: SleeperLeague) => (
-            <option key={league.league_id} value={league.league_id}>
-              {league.name} ({league.season})
-            </option>
-          ))}
-        </select>
+    <div className="space-y-6">
+      <div className="bg-white shadow rounded-lg p-6">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-2xl font-bold text-gray-900">{currentLeague.name}</h2>
+          <select
+            className="mt-1 block w-64 pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+            value={currentLeague.league_id}
+            onChange={(e: ChangeEvent<HTMLSelectElement>) => {
+              console.log('LeagueInfo - League selection changed:', e.target.value);
+              const league = leagues.find((l: SleeperLeague) => l.league_id === e.target.value);
+              if (league) {
+                console.log('LeagueInfo - Setting new current league:', league);
+                setCurrentLeague(league);
+              }
+            }}
+          >
+            {leagues.map((league: SleeperLeague) => (
+              <option key={league.league_id} value={league.league_id}>
+                {league.name} ({league.season})
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <h3 className="text-lg font-medium text-gray-900">League Settings</h3>
+            <dl className="mt-2 space-y-2">
+              <div className="flex justify-between">
+                <dt className="text-gray-600">Teams</dt>
+                <dd className="text-gray-900">{currentLeague.settings.num_teams}</dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="text-gray-600">Roster Positions</dt>
+                <dd className="text-gray-900 text-sm">{formatRosterPositions(currentLeague.roster_positions).positions}</dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="text-gray-600">Bench Slots</dt>
+                <dd className="text-gray-900">{formatRosterPositions(currentLeague.roster_positions).benchSlots}</dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="text-gray-600">Waiver Type</dt>
+                <dd className="text-gray-900">
+                  {currentLeague.settings.waiver_type === 0 ? 'Standard' : 
+                   currentLeague.settings.waiver_type === 1 ? 'FAAB' : 'Custom'}
+                </dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="text-gray-600">Daily Waivers</dt>
+                <dd className="text-gray-900">{currentLeague.settings.daily_waivers === 1 ? 'Yes' : 'No'}</dd>
+              </div>
+            </dl>
+          </div>
+
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <h3 className="text-lg font-medium text-gray-900">Season Info</h3>
+            <dl className="mt-2 space-y-2">
+              <div className="flex justify-between">
+                <dt className="text-gray-600">Season</dt>
+                <dd className="text-gray-900">
+                  {currentLeague.season}
+                  <span className="text-xs text-gray-500 ml-1">
+                    {getSeasonNumber(currentLeague.season, leagues)}
+                  </span>
+                </dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="text-gray-600">Status</dt>
+                <dd className="text-gray-900">{formatStatus(currentLeague.status)}</dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="text-gray-600">Start Week</dt>
+                <dd className="text-gray-900">
+                  Week {currentLeague.settings.start_week}
+                  <span className="text-xs text-gray-500 ml-1">
+                    ({getDateForWeek(currentLeague.settings.start_week, currentLeague.season)})
+                  </span>
+                </dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="text-gray-600">Season Start</dt>
+                <dd className="text-gray-900">
+                  {getDateForWeek(currentLeague.settings.start_week, currentLeague.season)}
+                </dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="text-gray-600">Draft Rounds</dt>
+                <dd className="text-gray-900">{currentLeague.settings.draft_rounds}</dd>
+              </div>
+            </dl>
+          </div>
+
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <h3 className="text-lg font-medium text-gray-900">Playoff Info</h3>
+            <dl className="mt-2 space-y-2">
+              <div className="flex justify-between">
+                <dt className="text-gray-600">Playoff Teams</dt>
+                <dd className="text-gray-900">{currentLeague.settings.playoff_teams}</dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="text-gray-600">Playoff Week Start</dt>
+                <dd className="text-gray-900">
+                  Week {currentLeague.settings.playoff_week_start} 
+                  <span className="text-xs text-gray-500 ml-1">
+                    ({getDateForWeek(currentLeague.settings.playoff_week_start, currentLeague.season)})
+                  </span>
+                </dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="text-gray-600">Trade Deadline</dt>
+                <dd className="text-gray-900">
+                  Week {currentLeague.settings.trade_deadline}
+                  <span className="text-xs text-gray-500 ml-1">
+                    ({getDateForWeek(currentLeague.settings.trade_deadline, currentLeague.season)})
+                  </span>
+                </dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="text-gray-600">Playoff Type</dt>
+                <dd className="text-gray-900">
+                  {currentLeague.settings.playoff_type === 0 ? 'Single Elimination' : 
+                   currentLeague.settings.playoff_type === 1 ? 'Two Rounds' : 'Custom'}
+                </dd>
+              </div>
+            </dl>
+          </div>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <div className="bg-gray-50 p-4 rounded-lg">
-          <h3 className="text-lg font-medium text-gray-900">League Settings</h3>
-          <dl className="mt-2 space-y-2">
-            <div className="flex justify-between">
-              <dt className="text-gray-600">Teams</dt>
-              <dd className="text-gray-900">{currentLeague.settings.num_teams}</dd>
-            </div>
-            <div className="flex justify-between">
-              <dt className="text-gray-600">Roster Positions</dt>
-              <dd className="text-gray-900 text-sm">{formatRosterPositions(currentLeague.roster_positions).positions}</dd>
-            </div>
-            <div className="flex justify-between">
-              <dt className="text-gray-600">Bench Slots</dt>
-              <dd className="text-gray-900">{formatRosterPositions(currentLeague.roster_positions).benchSlots}</dd>
-            </div>
-            <div className="flex justify-between">
-              <dt className="text-gray-600">Waiver Type</dt>
-              <dd className="text-gray-900">
-                {currentLeague.settings.waiver_type === 0 ? 'Standard' : 
-                 currentLeague.settings.waiver_type === 1 ? 'FAAB' : 'Custom'}
-              </dd>
-            </div>
-            <div className="flex justify-between">
-              <dt className="text-gray-600">Daily Waivers</dt>
-              <dd className="text-gray-900">{currentLeague.settings.daily_waivers === 1 ? 'Yes' : 'No'}</dd>
-            </div>
-          </dl>
+      {/* Debug Section */}
+      <div className="bg-white shadow rounded-lg p-6">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-2xl font-bold text-gray-900">API Debug Data</h2>
+          <button
+            onClick={() => setShowDebug(!showDebug)}
+            className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          >
+            {showDebug ? 'Hide Debug Data' : 'Show Debug Data'}
+          </button>
         </div>
 
-        <div className="bg-gray-50 p-4 rounded-lg">
-          <h3 className="text-lg font-medium text-gray-900">Season Info</h3>
-          <dl className="mt-2 space-y-2">
-            <div className="flex justify-between">
-              <dt className="text-gray-600">Season</dt>
-              <dd className="text-gray-900">
-                {currentLeague.season}
-                <span className="text-xs text-gray-500 ml-1">
-                  {getSeasonNumber(currentLeague.season, leagues)}
-                </span>
-              </dd>
+        {showDebug && (
+          <div className="space-y-6">
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <h3 className="text-lg font-medium text-gray-900 mb-2">User Data</h3>
+              <pre className="overflow-auto p-4 bg-gray-800 text-gray-100 rounded-md text-sm">
+                {formatJSON(user)}
+              </pre>
             </div>
-            <div className="flex justify-between">
-              <dt className="text-gray-600">Status</dt>
-              <dd className="text-gray-900">{formatStatus(currentLeague.status)}</dd>
-            </div>
-            <div className="flex justify-between">
-              <dt className="text-gray-600">Start Week</dt>
-              <dd className="text-gray-900">
-                Week {currentLeague.settings.start_week}
-                <span className="text-xs text-gray-500 ml-1">
-                  ({getDateForWeek(currentLeague.settings.start_week, currentLeague.season)})
-                </span>
-              </dd>
-            </div>
-            <div className="flex justify-between">
-              <dt className="text-gray-600">Season Start</dt>
-              <dd className="text-gray-900">
-                {getDateForWeek(currentLeague.settings.start_week, currentLeague.season)}
-              </dd>
-            </div>
-            <div className="flex justify-between">
-              <dt className="text-gray-600">Draft Rounds</dt>
-              <dd className="text-gray-900">{currentLeague.settings.draft_rounds}</dd>
-            </div>
-          </dl>
-        </div>
 
-        <div className="bg-gray-50 p-4 rounded-lg">
-          <h3 className="text-lg font-medium text-gray-900">Playoff Info</h3>
-          <dl className="mt-2 space-y-2">
-            <div className="flex justify-between">
-              <dt className="text-gray-600">Playoff Teams</dt>
-              <dd className="text-gray-900">{currentLeague.settings.playoff_teams}</dd>
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Current League Data</h3>
+              <pre className="overflow-auto p-4 bg-gray-800 text-gray-100 rounded-md text-sm">
+                {formatJSON(currentLeague)}
+              </pre>
             </div>
-            <div className="flex justify-between">
-              <dt className="text-gray-600">Playoff Week Start</dt>
-              <dd className="text-gray-900">
-                Week {currentLeague.settings.playoff_week_start} 
-                <span className="text-xs text-gray-500 ml-1">
-                  ({getDateForWeek(currentLeague.settings.playoff_week_start, currentLeague.season)})
-                </span>
-              </dd>
+
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <h3 className="text-lg font-medium text-gray-900 mb-2">All Leagues Data</h3>
+              <pre className="overflow-auto p-4 bg-gray-800 text-gray-100 rounded-md text-sm">
+                {formatJSON(leagues)}
+              </pre>
             </div>
-            <div className="flex justify-between">
-              <dt className="text-gray-600">Trade Deadline</dt>
-              <dd className="text-gray-900">
-                Week {currentLeague.settings.trade_deadline}
-                <span className="text-xs text-gray-500 ml-1">
-                  ({getDateForWeek(currentLeague.settings.trade_deadline, currentLeague.season)})
-                </span>
-              </dd>
+
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Rosters Data</h3>
+              <pre className="overflow-auto p-4 bg-gray-800 text-gray-100 rounded-md text-sm">
+                {formatJSON(rosters)}
+              </pre>
             </div>
-            <div className="flex justify-between">
-              <dt className="text-gray-600">Playoff Type</dt>
-              <dd className="text-gray-900">
-                {currentLeague.settings.playoff_type === 0 ? 'Single Elimination' : 
-                 currentLeague.settings.playoff_type === 1 ? 'Two Rounds' : 'Custom'}
-              </dd>
+
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Players Data (Sample)</h3>
+              <pre className="overflow-auto p-4 bg-gray-800 text-gray-100 rounded-md text-sm">
+                {formatJSON(Object.entries(players).slice(0, 5).reduce((acc, [key, value]) => {
+                  acc[key] = value;
+                  return acc;
+                }, {} as Record<string, any>))}
+              </pre>
+              <p className="mt-2 text-sm text-gray-500">
+                Showing first 5 players only. Total players: {Object.keys(players).length}
+              </p>
             </div>
-          </dl>
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );
