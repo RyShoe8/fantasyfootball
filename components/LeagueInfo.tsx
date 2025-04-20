@@ -209,10 +209,6 @@ export default function LeagueInfo() {
               <p className="text-gray-600">Playoff Teams</p>
               <p className="font-medium">{currentLeague.settings.playoff_teams}</p>
             </div>
-            <div>
-              <p className="text-gray-600">Playoff Rounds</p>
-              <p className="font-medium">{currentLeague.settings.playoff_rounds}</p>
-            </div>
           </div>
         </div>
       </div>
