@@ -18,7 +18,11 @@ const options: MongoClientOptions = {
   monitorCommands: false,
   directConnection: true,
   tls: false,
-  minHeartbeatFrequencyMS: 5000
+  minHeartbeatFrequencyMS: 5000,
+  authMechanism: 'SCRAM-SHA-256',
+  authSource: 'admin',
+  retryWrites: false,
+  retryReads: false
 };
 
 let client: MongoClient;

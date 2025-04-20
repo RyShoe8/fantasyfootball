@@ -39,7 +39,9 @@ const nextConfig = {
         https: false,
         zlib: false,
         path: false,
-        'mongodb-client-encryption': false
+        'mongodb-client-encryption': false,
+        'timers/promises': false,
+        timers: false
       };
     }
     return config;
