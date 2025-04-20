@@ -62,7 +62,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   }, [router.pathname, user, isLoading, requiresAuth, isHydrated, currentLeague, isMobile]);
 
   // Show loading spinner during initial load or hydration
-  if (!isHydrated || isLoading) {
+  if (!isHydrated || (isLoading && router.pathname !== '/login')) {
     console.log('Layout: Showing loading state', { isHydrated, isLoading, isMobile });
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
