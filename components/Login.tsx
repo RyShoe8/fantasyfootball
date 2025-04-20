@@ -1,27 +1,74 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSleeper } from '../contexts/SleeperContext';
 import { useRouter } from 'next/router';
 
 export default function Login() {
   const [username, setUsername] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { login, error } = useSleeper();
+  const [localError, setLocalError] = useState<string | null>(null);
+  const { login, error: contextError, user } = useSleeper();
   const router = useRouter();
+
+  useEffect(() => {
+    // If user is already logged in, redirect to home
+    if (user) {
+      console.log('User already logged in, redirecting to home:', user);
+      router.push('/');
+    }
+  }, [user, router]);
+
+  useEffect(() => {
+    // Update local error state when context error changes
+    if (contextError) {
+      console.log('Context error received:', contextError);
+      setLocalError(contextError);
+    }
+  }, [contextError]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!username.trim()) return;
+    const trimmedUsername = username.trim();
     
+    if (!trimmedUsername) {
+      console.log('Empty username submitted');
+      setLocalError('Please enter a username');
+      return;
+    }
+    
+    console.log('Attempting to login with username:', trimmedUsername);
     setIsLoading(true);
+    setLocalError(null);
+    
     try {
-      await login(username.trim());
-      if (!error) {
+      console.log('Calling login function...');
+      await login(trimmedUsername);
+      
+      // Check if there's an error in the context
+      if (!contextError) {
+        console.log('Login successful, redirecting to home');
         router.push('/');
+      } else {
+        console.log('Login failed with context error:', contextError);
+        setLocalError(contextError);
       }
     } catch (err) {
-      console.error('Login failed:', err);
+      console.error('Login failed with error:', err);
+      setLocalError(
+        err instanceof Error ? err.message : 'An unexpected error occurred'
+      );
     } finally {
+      console.log('Login attempt completed');
       setIsLoading(false);
+    }
+  };
+
+  const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newUsername = e.target.value;
+    console.log('Username input changed:', newUsername);
+    setUsername(newUsername);
+    // Clear error when user starts typing
+    if (localError) {
+      setLocalError(null);
     }
   };
 
@@ -50,13 +97,21 @@ export default function Login() {
                 className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                 placeholder="Sleeper Username"
                 value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                onChange={handleUsernameChange}
+                aria-invalid={!!localError}
+                aria-describedby={localError ? "error-message" : undefined}
               />
             </div>
           </div>
 
-          {error && (
-            <div className="text-red-500 text-sm text-center">{error}</div>
+          {localError && (
+            <div 
+              id="error-message"
+              role="alert"
+              className="text-red-500 text-sm text-center"
+            >
+              {localError}
+            </div>
           )}
 
           <div>
@@ -64,6 +119,7 @@ export default function Login() {
               type="submit"
               disabled={isLoading || !username.trim()}
               className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+              aria-disabled={isLoading || !username.trim()}
             >
               {isLoading ? (
                 <span className="absolute left-0 inset-y-0 flex items-center pl-3">
@@ -72,6 +128,7 @@ export default function Login() {
                     xmlns="http://www.w3.org/2000/svg"
                     fill="none"
                     viewBox="0 0 24 24"
+                    aria-hidden="true"
                   >
                     <circle
                       className="opacity-25"

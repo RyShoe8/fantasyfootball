@@ -34,38 +34,48 @@ export function SleeperProvider({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    console.log('SleeperProvider mounted, checking for stored user...');
     const storedUser = localStorage.getItem('sleeperUser');
     if (storedUser) {
-      const userData = JSON.parse(storedUser);
-      setUser(userData);
-      fetchUserData(userData.user_id).catch(err => {
-        console.error('Failed to fetch user data:', err);
-        setError('Failed to load user data. Please try logging in again.');
-        setUser(null);
+      console.log('Found stored user data:', storedUser);
+      try {
+        const userData = JSON.parse(storedUser);
+        console.log('Parsed user data:', userData);
+        setUser(userData);
+        fetchUserData(userData.user_id).catch(err => {
+          console.error('Failed to fetch user data:', err);
+          console.log('Clearing stored user data due to error');
+          setError('Failed to load user data. Please try logging in again.');
+          setUser(null);
+          localStorage.removeItem('sleeperUser');
+        });
+      } catch (err) {
+        console.error('Failed to parse stored user data:', err);
         localStorage.removeItem('sleeperUser');
-      });
+        setIsLoading(false);
+      }
     } else {
+      console.log('No stored user data found');
       setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    // Set the first league as current league when leagues are loaded
     if (leagues.length > 0 && !currentLeague) {
+      console.log('Setting initial current league:', leagues[0]);
       setCurrentLeague(leagues[0]);
     }
   }, [leagues, currentLeague]);
 
   const fetchUserData = async (userId: string) => {
     try {
+      console.log('Starting fetchUserData for user ID:', userId);
       setIsLoading(true);
       setError(null);
 
-      console.log('Fetching data for user ID:', userId);
-
       // Fetch user's leagues
       const currentYear = new Date().getFullYear();
-      console.log('Fetching leagues for year:', currentYear);
+      console.log(`Fetching leagues for user ${userId} and year ${currentYear}`);
       const leaguesResponse: AxiosResponse<SleeperLeague[]> = await axios.get(
         `https://api.sleeper.app/v1/user/${userId}/leagues/nfl/${currentYear}`
       );
@@ -75,14 +85,16 @@ export function SleeperProvider({ children }: { children: React.ReactNode }) {
         throw new Error('Invalid leagues data received from API');
       }
 
-      console.log('Found leagues:', leaguesResponse.data.length);
+      console.log(`Found ${leaguesResponse.data.length} leagues:`, leaguesResponse.data);
       setLeagues(leaguesResponse.data);
 
       // Fetch rosters for each league
       console.log('Fetching rosters for each league...');
-      const rostersPromises = leaguesResponse.data.map((league: SleeperLeague) => {
-        console.log('Fetching rosters for league:', league.league_id);
-        return axios.get<SleeperRoster[]>(`https://api.sleeper.app/v1/league/${league.league_id}/rosters`);
+      const rostersPromises = leaguesResponse.data.map(async (league: SleeperLeague) => {
+        console.log(`Fetching rosters for league ${league.league_id} (${league.name})`);
+        const response = await axios.get<SleeperRoster[]>(`https://api.sleeper.app/v1/league/${league.league_id}/rosters`);
+        console.log(`Received ${response.data.length} rosters for league ${league.league_id}`);
+        return response;
       });
 
       const rostersResponses = await Promise.all(rostersPromises);
@@ -91,20 +103,23 @@ export function SleeperProvider({ children }: { children: React.ReactNode }) {
           console.error('Invalid roster data received:', response.data);
           return [];
         }
-        // Log each roster's metadata
+        
         response.data.forEach(roster => {
-          console.log('Roster data:', {
+          console.log('Processing roster:', {
             rosterId: roster.roster_id,
+            leagueId: roster.league_id,
             ownerId: roster.owner_id,
             metadata: roster.metadata,
+            settings: roster.settings,
             hasMetadata: !!roster.metadata,
-            hasTeamName: !!roster.metadata?.team_name
+            hasTeamName: !!roster.metadata?.team_name,
+            teamName: roster.metadata?.team_name || `Team ${roster.roster_id}`
           });
         });
         return response.data;
       });
 
-      console.log('Total rosters found:', allRosters.length);
+      console.log(`Total rosters found: ${allRosters.length}`, allRosters);
       setRosters(allRosters);
 
       // Fetch players data
@@ -122,7 +137,7 @@ export function SleeperProvider({ children }: { children: React.ReactNode }) {
       setPlayers(playersResponse.data);
 
       setIsLoading(false);
-      console.log('All user data fetched successfully');
+      console.log('All user data fetched and stored successfully');
     } catch (err) {
       console.error('Failed to fetch user data:', err);
       const error = err as AxiosError;
@@ -138,12 +153,12 @@ export function SleeperProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (username: string) => {
     try {
+      console.log('Starting login process for username:', username);
       setIsLoading(true);
       setError(null);
 
-      console.log('Attempting to login with username:', username);
-
       // Fetch user data
+      console.log('Fetching user data from API...');
       const userResponse: AxiosResponse<SleeperUser> = await axios.get(
         `https://api.sleeper.app/v1/user/${username}`
       );
@@ -155,7 +170,7 @@ export function SleeperProvider({ children }: { children: React.ReactNode }) {
       }
       
       const userData = userResponse.data;
-      console.log('Setting user data:', userData);
+      console.log('Setting user data and storing in localStorage:', userData);
       setUser(userData);
       localStorage.setItem('sleeperUser', JSON.stringify(userData));
 
@@ -163,10 +178,10 @@ export function SleeperProvider({ children }: { children: React.ReactNode }) {
       console.log('Fetching additional user data...');
       await fetchUserData(userData.user_id);
 
-      console.log('Login successful');
+      console.log('Login process completed successfully');
       setIsLoading(false);
     } catch (err) {
-      console.error('Login failed:', err);
+      console.error('Login process failed:', err);
       const error = err as AxiosError;
       const errorMessage = error.response?.status === 404 
         ? 'User not found. Please check your username and try again.'
@@ -181,6 +196,7 @@ export function SleeperProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = () => {
+    console.log('Logging out user and clearing all data');
     setUser(null);
     setLeagues([]);
     setRosters([]);
