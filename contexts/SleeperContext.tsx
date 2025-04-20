@@ -46,6 +46,15 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [error, setError] = useState<string | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
 
+  // Get current season
+  const getCurrentSeason = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth() + 1; // 0-based month
+    // If we're in the first 8 months, use previous year as the season
+    return month < 8 ? year - 1 : year;
+  };
+
   const fetchUserData = async (userId: string) => {
     try {
       const response = await axios.get(`https://api.sleeper.app/v1/user/${userId}`);
@@ -100,7 +109,8 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
       localStorage.setItem('sleeperUser', JSON.stringify(userData));
       
       // Fetch league data
-      const leaguesResponse = await axios.get(`https://api.sleeper.app/v1/user/${userData.user_id}/leagues/nfl/2023`);
+      const currentSeason = getCurrentSeason();
+      const leaguesResponse = await axios.get(`https://api.sleeper.app/v1/user/${userData.user_id}/leagues/nfl/${currentSeason}`);
       if (leaguesResponse.data.length > 0) {
         const leagueId = leaguesResponse.data[0].league_id;
         await Promise.all([
@@ -162,7 +172,8 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
             
             // Fetch league data
             console.log('Fetching leagues...');
-            const leaguesResponse = await axios.get(`https://api.sleeper.app/v1/user/${userData.user_id}/leagues/nfl/2023`);
+            const currentSeason = getCurrentSeason();
+            const leaguesResponse = await axios.get(`https://api.sleeper.app/v1/user/${userData.user_id}/leagues/nfl/${currentSeason}`);
             console.log('Leagues response:', leaguesResponse.data);
             
             if (leaguesResponse.data && leaguesResponse.data.length > 0) {

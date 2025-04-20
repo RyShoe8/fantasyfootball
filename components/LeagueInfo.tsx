@@ -82,127 +82,83 @@ const getSeasonNumber = (season: string, leagues: SleeperLeague[]) => {
   return ` (${seasonNumber}${suffix} Season)`;
 };
 
-export default function LeagueInfo() {
+const LeagueInfo: React.FC = () => {
   const { currentLeague, leagues, setCurrentLeague } = useSleeper();
 
-  console.log('LeagueInfo - currentLeague:', currentLeague);
-  console.log('LeagueInfo - leagues:', leagues);
+  const handleLeagueChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const selectedLeague = leagues.find(league => league.league_id === event.target.value);
+    if (selectedLeague) {
+      setCurrentLeague(selectedLeague);
+    }
+  };
 
   if (!currentLeague) {
-    console.log('LeagueInfo - No current league selected');
-    return null;
+    return (
+      <div className="text-center py-4">
+        <p className="text-gray-600">No league selected</p>
+      </div>
+    );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col items-center mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">{currentLeague.name}</h2>
+    <div className="space-y-4">
+      <div className="flex flex-col space-y-2">
+        <label htmlFor="league-select" className="text-sm font-medium text-gray-700">
+          Select League
+        </label>
         <select
-          className="w-full max-w-md pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+          id="league-select"
           value={currentLeague.league_id}
-          onChange={(e: ChangeEvent<HTMLSelectElement>) => {
-            console.log('LeagueInfo - League selection changed:', e.target.value);
-            const league = leagues.find((l: SleeperLeague) => l.league_id === e.target.value);
-            if (league) {
-              console.log('LeagueInfo - Setting new current league:', league);
-              setCurrentLeague(league);
-            }
-          }}
+          onChange={handleLeagueChange}
+          className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
         >
           {leagues.map((league: SleeperLeague) => (
             <option key={league.league_id} value={league.league_id}>
-              {league.name} ({league.season})
+              {league.name}
             </option>
           ))}
         </select>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* League Settings Card */}
-        <div className="bg-white shadow rounded-lg p-6">
-          <h2 className="text-xl font-bold mb-4">League Settings</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <h3 className="text-lg font-medium text-gray-900">League Details</h3>
+          <dl className="mt-2 space-y-2">
             <div>
-              <p className="text-gray-600">Total Teams</p>
-              <p className="font-medium">{currentLeague.settings.num_teams}</p>
-            </div>
-            <div>
-              <p className="text-gray-600">Start Week</p>
-              <p className="font-medium">Week {currentLeague.settings.start_week}</p>
+              <dt className="text-sm font-medium text-gray-500">League Name</dt>
+              <dd className="text-sm text-gray-900">{currentLeague.name}</dd>
             </div>
             <div>
-              <p className="text-gray-600">Roster Positions</p>
-              <p className="font-medium">{formatRosterPositions(currentLeague.roster_positions).positions}</p>
+              <dt className="text-sm font-medium text-gray-500">Season</dt>
+              <dd className="text-sm text-gray-900">{currentLeague.season}</dd>
             </div>
             <div>
-              <p className="text-gray-600">Bench Slots</p>
-              <p className="font-medium">{formatRosterPositions(currentLeague.roster_positions).benchSlots}</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Season Info Card */}
-        <div className="bg-white shadow rounded-lg p-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Season Info</h3>
-          <dl className="space-y-2">
-            <div className="flex justify-between">
-              <dt className="text-gray-600">Season</dt>
-              <dd className="text-gray-900">
-                {currentLeague.season}
-                <span className="text-xs text-gray-500 ml-1">
-                  {getSeasonNumber(currentLeague.season, leagues)}
-                </span>
-              </dd>
-            </div>
-            <div className="flex justify-between">
-              <dt className="text-gray-600">Status</dt>
-              <dd className="text-gray-900">{formatStatus(currentLeague.status)}</dd>
-            </div>
-            <div className="flex justify-between">
-              <dt className="text-gray-600">Start Week</dt>
-              <dd className="text-gray-900">
-                Week {currentLeague.settings.start_week}
-                <span className="text-xs text-gray-500 ml-1">
-                  ({getDateForWeek(currentLeague.settings.start_week, currentLeague.season)})
-                </span>
-              </dd>
-            </div>
-            <div className="flex justify-between">
-              <dt className="text-gray-600">Season Start</dt>
-              <dd className="text-gray-900">
-                {getDateForWeek(currentLeague.settings.start_week, currentLeague.season)}
-              </dd>
-            </div>
-            <div className="flex justify-between">
-              <dt className="text-gray-600">Draft Rounds</dt>
-              <dd className="text-gray-900">{currentLeague.settings.draft_rounds}</dd>
+              <dt className="text-sm font-medium text-gray-500">Status</dt>
+              <dd className="text-sm text-gray-900">{currentLeague.status}</dd>
             </div>
           </dl>
         </div>
-
-        {/* Playoff Info Card */}
-        <div className="bg-white shadow rounded-lg p-6">
-          <h2 className="text-xl font-bold mb-4">Playoff Information</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <h3 className="text-lg font-medium text-gray-900">Settings</h3>
+          <dl className="mt-2 space-y-2">
             <div>
-              <p className="text-gray-600">Playoff Week Start</p>
-              <p className="font-medium">Week {currentLeague.settings.playoff_week_start}</p>
+              <dt className="text-sm font-medium text-gray-500">Scoring Settings</dt>
+              <dd className="text-sm text-gray-900">
+                {currentLeague.settings?.scoring_settings ? 'Custom' : 'Standard'}
+              </dd>
             </div>
             <div>
-              <p className="text-gray-600">Trade Deadline</p>
-              <p className="font-medium">
-                {currentLeague.settings.trade_deadline ? 
-                  formatDate(currentLeague.settings.trade_deadline) : 
-                  'Not set'}
-              </p>
+              <dt className="text-sm font-medium text-gray-500">Roster Settings</dt>
+              <dd className="text-sm text-gray-900">
+                {currentLeague.settings?.roster_positions?.join(', ')}
+              </dd>
             </div>
-            <div>
-              <p className="text-gray-600">Playoff Teams</p>
-              <p className="font-medium">{currentLeague.settings.playoff_teams}</p>
-            </div>
-          </div>
+          </dl>
         </div>
       </div>
     </div>
   );
+};
+
+export default LeagueInfo; 
 } 
