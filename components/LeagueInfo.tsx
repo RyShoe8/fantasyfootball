@@ -199,11 +199,11 @@ export default function LeagueInfo() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <p className="text-gray-600">Playoff Week Start</p>
-              <p className="font-medium">{currentLeague.playoff_week_start} ({formatDate(currentLeague.playoff_week_start_date)})</p>
+              <p className="font-medium">Week {currentLeague.settings.playoff_week_start}</p>
             </div>
             <div>
               <p className="text-gray-600">Trade Deadline</p>
-              <p className="font-medium">{formatDate(currentLeague.trade_deadline)}</p>
+              <p className="font-medium">{formatDate(currentLeague.settings.trade_deadline)}</p>
             </div>
             <div>
               <p className="text-gray-600">Playoff Teams</p>
