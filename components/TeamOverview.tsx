@@ -106,17 +106,36 @@ const TeamOverview: React.FC = () => {
   }, [user, rosters, players, selectedWeek, currentLeague]);
 
   const teamStats = useMemo(() => {
-    if (!user || !rosters || !currentLeague) return null;
+    if (!user || !rosters || !currentLeague) {
+      console.log('Missing required data:', { user, rosters, currentLeague });
+      return null;
+    }
 
-    const userRoster = rosters.find((r: SleeperRoster) => r.owner_id === user.user_id);
-    if (!userRoster) return null;
+    // Filter rosters to only include those from the current league
+    const leagueRosters = rosters.filter((r: SleeperRoster) => r.league_id === currentLeague.league_id);
+    console.log('League rosters:', leagueRosters);
+    
+    // Find the user's roster in the current league
+    const userRoster = leagueRosters.find((r: SleeperRoster) => r.owner_id === user.user_id);
+    if (!userRoster) {
+      console.log('User roster not found in current league:', { userId: user.user_id, leagueId: currentLeague.league_id });
+      return null;
+    }
+
+    console.log('User roster metadata:', userRoster.metadata);
+    console.log('User roster ID:', userRoster.roster_id);
+    console.log('User roster settings:', userRoster.settings);
 
     const rosterPlayers = [...(userRoster.starters || []), ...(userRoster.reserves || [])]
       .map(playerId => {
         const player = players[playerId as keyof typeof players] as ExtendedPlayer | undefined;
-        if (!player) return null;
+        if (!player) {
+          console.log('Player not found:', playerId);
+          return null;
+        }
         
         const weekStats = player.stats?.[selectedWeek] || {};
+        console.log('Player stats for week', selectedWeek, ':', { playerId, weekStats });
         
         return {
           ...player,
@@ -129,6 +148,7 @@ const TeamOverview: React.FC = () => {
 
     const totalPoints = rosterPlayers.reduce((sum, player) => 
       sum + ((player.pts_ppr as number) || 0), 0);
+    console.log('Total points calculated:', totalPoints);
 
     const positionStats = rosterPlayers.reduce((acc, player) => {
       const pos = player.position;
@@ -144,11 +164,22 @@ const TeamOverview: React.FC = () => {
       acc[pos].projected += ((player.projected_pts as number) || 0);
       return acc;
     }, {} as Record<string, { count: number; points: number; projected: number }>);
+    console.log('Position stats calculated:', positionStats);
+
+    // Get the team name from the roster metadata, or use a default if not available
+    const teamName = userRoster.metadata?.team_name || 
+                    userRoster.metadata?.name || 
+                    `Team ${userRoster.roster_id}`;
+    console.log('Team name resolved:', { 
+      fromMetadata: userRoster.metadata?.team_name,
+      fromName: userRoster.metadata?.name,
+      final: teamName 
+    });
 
     const teamStats: TeamStats = {
       teamId: userRoster.roster_id.toString(),
       ownerId: userRoster.owner_id,
-      teamName: userRoster.metadata?.team_name || `Team ${userRoster.roster_id}`,
+      teamName,
       wins: userRoster.settings.wins || 0,
       losses: userRoster.settings.losses || 0,
       ties: userRoster.settings.fpts === userRoster.settings.fpts_against ? 1 : 0,
@@ -157,6 +188,7 @@ const TeamOverview: React.FC = () => {
       players: rosterPlayers
     };
 
+    console.log('Final team stats:', teamStats);
     return teamStats;
   }, [user, rosters, players, selectedWeek, currentLeague]);
 
