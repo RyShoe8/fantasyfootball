@@ -23,6 +23,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Fetch fresh data from Sleeper API
+    console.log('Fetching fresh player data from Sleeper API...');
     const response = await axios.get('https://api.sleeper.app/v1/players/nfl');
     const players = response.data;
 
@@ -33,9 +34,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       updatedAt: now
     });
 
+    // Log the shape of the data
+    console.log('Player data shape:', {
+      totalPlayers: Object.keys(players).length,
+      samplePlayer: Object.values(players)[0]
+    });
+
     return res.status(200).json(players);
   } catch (error) {
     console.error('Error fetching player data:', error);
-    return res.status(500).json({ message: 'Error fetching player data' });
+    if (axios.isAxiosError(error)) {
+      console.error('Axios error details:', {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data
+      });
+    }
+    return res.status(500).json({ message: 'Error fetching player data', error: error instanceof Error ? error.message : 'Unknown error' });
   }
 } 

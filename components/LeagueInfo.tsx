@@ -80,6 +80,18 @@ const LeagueInfo: React.FC = () => {
     return `${teams} teams, ${weeks} weeks`;
   };
 
+  // Helper function to format position name
+  const formatPositionName = (pos: string) => {
+    switch (pos) {
+      case 'SUPER_FLEX':
+        return 'Super Flex';
+      case 'IDP_FLEX':
+        return 'IDP Flex';
+      default:
+        return pos;
+    }
+  };
+
   const rosterBreakdown = getRosterBreakdown(currentLeague);
 
   return (
@@ -150,7 +162,7 @@ const LeagueInfo: React.FC = () => {
             <div className="mt-2 space-y-1">
               {Object.entries(rosterBreakdown).map(([pos, count]) => (
                 <p key={pos} className="text-sm text-gray-900">
-                  <span className="font-medium">{pos}:</span> {count}
+                  <span className="font-medium">{formatPositionName(pos)}:</span> {count}
                 </p>
               ))}
             </div>

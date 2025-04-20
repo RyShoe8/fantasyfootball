@@ -50,16 +50,19 @@ export default function TradeEvaluator() {
 
   // Check if we have the necessary data, redirect if not
   useEffect(() => {
-    // If we don't have rosters or players data, redirect to home
+    // If we don't have rosters or players data, show loading state
     if ((!rosters || rosters.length === 0) || !players || Object.keys(players).length === 0) {
-      console.log('Trade Evaluator page: Missing data, redirecting to home');
-      router.push('/');
+      console.log('Trade Evaluator page: Waiting for data...', {
+        hasRosters: !!rosters && rosters.length > 0,
+        hasPlayers: !!players && Object.keys(players).length > 0
+      });
+      setIsLoading(true);
       return;
     }
     
     // If we have the data, we're no longer loading
     setIsLoading(false);
-  }, [rosters, players, router]);
+  }, [rosters, players]);
 
   const currentRoster = useMemo(() => {
     if (!user || !rosters) return null;
@@ -228,7 +231,10 @@ export default function TradeEvaluator() {
   if (isLoading || !currentRoster) {
     return (
       <div className="p-6 flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+          <p className="mt-4 text-gray-600">Loading trade evaluator...</p>
+        </div>
       </div>
     );
   }

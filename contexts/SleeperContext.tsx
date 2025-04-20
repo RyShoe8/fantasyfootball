@@ -172,13 +172,28 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
       // Use cached data if it's less than a day old
       if (cachedPlayers && cacheTimestamp && (now - parseInt(cacheTimestamp)) < ONE_DAY) {
         console.log('Using cached player data');
-        setPlayers(JSON.parse(cachedPlayers));
-        return;
+        const parsedPlayers = JSON.parse(cachedPlayers);
+        if (Object.keys(parsedPlayers).length > 0) {
+          setPlayers(parsedPlayers);
+          return;
+        }
+        console.log('Cached player data was empty, fetching fresh data');
       }
 
       console.log('Fetching fresh player data');
       const response = await axios.get('/api/players');
       const playerData = response.data;
+      
+      // Validate player data
+      if (!playerData || typeof playerData !== 'object' || Object.keys(playerData).length === 0) {
+        console.error('Invalid player data received:', playerData);
+        throw new Error('Invalid player data received from API');
+      }
+
+      console.log('Player data fetched successfully:', {
+        totalPlayers: Object.keys(playerData).length,
+        samplePlayer: Object.values(playerData)[0]
+      });
       
       // Cache the data
       localStorage.setItem('sleeperPlayers', JSON.stringify(playerData));
@@ -187,7 +202,29 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setPlayers(playerData);
     } catch (error) {
       console.error('Error fetching players:', error);
+      if (axios.isAxiosError(error)) {
+        console.error('Axios error details:', {
+          status: error.response?.status,
+          statusText: error.response?.statusText,
+          data: error.response?.data
+        });
+      }
       setError('Failed to fetch player data');
+      // Try to use cached data as fallback
+      const cachedPlayers = localStorage.getItem('sleeperPlayers');
+      if (cachedPlayers) {
+        try {
+          const parsedPlayers = JSON.parse(cachedPlayers);
+          if (Object.keys(parsedPlayers).length > 0) {
+            console.log('Using cached player data as fallback');
+            setPlayers(parsedPlayers);
+            return;
+          }
+        } catch (e) {
+          console.error('Error parsing cached player data:', e);
+        }
+      }
+      setPlayers({});
     }
   };
 

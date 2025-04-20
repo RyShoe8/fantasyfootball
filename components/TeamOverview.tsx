@@ -352,90 +352,38 @@ export const TeamOverview: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-gray-50 p-4 rounded-lg">
-          <h3 className="text-lg font-semibold mb-2">Team Name</h3>
-          <p className="text-gray-600">
-            {rosterData.teamName}
-          </p>
-        </div>
-        <div className="bg-gray-50 p-4 rounded-lg">
-          <h3 className="text-lg font-semibold mb-2">Record</h3>
-          <p className="text-gray-600">
-            {teamStats.wins} - {teamStats.losses}
-          </p>
+    <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+        <div>
+          <h2 className="text-xl font-semibold text-gray-900">Standings</h2>
         </div>
       </div>
 
-      <div className="bg-gray-50 p-4 rounded-lg">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-semibold">Team Overview</h3>
-        </div>
-
-        <div>
-          <h4 className="font-medium mb-2">Starters</h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-            {rosterData.roster.starters?.map((playerId: string) => {
-              const player = players?.[playerId];
-              return player ? (
-                <div key={playerId} className="flex justify-between items-center bg-white p-2 rounded">
-                  <span>{`${player.first_name} ${player.last_name}`} ({player.position})</span>
-                  <span className="text-gray-600">{getPlayerStats(playerId).projected.toFixed(2)}</span>
-                </div>
-              ) : null;
-            })}
-          </div>
-        </div>
-
-        <div>
-          <h4 className="font-medium mb-2">Bench</h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-            {rosterData.roster.players?.filter((id: string) => !rosterData.roster.starters?.includes(id)).map((playerId: string) => {
-              const player = players?.[playerId];
-              return player ? (
-                <div key={playerId} className="flex justify-between items-center bg-white p-2 rounded">
-                  <span>{`${player.first_name} ${player.last_name}`} ({player.position})</span>
-                  <span className="text-gray-600">{getPlayerStats(playerId).projected.toFixed(2)}</span>
-                </div>
-              ) : null;
-            })}
-          </div>
-        </div>
-
-        {rosterData.roster.taxi && rosterData.roster.taxi.length > 0 && (
-          <div>
-            <h4 className="font-medium mb-2">Taxi Squad</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-              {rosterData.roster.taxi.map((playerId: string) => {
-                const player = players?.[playerId];
-                return player ? (
-                  <div key={playerId} className="flex justify-between items-center bg-white p-2 rounded">
-                    <span>{`${player.first_name} ${player.last_name}`} ({player.position})</span>
-                    <span className="text-gray-600">{getPlayerStats(playerId).projected.toFixed(2)}</span>
-                  </div>
-                ) : null;
-              })}
-            </div>
-          </div>
-        )}
-
-        {rosterData.roster.ir && rosterData.roster.ir.length > 0 && (
-          <div>
-            <h4 className="font-medium mb-2">IR</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-              {rosterData.roster.ir.map((playerId: string) => {
-                const player = players?.[playerId];
-                return player ? (
-                  <div key={playerId} className="flex justify-between items-center bg-white p-2 rounded">
-                    <span>{`${player.first_name} ${player.last_name}`} ({player.position})</span>
-                    <span className="text-gray-600">{getPlayerStats(playerId).projected.toFixed(2)}</span>
-                  </div>
-                ) : null;
-              })}
-            </div>
-          </div>
-        )}
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rank</th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Team</th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Record</th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Points For</th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Points Against</th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Streak</th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {sortedTeams.map((team, index) => (
+              <tr key={team.roster.roster_id}>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{index + 1}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{team.teamName}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{team.wins}-{team.losses}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{team.totalPoints.toFixed(2)}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{team.totalPoints.toFixed(2)}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{team.streak}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );
