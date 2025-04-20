@@ -63,7 +63,7 @@ const TeamOverview: React.FC = () => {
         if (!player) return null;
 
         // Get stats for the selected week and ensure it's typed as PlayerStats
-        const rawStats = player.stats?.[selectedWeek] || {};
+        const rawStats = (player.stats?.[selectedWeek] || {}) as Partial<PlayerStats>;
         const weekStats: PlayerStats = {
           ...rawStats,
           fpts: typeof rawStats.fpts === 'number' ? rawStats.fpts : 0,
