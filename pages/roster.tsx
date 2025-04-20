@@ -144,7 +144,7 @@ const Roster: React.FC = () => {
   const teamStats = useMemo(() => {
     if (!user || !rosters) return null;
 
-    const userRoster = rosters.find((r: RosterPlayer) => r.owner_id === user.user_id);
+    const userRoster = rosters.find((r: SleeperRoster) => r.owner_id === user.user_id);
     if (!userRoster) return null;
 
     const rosterPlayers = [...(userRoster.starters || []), ...(userRoster.reserves || [])]
