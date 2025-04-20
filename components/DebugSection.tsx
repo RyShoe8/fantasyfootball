@@ -3,7 +3,7 @@ import { useSleeper } from '../contexts/SleeperContext';
 import axios from 'axios';
 
 export default function DebugSection() {
-  const { currentLeague } = useSleeper();
+  const { currentLeague, setRosters, setUsers, setPlayers, setDraftPicks } = useSleeper();
   const [apiResponse, setApiResponse] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -42,6 +42,23 @@ export default function DebugSection() {
       console.log(`Fetching ${endpoint} from:`, url);
       const response = await axios.get(url);
       console.log(`${endpoint} API Response:`, response.data);
+      
+      // Update the global state based on the endpoint
+      switch (endpoint) {
+        case 'rosters':
+          setRosters(response.data);
+          break;
+        case 'users':
+          setUsers(response.data);
+          break;
+        case 'players':
+          setPlayers(response.data);
+          break;
+        case 'draftPicks':
+          setDraftPicks(response.data);
+          break;
+      }
+      
       setApiResponse(response.data);
     } catch (error) {
       console.error(`Error fetching ${endpoint}:`, error);

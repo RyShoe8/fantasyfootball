@@ -204,6 +204,20 @@ export function SleeperProvider({ children }: { children: React.ReactNode }) {
       console.log('Rosters data:', formatApiResponse(rostersResponse.data, 'rosters'));
       setRosters(rostersResponse.data);
 
+      // 5. Fetch users for the league
+      console.log('Fetching users for the league...');
+      const usersResponse = await axios.get<SleeperUser[]>(
+        `https://api.sleeper.app/v1/league/${targetLeague.league_id}/users`
+      );
+      
+      if (!Array.isArray(usersResponse.data)) {
+        console.error('Invalid users data received:', usersResponse.data);
+        throw new Error('Invalid users data received from API');
+      }
+
+      console.log('Users data:', formatApiResponse(usersResponse.data, 'users'));
+      setUsers(usersResponse.data);
+
       // Fetch players data
       console.log('Fetching players data...');
       const playersResponse: AxiosResponse<Record<string, SleeperPlayer>> = await axios.get(

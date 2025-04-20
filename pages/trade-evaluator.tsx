@@ -221,9 +221,17 @@ export default function TradeEvaluator() {
     const roster = rosters.find((r: SleeperRoster) => r.roster_id.toString() === teamId);
     if (roster) {
       const teamUser = users?.find(u => u.user_id === roster.owner_id);
+      console.log('Selected team user:', {
+        rosterId: roster.roster_id,
+        ownerId: roster.owner_id,
+        userData: teamUser,
+        metadata: teamUser?.metadata,
+        display_name: teamUser?.display_name,
+        username: teamUser?.username
+      });
       roster.metadata = {
         ...roster.metadata,
-        team_name: teamUser?.metadata?.team_name || teamUser?.display_name
+        team_name: teamUser?.metadata?.team_name || teamUser?.display_name || teamUser?.username || `Team ${roster.roster_id}`
       };
     }
     setSelectedTeamRoster(roster || null);
@@ -284,7 +292,17 @@ export default function TradeEvaluator() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* My Side */}
         <div className="bg-white rounded-lg shadow p-4">
-          <h2 className="text-xl font-semibold mb-4">My Side</h2>
+          <h2 className="text-xl font-semibold mb-4">
+            My Side
+            {currentRoster && (
+              <span className="text-gray-600 text-base ml-2">
+                ({users?.find(u => u.user_id === currentRoster.owner_id)?.metadata?.team_name || 
+                  users?.find(u => u.user_id === currentRoster.owner_id)?.display_name || 
+                  users?.find(u => u.user_id === currentRoster.owner_id)?.username || 
+                  `Team ${currentRoster.roster_id}`})
+              </span>
+            )}
+          </h2>
           <div className="space-y-4">
             <div>
               <h3 className="font-medium mb-2">Players</h3>
@@ -435,7 +453,7 @@ export default function TradeEvaluator() {
                 const teamUser = users?.find(u => u.user_id === team.owner_id);
                 return (
                   <option key={team.roster_id} value={team.roster_id}>
-                    {teamUser?.metadata?.team_name || teamUser?.display_name || `Team ${team.roster_id}`}
+                    {teamUser?.metadata?.team_name || teamUser?.display_name || teamUser?.username || `Team ${team.roster_id}`}
                   </option>
                 );
               })}

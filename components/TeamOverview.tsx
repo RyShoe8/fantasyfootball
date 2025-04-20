@@ -108,11 +108,14 @@ export const TeamOverview: React.FC = () => {
 
     // Get team name from users array
     const userData = users.find((u: { user_id: string }) => u.user_id === userRoster.owner_id);
-    const teamName = userData?.metadata?.team_name || userData?.display_name || `Team ${userRoster.roster_id}`;
+    const teamName = userData?.metadata?.team_name || userData?.display_name || userData?.username || `Team ${userRoster.roster_id}`;
     console.log('Team name from users array:', { 
       userId: userRoster.owner_id, 
       userData, 
-      teamName 
+      teamName,
+      metadata: userData?.metadata,
+      display_name: userData?.display_name,
+      username: userData?.username
     });
 
     // Get all players from the roster
@@ -167,8 +170,8 @@ export const TeamOverview: React.FC = () => {
   }, [user, rosters, players, selectedWeek, currentLeague, users]);
 
   const teamStats = useMemo(() => {
-    if (!user || !rosters || !currentLeague) {
-      console.log('Missing required data:', { user, rosters, currentLeague });
+    if (!user || !rosters || !currentLeague || !users) {
+      console.log('Missing required data:', { user, rosters, currentLeague, users });
       return null;
     }
 
@@ -193,11 +196,14 @@ export const TeamOverview: React.FC = () => {
 
     // Get team name from users array
     const userData = users.find((u: { user_id: string }) => u.user_id === userRoster.owner_id);
-    const teamName = userData?.metadata?.team_name || userData?.display_name || `Team ${userRoster.roster_id}`;
+    const teamName = userData?.metadata?.team_name || userData?.display_name || userData?.username || `Team ${userRoster.roster_id}`;
     console.log('Team name from users array:', { 
       userId: userRoster.owner_id, 
       userData, 
-      teamName 
+      teamName,
+      metadata: userData?.metadata,
+      display_name: userData?.display_name,
+      username: userData?.username
     });
 
     // Calculate team stats
