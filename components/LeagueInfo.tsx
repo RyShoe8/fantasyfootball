@@ -259,7 +259,6 @@ export const LeagueInfo: React.FC = () => {
 
       {currentLeague && (
         <div className="mt-4">
-          <h3 className="text-sm font-medium text-gray-500 mb-2">Roster Positions</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
               <h4 className="text-sm font-medium text-gray-500">Starting Positions</h4>
