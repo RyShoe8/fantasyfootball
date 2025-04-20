@@ -131,10 +131,6 @@ export const LeagueInfo: React.FC = () => {
           const sameNameLeague = leagues.find((l: SleeperLeague) => l.name === currentLeague.name);
           if (sameNameLeague) {
             setCurrentLeague(sameNameLeague);
-            // Only navigate if we're not already on a league page
-            if (!router.pathname.includes('/league/')) {
-              router.push(`/league/${sameNameLeague.league_id}`);
-            }
             return;
           }
         }
@@ -142,10 +138,6 @@ export const LeagueInfo: React.FC = () => {
         // If no matching league found, use the first one
         const newLeague = leagues[0];
         setCurrentLeague(newLeague);
-        // Only navigate if we're not already on a league page
-        if (!router.pathname.includes('/league/')) {
-          router.push(`/league/${newLeague.league_id}`);
-        }
       } else {
         setError('No leagues found for this year');
         setLeagues([]);
