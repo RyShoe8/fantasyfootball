@@ -49,11 +49,14 @@ interface Roster {
   };
 }
 
-interface TradePlayer {
-  playerId: string;
-  player: Player;
-  projectedPoints: number;
-  totalPoints: number;
+interface TradePlayer extends SleeperPlayer {
+  stats: PlayerStats;
+  projected_pts: number;
+  pts_ppr: number;
+  full_name: string;
+  position: string;
+  team: string;
+  player_id: string;
 }
 
 interface TradeSide {
@@ -128,23 +131,37 @@ export default function TradeEvaluator() {
   const selectedTeamPlayers = useMemo(() => {
     if (!selectedTeamRoster || !players) return [];
     
-    // Get all players from the selected team's roster
     return [...(selectedTeamRoster.starters || []), ...(selectedTeamRoster.reserves || [])]
-      .map((playerId: string) => {
-        const player = players[playerId as keyof typeof players] as Player | undefined;
+      .map(playerId => {
+        const player = players[playerId as keyof typeof players];
         if (!player) return null;
 
         // Get stats for the selected week
-        const weekStats = player.stats?.[selectedWeek] || {};
+        const rawStats = (player.stats?.[selectedWeek] || {}) as Partial<PlayerStats>;
+        const weekStats: PlayerStats = {
+          ...rawStats,
+          fpts: typeof rawStats.fpts === 'number' ? rawStats.fpts : 0,
+          fpts_decimal: typeof rawStats.fpts_decimal === 'number' ? rawStats.fpts_decimal : 0,
+          projected_pts: typeof rawStats.projected_pts === 'number' ? rawStats.projected_pts : 0
+        };
+        
+        // Calculate fantasy points based on Sleeper API format
+        const fpts = weekStats.fpts || 0;
+        const fptsDecimal = weekStats.fpts_decimal || 0;
+        const totalFpts = fpts + (fptsDecimal / 100);
         
         return {
-          playerId,
-          player,
-          projectedPoints: weekStats.projected_pts || 0,
-          totalPoints: weekStats.pts_ppr || 0
-        };
+          ...player,
+          stats: weekStats,
+          projected_pts: weekStats.projected_pts || 0,
+          pts_ppr: totalFpts,
+          full_name: `${player.first_name} ${player.last_name}`,
+          position: player.position || '',
+          team: player.team || '',
+          player_id: player.player_id || ''
+        } as TradePlayer;
       })
-      .filter((p: TradePlayer | null): p is TradePlayer => p !== null);
+      .filter((p): p is NonNullable<typeof p> => p !== null);
   }, [selectedTeamRoster, players, selectedWeek]);
 
   const handleAddPlayer = (player: TradePlayer, side: 'my' | 'their') => {
@@ -157,9 +174,9 @@ export default function TradeEvaluator() {
 
   const handleRemovePlayer = (player: TradePlayer, side: 'my' | 'their') => {
     if (side === 'my') {
-      setMySide(mySide.filter((p: TradePlayer) => p.playerId !== player.playerId));
+      setMySide(mySide.filter((p: TradePlayer) => p.player_id !== player.player_id));
     } else {
-      setTheirSide(theirSide.filter((p: TradePlayer) => p.playerId !== player.playerId));
+      setTheirSide(theirSide.filter((p: TradePlayer) => p.player_id !== player.player_id));
     }
   };
 
@@ -174,14 +191,14 @@ export default function TradeEvaluator() {
 
   const mySideStats: TradeSide = {
     players: mySide,
-    totalProjectedPoints: mySide.reduce((sum: number, p: TradePlayer) => sum + p.projectedPoints, 0),
-    totalPoints: mySide.reduce((sum: number, p: TradePlayer) => sum + p.totalPoints, 0)
+    totalProjectedPoints: mySide.reduce((sum: number, p: TradePlayer) => sum + p.projected_pts, 0),
+    totalPoints: mySide.reduce((sum: number, p: TradePlayer) => sum + p.pts_ppr, 0)
   };
 
   const theirSideStats: TradeSide = {
     players: theirSide,
-    totalProjectedPoints: theirSide.reduce((sum: number, p: TradePlayer) => sum + p.projectedPoints, 0),
-    totalPoints: theirSide.reduce((sum: number, p: TradePlayer) => sum + p.totalPoints, 0)
+    totalProjectedPoints: theirSide.reduce((sum: number, p: TradePlayer) => sum + p.projected_pts, 0),
+    totalPoints: theirSide.reduce((sum: number, p: TradePlayer) => sum + p.pts_ppr, 0)
   };
 
   // Show loading state if data is not available
@@ -212,8 +229,8 @@ export default function TradeEvaluator() {
           <h2 className="text-xl font-semibold mb-4">My Side</h2>
           <div className="space-y-2">
             {mySide.map((player: TradePlayer) => (
-              <div key={player.playerId} className="flex justify-between items-center">
-                <span>{player.player.full_name}</span>
+              <div key={player.player_id} className="flex justify-between items-center">
+                <span>{player.full_name}</span>
                 <button
                   onClick={() => handleRemovePlayer(player, 'my')}
                   className="text-red-500"
@@ -234,8 +251,8 @@ export default function TradeEvaluator() {
           <h2 className="text-xl font-semibold mb-4">Their Side</h2>
           <div className="space-y-2">
             {theirSide.map((player: TradePlayer) => (
-              <div key={player.playerId} className="flex justify-between items-center">
-                <span>{player.player.full_name}</span>
+              <div key={player.player_id} className="flex justify-between items-center">
+                <span>{player.full_name}</span>
                 <button
                   onClick={() => handleRemovePlayer(player, 'their')}
                   className="text-red-500"
@@ -259,8 +276,8 @@ export default function TradeEvaluator() {
           <h2 className="text-xl font-semibold mb-4">My Players</h2>
           <div className="space-y-2">
             {availablePlayers.map((player: TradePlayer) => (
-              <div key={player.playerId} className="flex justify-between items-center">
-                <span>{player.player.full_name}</span>
+              <div key={player.player_id} className="flex justify-between items-center">
+                <span>{player.full_name}</span>
                 <button
                   onClick={() => handleAddPlayer(player, 'my')}
                   className="text-blue-500"
@@ -291,8 +308,8 @@ export default function TradeEvaluator() {
           </select>
           <div className="space-y-2">
             {selectedTeamPlayers.map((player: TradePlayer) => (
-              <div key={player.playerId} className="flex justify-between items-center">
-                <span>{player.player.full_name}</span>
+              <div key={player.player_id} className="flex justify-between items-center">
+                <span>{player.full_name}</span>
                 <button
                   onClick={() => handleAddPlayer(player, 'their')}
                   className="text-blue-500"
