@@ -1,4 +1,4 @@
-import React, { ChangeEvent, useState } from 'react';
+import React, { ChangeEvent } from 'react';
 import { useSleeper } from '../contexts/SleeperContext';
 import { SleeperLeague } from '../types/sleeper';
 
@@ -118,7 +118,6 @@ const formatApiResponse = (data: any, type: string) => {
 
 export default function LeagueInfo() {
   const { currentLeague, leagues, setCurrentLeague, user, rosters, players } = useSleeper();
-  const [showDebug, setShowDebug] = useState(false);
 
   console.log('LeagueInfo - currentLeague:', currentLeague);
   console.log('LeagueInfo - leagues:', leagues);
@@ -271,15 +270,9 @@ export default function LeagueInfo() {
       <div className="bg-white shadow rounded-lg p-6">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-2xl font-bold text-gray-900">API Debug</h2>
-          <button
-            onClick={() => setShowDebug(!showDebug)}
-            className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200"
-          >
-            {showDebug ? 'Hide Debug Data' : 'Show Debug Data'}
-          </button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <button
             onClick={() => {
               fetch(`https://api.sleeper.app/v1/league/${currentLeague.league_id}/rosters`)
@@ -359,39 +352,6 @@ export default function LeagueInfo() {
             Fetch League
           </button>
         </div>
-
-        {showDebug && (
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">League Data</h3>
-                <pre className="bg-gray-100 p-4 rounded-md overflow-auto max-h-96">
-                  {formatJSON(formatApiResponse(currentLeague, 'league'))}
-                </pre>
-              </div>
-              <div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">User Data</h3>
-                <pre className="bg-gray-100 p-4 rounded-md overflow-auto max-h-96">
-                  {formatJSON(formatApiResponse(user, 'user'))}
-                </pre>
-              </div>
-            </div>
-
-            <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Rosters Data</h3>
-              <pre className="bg-gray-100 p-4 rounded-md overflow-auto max-h-96">
-                {formatJSON(formatApiResponse(rosters, 'rosters'))}
-              </pre>
-            </div>
-
-            <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Players Data</h3>
-              <pre className="bg-gray-100 p-4 rounded-md overflow-auto max-h-96">
-                {formatJSON(formatApiResponse(players, 'players'))}
-              </pre>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
