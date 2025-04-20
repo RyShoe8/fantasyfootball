@@ -25,6 +25,20 @@ interface PlayerStats {
   fpts_decimal?: number;
   fpts_against?: number;
   fpts_against_decimal?: number;
+  // Position-specific stats
+  passing_yards?: number;
+  passing_tds?: number;
+  passing_ints?: number;
+  rushing_yards?: number;
+  rushing_tds?: number;
+  receiving_yards?: number;
+  receiving_tds?: number;
+  receptions?: number;
+  tackles?: number;
+  sacks?: number;
+  interceptions?: number;
+  fumbles?: number;
+  fumbles_lost?: number;
   [key: string]: any;
 }
 
@@ -36,6 +50,9 @@ interface Player extends SleeperPlayer {
   position: string;
   team: string;
   player_id: string;
+  overall_rank?: number;
+  position_rank?: number;
+  roster_slot?: 'starter' | 'bench' | 'ir' | 'taxi';
 }
 
 interface RosterPlayer extends Player {
@@ -78,40 +95,63 @@ const Roster: React.FC = () => {
     const userRoster = leagueRosters.find((r: SleeperRoster) => r.owner_id === user.user_id);
     if (!userRoster) return null;
 
-    // Get all players from the roster
-    const rosterPlayers = [...(userRoster.starters || []), ...(userRoster.reserves || [])]
-      .map(playerId => {
-        const player = players[playerId as keyof typeof players];
-        if (!player) return null;
+    // Get all players from the roster including all roster spots
+    const rosterPlayers = [
+      ...(userRoster.starters || []).map(id => ({ id, slot: 'starter' as const })),
+      ...(userRoster.reserves || []).map(id => ({ id, slot: 'bench' as const })),
+      ...(userRoster.taxi || []).map(id => ({ id, slot: 'taxi' as const })),
+      ...(userRoster.ir || []).map(id => ({ id, slot: 'ir' as const }))
+    ].map(({ id, slot }) => {
+      const player = players[id as keyof typeof players];
+      if (!player) return null;
 
-        // Get stats for the selected week and ensure it's typed as PlayerStats
-        const rawStats = (player.stats?.[selectedWeek] || {}) as Partial<PlayerStats>;
-        const weekStats: PlayerStats = {
-          ...rawStats,
-          fpts: typeof rawStats.fpts === 'number' ? rawStats.fpts : 0,
-          fpts_decimal: typeof rawStats.fpts_decimal === 'number' ? rawStats.fpts_decimal : 0,
-          projected_pts: typeof rawStats.projected_pts === 'number' ? rawStats.projected_pts : 0
-        };
-        
-        // Calculate fantasy points based on Sleeper API format
-        const fpts = weekStats.fpts || 0;
-        const fptsDecimal = weekStats.fpts_decimal || 0;
-        const totalFpts = fpts + (fptsDecimal / 100);
-        
-        return {
-          ...player,
-          stats: weekStats,
-          projected_pts: weekStats.projected_pts || 0,
-          pts_ppr: totalFpts,
-          isStarter: userRoster.starters?.includes(playerId) || false,
-          full_name: `${player.first_name} ${player.last_name}`,
-          position: player.position || '',
-          team: player.team || '',
-          player_id: player.player_id || '',
-          owner_id: userRoster.owner_id
-        } as RosterPlayer;
-      })
-      .filter((p): p is NonNullable<typeof p> => p !== null);
+      // Get stats for the selected week and ensure it's typed as PlayerStats
+      const rawStats = (player.stats?.[selectedWeek] || {}) as Partial<PlayerStats>;
+      const weekStats: PlayerStats = {
+        ...rawStats,
+        fpts: typeof rawStats.fpts === 'number' ? rawStats.fpts : 0,
+        fpts_decimal: typeof rawStats.fpts_decimal === 'number' ? rawStats.fpts_decimal : 0,
+        projected_pts: typeof rawStats.projected_pts === 'number' ? rawStats.projected_pts : 0
+      };
+      
+      // Calculate fantasy points based on Sleeper API format
+      const fpts = weekStats.fpts || 0;
+      const fptsDecimal = weekStats.fpts_decimal || 0;
+      const totalFpts = fpts + (fptsDecimal / 100);
+      
+      return {
+        ...player,
+        stats: weekStats,
+        projected_pts: weekStats.projected_pts || 0,
+        pts_ppr: totalFpts,
+        isStarter: slot === 'starter',
+        full_name: `${player.first_name} ${player.last_name}`,
+        position: player.position || '',
+        team: player.team || '',
+        player_id: player.player_id || '',
+        owner_id: userRoster.owner_id,
+        roster_slot: slot,
+        overall_rank: player.search_rank || 0,
+        position_rank: 0 // This would need to be calculated based on position
+      } as RosterPlayer;
+    })
+    .filter((p): p is NonNullable<typeof p> => p !== null);
+
+    // Calculate position ranks
+    const playersByPosition = rosterPlayers.reduce((acc, player) => {
+      if (!acc[player.position]) {
+        acc[player.position] = [];
+      }
+      acc[player.position].push(player);
+      return acc;
+    }, {} as Record<string, RosterPlayer[]>);
+
+    Object.values(playersByPosition).forEach(positionPlayers => {
+      positionPlayers.sort((a, b) => (b.pts_ppr || 0) - (a.pts_ppr || 0));
+      positionPlayers.forEach((player, index) => {
+        player.position_rank = index + 1;
+      });
+    });
 
     // Sort players
     const sortedPlayers = [...rosterPlayers].sort((a, b) => {
@@ -235,6 +275,12 @@ const Roster: React.FC = () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Team
                 </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Ranks
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Stats
+                </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
                     onClick={() => handleSort('pts_ppr')}>
                   Points
@@ -251,8 +297,24 @@ const Roster: React.FC = () => {
             <tbody className="bg-white divide-y divide-gray-200">
               {rosterData.players.map((player: RosterPlayer) => (
                 <tr key={player.player_id} className={player.isStarter ? 'bg-green-50' : ''}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {player.full_name}
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center">
+                      <div className="flex-shrink-0 h-10 w-10">
+                        <img
+                          className="h-10 w-10 rounded-full"
+                          src={`https://sleepercdn.com/avatars/${player.player_id}`}
+                          alt={player.full_name}
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.src = 'https://sleepercdn.com/avatars/default.png';
+                          }}
+                        />
+                      </div>
+                      <div className="ml-4">
+                        <div className="text-sm font-medium text-gray-900">{player.full_name}</div>
+                        <div className="text-sm text-gray-500">{player.roster_slot}</div>
+                      </div>
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {player.position}
@@ -261,13 +323,24 @@ const Roster: React.FC = () => {
                     {player.team}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <div>Overall: #{player.overall_rank}</div>
+                    <div>Position: #{player.position_rank}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {getPositionStats(player)}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {player.pts_ppr?.toFixed(2) || '0.00'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {player.projected_pts?.toFixed(2) || '0.00'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {player.isStarter ? 'Starter' : 'Bench'}
+                    {player.injury_status ? (
+                      <span className="text-red-600">{player.injury_status}</span>
+                    ) : (
+                      <span className="text-green-600">Active</span>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -358,6 +431,48 @@ const Roster: React.FC = () => {
       </div>
     </div>
   );
+};
+
+// Helper function to get position-specific stats
+const getPositionStats = (player: RosterPlayer) => {
+  const stats = player.stats || {};
+  switch (player.position) {
+    case 'QB':
+      return (
+        <div className="space-y-1">
+          <div>Pass: {stats.passing_yards?.toLocaleString() || 0} yds</div>
+          <div>TD: {stats.passing_tds || 0}</div>
+          <div>INT: {stats.passing_ints || 0}</div>
+        </div>
+      );
+    case 'RB':
+      return (
+        <div className="space-y-1">
+          <div>Rush: {stats.rushing_yards?.toLocaleString() || 0} yds</div>
+          <div>TD: {stats.rushing_tds || 0}</div>
+          <div>Rec: {stats.receptions || 0}</div>
+        </div>
+      );
+    case 'WR':
+    case 'TE':
+      return (
+        <div className="space-y-1">
+          <div>Rec: {stats.receptions || 0}</div>
+          <div>Yds: {stats.receiving_yards?.toLocaleString() || 0}</div>
+          <div>TD: {stats.receiving_tds || 0}</div>
+        </div>
+      );
+    case 'IDP':
+      return (
+        <div className="space-y-1">
+          <div>Tackles: {stats.tackles || 0}</div>
+          <div>Sacks: {stats.sacks || 0}</div>
+          <div>INT: {stats.interceptions || 0}</div>
+        </div>
+      );
+    default:
+      return null;
+  }
 };
 
 export default Roster; 
