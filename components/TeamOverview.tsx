@@ -22,17 +22,6 @@ interface Player {
   pts_ppr?: number;
 }
 
-interface Roster {
-  roster_id: number;
-  owner_id: string;
-  starters: string[];
-  reserves: string[];
-  players: string[];
-  metadata: {
-    team_name?: string;
-  };
-}
-
 interface TeamStats {
   teamId: string;
   ownerId: string;
@@ -54,26 +43,34 @@ const TeamOverview: React.FC = () => {
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
   const teamStats = useMemo(() => {
-    if (!user || !rosters) return null;
+    if (!user || !rosters || !players) return null;
 
-    const userRoster = rosters.find((r: Roster) => r.owner_id === user.user_id);
+    const userRoster = rosters.find((r: SleeperRoster) => r.owner_id === user.user_id);
     if (!userRoster) return null;
 
+    // Get all players from the roster
     const rosterPlayers = [...(userRoster.starters || []), ...(userRoster.reserves || [])]
       .map(playerId => {
         const player = players[playerId as keyof typeof players] as Player | undefined;
-        return player ? {
+        if (!player) return null;
+
+        // Get stats for the selected week
+        const weekStats = player.stats?.[selectedWeek] || {};
+        
+        return {
           ...player,
-          stats: player.stats || {},
-          projected_pts: player.stats?.[selectedWeek]?.projected_pts || 0,
-          pts_ppr: player.stats?.[selectedWeek]?.pts_ppr || 0
-        } : null;
+          stats: weekStats,
+          projected_pts: weekStats.projected_pts || 0,
+          pts_ppr: weekStats.pts_ppr || 0
+        };
       })
       .filter((p): p is NonNullable<typeof p> => p !== null);
 
+    // Calculate total points
     const totalPoints = rosterPlayers.reduce((sum, player) => 
-      sum + ((player.pts_ppr as number) || 0), 0);
+      sum + (player.pts_ppr || 0), 0);
 
+    // Calculate position stats
     const positionStats = rosterPlayers.reduce((acc, player) => {
       const pos = player.position;
       if (!acc[pos]) {
@@ -84,18 +81,18 @@ const TeamOverview: React.FC = () => {
         };
       }
       acc[pos].count++;
-      acc[pos].points += ((player.pts_ppr as number) || 0);
-      acc[pos].projected += ((player.projected_pts as number) || 0);
+      acc[pos].points += (player.pts_ppr || 0);
+      acc[pos].projected += (player.projected_pts || 0);
       return acc;
     }, {} as Record<string, { count: number; points: number; projected: number }>);
 
     const teamStats: TeamStats = {
-      teamId: userRoster.roster_id.toString(),
+      teamId: userRoster.roster_id,
       ownerId: userRoster.owner_id,
       teamName: userRoster.metadata?.team_name || `Team ${userRoster.roster_id}`,
-      wins: 0, // These would come from actual league data
-      losses: 0,
-      ties: 0,
+      wins: userRoster.settings.wins,
+      losses: userRoster.settings.losses,
+      ties: 0, // This would come from actual league data if available
       totalPoints,
       positionStats,
       players: rosterPlayers
@@ -207,6 +204,6 @@ const TeamOverview: React.FC = () => {
       </div>
     </div>
   );
-}
+};
 
 export default TeamOverview; 
