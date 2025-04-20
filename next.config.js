@@ -22,6 +22,28 @@ const nextConfig = {
       },
     ];
   },
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      // Disable all Node.js specific modules in the browser
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        net: false,
+        tls: false,
+        fs: false,
+        dns: false,
+        child_process: false,
+        'fs/promises': false,
+        crypto: false,
+        stream: false,
+        http: false,
+        https: false,
+        zlib: false,
+        path: false,
+        'mongodb-client-encryption': false
+      };
+    }
+    return config;
+  },
 };
 
 module.exports = nextConfig; 

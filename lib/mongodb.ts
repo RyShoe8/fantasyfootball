@@ -13,10 +13,12 @@ const options: MongoClientOptions = {
   maxPoolSize: 10,
   serverSelectionTimeoutMS: 5000,
   socketTimeoutMS: 45000,
-  // Disable client-side encryption in browser environment
-  autoEncryption: {
-    bypassAutoEncryption: true
-  }
+  // Disable all browser-incompatible features
+  autoEncryption: undefined,
+  monitorCommands: false,
+  directConnection: true,
+  tls: false,
+  minHeartbeatFrequencyMS: 5000
 };
 
 let client: MongoClient;
