@@ -10,18 +10,28 @@ interface LayoutProps {
 }
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
-  const { user, isLoading, error } = useSleeper();
+  const { user, isLoading, error, currentLeague } = useSleeper();
   const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   // Check if current page requires authentication
   const requiresAuth = !['/login'].includes(router.pathname);
 
-  // Handle hydration
+  // Handle hydration and mobile detection
   useEffect(() => {
-    console.log('Layout: Hydrating...');
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 640);
+    };
+
     setIsHydrated(true);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+
+    return () => {
+      window.removeEventListener('resize', checkMobile);
+    };
   }, []);
 
   // Handle authentication
@@ -31,18 +41,20 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       isLoading,
       requiresAuth,
       hasUser: !!user,
-      path: router.pathname
+      hasLeague: !!currentLeague,
+      path: router.pathname,
+      isMobile
     });
 
     if (isHydrated && !isLoading && requiresAuth && !user) {
       console.log('Layout: Redirecting to login...');
       router.push('/login');
     }
-  }, [router.pathname, user, isLoading, requiresAuth, isHydrated]);
+  }, [router.pathname, user, isLoading, requiresAuth, isHydrated, currentLeague, isMobile]);
 
   // Show loading spinner during initial load or hydration
   if (!isHydrated || isLoading) {
-    console.log('Layout: Showing loading state', { isHydrated, isLoading });
+    console.log('Layout: Showing loading state', { isHydrated, isLoading, isMobile });
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
         <div className="text-center">
@@ -55,7 +67,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   // Show error state if there's an error
   if (error) {
-    console.log('Layout: Showing error state', { error });
+    console.log('Layout: Showing error state', { error, isMobile });
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
         <div className="text-center">
@@ -74,19 +86,34 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   // Show login page if not authenticated and on login page
   if (!user && router.pathname === '/login') {
-    console.log('Layout: Showing login page');
+    console.log('Layout: Showing login page', { isMobile });
     return <Login />;
   }
 
   // Show nothing while redirecting
   if (!user && requiresAuth) {
-    console.log('Layout: Waiting for redirect');
+    console.log('Layout: Waiting for redirect', { isMobile });
     return null;
+  }
+
+  // Show loading state if we don't have league data yet
+  if (requiresAuth && !currentLeague) {
+    console.log('Layout: Waiting for league data', { isMobile });
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+        <div className="text-center">
+          <Spinner />
+          <p className="mt-4 text-gray-600">Loading league data...</p>
+        </div>
+      </div>
+    );
   }
 
   console.log('Layout: Rendering main layout', {
     hasUser: !!user,
-    path: router.pathname
+    hasLeague: !!currentLeague,
+    path: router.pathname,
+    isMobile
   });
 
   return (
