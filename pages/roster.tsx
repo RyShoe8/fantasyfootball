@@ -39,6 +39,7 @@ interface PlayerStats {
   interceptions?: number;
   fumbles?: number;
   fumbles_lost?: number;
+  games_played?: number;
   [key: string]: any;
 }
 
@@ -287,12 +288,12 @@ const Roster: React.FC = () => {
       case 'RB':
         return {
           rushing: `${stats.rushing_yards || 0} yds, ${stats.rushing_tds || 0} TD`,
-          receiving: `${stats.receiving_yards || 0} yds, ${stats.receiving_tds || 0} TD`
+          receiving: `${stats.receiving_yards || 0} yds, ${stats.receiving_tds || 0} TD, ${stats.receptions || 0} rec`
         };
       case 'WR':
       case 'TE':
         return {
-          receiving: `${stats.receiving_yards || 0} yds, ${stats.receiving_tds || 0} TD`,
+          receiving: `${stats.receiving_yards || 0} yds, ${stats.receiving_tds || 0} TD, ${stats.receptions || 0} rec`,
           targets: `${stats.receiving_targets || 0} targets`
         };
       case 'K':
@@ -310,7 +311,7 @@ const Roster: React.FC = () => {
 
   const renderPlayerStats = (playerId: string) => {
     const stats = getPlayerStats(playerId);
-    if (!stats) return null;
+    if (!stats) return <div className="text-sm text-gray-500">No stats available</div>;
 
     return (
       <div className="text-sm text-gray-600">
@@ -321,6 +322,11 @@ const Roster: React.FC = () => {
         ))}
       </div>
     );
+  };
+
+  const getPointsDisplay = (points: number | undefined) => {
+    if (points === undefined || points === null) return '0.00';
+    return points.toFixed(2);
   };
 
   return (
@@ -386,11 +392,15 @@ const Roster: React.FC = () => {
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
                     onClick={() => handleSort('pts_ppr')}>
-                  Points
+                  Season Points
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
                     onClick={() => handleSort('projected_pts')}>
-                  Projected
+                  Projected Season
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                    onClick={() => handleSort('pts_ppr')}>
+                  Avg Points/Game
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Status
@@ -440,10 +450,13 @@ const Roster: React.FC = () => {
                     {renderPlayerStats(player.player_id)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {player.pts_ppr?.toFixed(2) || '0.00'}
+                    {getPointsDisplay(player.stats?.pts_ppr)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {player.projected_pts?.toFixed(2) || '0.00'}
+                    {getPointsDisplay(player.stats?.projected_pts)}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {getPointsDisplay(player.stats?.pts_ppr ? player.stats.pts_ppr / (player.stats.games_played || 1) : 0)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {player.injury_status ? (
