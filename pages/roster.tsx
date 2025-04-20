@@ -299,14 +299,21 @@ const Roster: React.FC = () => {
                 <tr key={player.player_id} className={player.isStarter ? 'bg-green-50' : ''}>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
-                      <div className="flex-shrink-0 h-10 w-10">
+                      <div className="flex-shrink-0 h-10 w-10 bg-gray-200 rounded-full flex items-center justify-center">
                         <img
-                          className="h-10 w-10 rounded-full"
+                          className="h-10 w-10 rounded-full object-cover"
                           src={`https://sleepercdn.com/avatars/${player.player_id}`}
                           alt={player.full_name}
                           onError={(e) => {
                             const target = e.target as HTMLImageElement;
-                            target.src = 'https://sleepercdn.com/avatars/default.png';
+                            target.style.display = 'none';
+                            const parent = target.parentElement;
+                            if (parent) {
+                              const fallback = document.createElement('div');
+                              fallback.className = 'h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center text-gray-500 text-sm font-medium';
+                              fallback.textContent = player.position;
+                              parent.appendChild(fallback);
+                            }
                           }}
                         />
                       </div>
