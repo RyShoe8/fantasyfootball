@@ -43,7 +43,11 @@ const getDateForWeek = (week: number, season: string) => {
 export default function LeagueInfo() {
   const { currentLeague, leagues, setCurrentLeague } = useSleeper();
 
+  console.log('LeagueInfo - currentLeague:', currentLeague);
+  console.log('LeagueInfo - leagues:', leagues);
+
   if (!currentLeague) {
+    console.log('LeagueInfo - No current league selected');
     return null;
   }
 
@@ -55,8 +59,10 @@ export default function LeagueInfo() {
           className="mt-1 block w-64 pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
           value={currentLeague.league_id}
           onChange={(e) => {
+            console.log('LeagueInfo - League selection changed:', e.target.value);
             const league = leagues.find(l => l.league_id === e.target.value);
             if (league) {
+              console.log('LeagueInfo - Setting new current league:', league);
               setCurrentLeague(league);
             }
           }}

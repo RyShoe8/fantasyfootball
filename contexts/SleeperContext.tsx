@@ -46,25 +46,36 @@ export const SleeperProvider: React.FC<{ children: ReactNode }> = ({ children })
       setIsLoading(true);
       setError(null);
       
+      console.log('Initializing Sleeper service for username:', username);
       const sleeperService = new SleeperService(username);
       await sleeperService.initialize();
       setService(sleeperService);
 
+      console.log('Fetching user data...');
       const userData = await sleeperService.getUser();
+      console.log('User data:', userData);
       setUser(userData);
 
+      console.log('Fetching leagues data...');
       const leaguesData = await sleeperService.getLeagues();
+      console.log('Leagues data:', leaguesData);
       setLeagues(leaguesData);
 
+      console.log('Fetching players data...');
       const playersData = await sleeperService.getPlayers();
+      console.log('Players data loaded:', Object.keys(playersData).length, 'players');
       setPlayers(playersData);
 
       if (leaguesData.length > 0) {
+        console.log('Setting current league:', leaguesData[0]);
         setCurrentLeague(leaguesData[0]);
+        console.log('Fetching rosters data...');
         const rostersData = await sleeperService.getRosters(leaguesData[0].league_id);
+        console.log('Rosters data:', rostersData);
         setRosters(rostersData);
       }
     } catch (error: unknown) {
+      console.error('Error initializing Sleeper service:', error);
       let errorMessage = 'An unexpected error occurred';
       if (error instanceof Error) {
         errorMessage = error.message;

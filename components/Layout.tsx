@@ -33,11 +33,27 @@ export default function Layout({ children }: LayoutProps) {
             </div>
             <div className="flex items-center">
               <div className="flex items-center space-x-4">
-                <img
-                  className="h-8 w-8 rounded-full"
-                  src={user.avatar}
-                  alt={user.display_name}
-                />
+                <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
+                  {user.avatar ? (
+                    <img
+                      className="h-8 w-8 rounded-full"
+                      src={user.avatar}
+                      alt={user.display_name}
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                        target.parentElement?.classList.add('bg-indigo-100');
+                        target.parentElement?.classList.add('text-indigo-600');
+                        target.parentElement?.classList.add('font-semibold');
+                        target.parentElement?.textContent = user.display_name.charAt(0).toUpperCase();
+                      }}
+                    />
+                  ) : (
+                    <span className="text-indigo-600 font-semibold">
+                      {user.display_name.charAt(0).toUpperCase()}
+                    </span>
+                  )}
+                </div>
                 <span className="text-gray-700">{user.display_name}</span>
               </div>
             </div>

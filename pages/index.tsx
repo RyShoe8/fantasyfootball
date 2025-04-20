@@ -2,7 +2,11 @@ import LeagueInfo from '../components/LeagueInfo';
 import { useSleeper } from '../contexts/SleeperContext';
 
 export default function Home() {
-  const { currentLeague } = useSleeper();
+  const { currentLeague, currentRoster, players } = useSleeper();
+
+  console.log('Home - currentLeague:', currentLeague);
+  console.log('Home - currentRoster:', currentRoster);
+  console.log('Home - players:', players ? Object.keys(players).length : 0, 'players loaded');
 
   return (
     <div className="space-y-6">
@@ -12,7 +16,15 @@ export default function Home() {
         {/* Team Overview Card */}
         <div className="bg-white rounded-lg shadow p-6">
           <h2 className="text-xl font-semibold mb-4">Team Overview</h2>
-          <p className="text-gray-600">View your roster, stats, and performance.</p>
+          {currentRoster ? (
+            <div className="space-y-2">
+              <p className="text-gray-600">Team Name: {currentRoster.metadata?.team_name || 'Unnamed Team'}</p>
+              <p className="text-gray-600">Record: {currentRoster.settings.wins}-{currentRoster.settings.losses}</p>
+              <p className="text-gray-600">Total Points: {currentRoster.settings.fpts}</p>
+            </div>
+          ) : (
+            <p className="text-gray-600">Select a team to view overview.</p>
+          )}
         </div>
 
         {/* Trade Evaluator Card */}
@@ -36,13 +48,25 @@ export default function Home() {
         {/* League Standings Card */}
         <div className="bg-white rounded-lg shadow p-6">
           <h2 className="text-xl font-semibold mb-4">League Standings</h2>
-          <p className="text-gray-600">View your league's current standings and stats.</p>
+          {currentLeague ? (
+            <div className="space-y-2">
+              <p className="text-gray-600">League Name: {currentLeague.name}</p>
+              <p className="text-gray-600">Season: {currentLeague.season}</p>
+              <p className="text-gray-600">Status: {currentLeague.status}</p>
+            </div>
+          ) : (
+            <p className="text-gray-600">Select a league to view standings.</p>
+          )}
         </div>
 
         {/* Player Rankings Card */}
         <div className="bg-white rounded-lg shadow p-6">
           <h2 className="text-xl font-semibold mb-4">Player Rankings</h2>
-          <p className="text-gray-600">Check updated player rankings and projections.</p>
+          {players && Object.keys(players).length > 0 ? (
+            <p className="text-gray-600">Loaded {Object.keys(players).length} players</p>
+          ) : (
+            <p className="text-gray-600">Loading player data...</p>
+          )}
         </div>
       </div>
     </div>
