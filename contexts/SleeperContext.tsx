@@ -259,12 +259,14 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
       console.log('Starting login process for username:', username);
       const userData = await fetchUserByUsername(username);
       if (!userData) {
+        console.error('No user data returned from fetchUserByUsername');
         throw new Error('Failed to fetch user data');
       }
       
       console.log('User data fetched successfully:', userData);
       
       // Set user state and save to localStorage
+      console.log('Setting user state and saving to localStorage');
       setUser(userData);
       localStorage.setItem('sleeperUser', JSON.stringify(userData));
       
@@ -275,6 +277,7 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
       localStorage.setItem('sleeperSelectedYear', currentSeason.toString());
       
       // Check database first
+      console.log('Checking database for cached league data');
       const dbLeague = await getLeagueData(userData.user_id, currentSeason.toString());
       let leaguesData: SleeperLeague[] = [];
       
@@ -311,12 +314,14 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
         
         // Set current league
         const leagueId = leaguesData[0].league_id;
+        console.log('Setting current league:', leaguesData[0]);
         setCurrentLeagueState(leaguesData[0]);
         localStorage.setItem('sleeperCurrentLeague', JSON.stringify(leaguesData[0]));
         
         // Fetch additional data with timeout
         const timeout = 5000; // 5 seconds timeout
         try {
+          console.log('Fetching additional data (rosters, users, players)');
           await Promise.race([
             Promise.all([
               fetchRosters(leagueId),
@@ -327,18 +332,21 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
               setTimeout(() => reject(new Error('Request timed out')), timeout)
             )
           ]);
+          console.log('Additional data fetched successfully');
         } catch (err) {
           console.error('Error fetching additional data:', err);
           // Don't throw here, we still want to show the basic league data
           setError('Some data could not be loaded. Please refresh the page to try again.');
         }
       } else {
+        console.log('No leagues found for user');
         setError('No leagues found for this user');
         setLeagues([]);
         setCurrentLeagueState(null);
       }
 
       // Set initialization flags
+      console.log('Setting initialization flags');
       setIsInitialized(true);
       setHasInitialized(true);
     } catch (err) {
@@ -355,6 +363,7 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
       localStorage.removeItem('sleeperCurrentLeague');
       localStorage.removeItem('sleeperSelectedYear');
     } finally {
+      console.log('Login process completed, setting isLoading to false');
       setIsLoading(false);
     }
   };
