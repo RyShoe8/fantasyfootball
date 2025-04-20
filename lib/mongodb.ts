@@ -4,11 +4,7 @@ declare global {
   var _mongoClientPromise: Promise<MongoClient> | undefined;
 }
 
-if (!process.env.MONGODB_URI) {
-  throw new Error('Please add your Mongo URI to .env.local');
-}
-
-const uri = process.env.MONGODB_URI;
+const uri = process.env.MONGODB_URI || 'mongodb://localhost:27017/fantasyfootball';
 const options: MongoClientOptions = {
   maxPoolSize: 10,
   serverSelectionTimeoutMS: 5000,
