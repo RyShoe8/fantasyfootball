@@ -168,11 +168,9 @@ const TeamOverview: React.FC = () => {
 
     // Get the team name from the roster metadata, or use a default if not available
     const teamName = userRoster.metadata?.team_name || 
-                    userRoster.metadata?.name || 
                     `Team ${userRoster.roster_id}`;
     console.log('Team name resolved:', { 
       fromMetadata: userRoster.metadata?.team_name,
-      fromName: userRoster.metadata?.name,
       final: teamName 
     });
 
