@@ -161,11 +161,24 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 <div className="flex items-center space-x-2">
                   <span className="text-sm text-gray-600">{user?.display_name}</span>
                   {user?.avatar && (
-                    <img
-                      src={`https://sleepercdn.com/avatars/${user.avatar}`}
-                      alt={user.display_name}
-                      className="h-8 w-8 rounded-full"
-                    />
+                    <div className="h-8 w-8 rounded-full overflow-hidden">
+                      <img
+                        src={`https://sleepercdn.com/avatars/${user.avatar}`}
+                        alt={user.display_name}
+                        className="h-8 w-8 rounded-full"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                          const parent = target.parentElement;
+                          if (parent) {
+                            const fallback = document.createElement('div');
+                            fallback.className = 'h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-sm font-medium';
+                            fallback.textContent = user.display_name.charAt(0).toUpperCase();
+                            parent.appendChild(fallback);
+                          }
+                        }}
+                      />
+                    </div>
                   )}
                 </div>
                 <button
@@ -195,11 +208,24 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               <div className="flex items-center space-x-2">
                 <span className="text-sm text-gray-600">{user?.display_name}</span>
                 {user?.avatar && (
-                  <img
-                    src={`https://sleepercdn.com/avatars/${user.avatar}`}
-                    alt={user.display_name}
-                    className="h-8 w-8 rounded-full"
-                  />
+                  <div className="h-8 w-8 rounded-full overflow-hidden">
+                    <img
+                      src={`https://sleepercdn.com/avatars/${user.avatar}`}
+                      alt={user.display_name}
+                      className="h-8 w-8 rounded-full"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                        const parent = target.parentElement;
+                        if (parent) {
+                          const fallback = document.createElement('div');
+                          fallback.className = 'h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-sm font-medium';
+                          fallback.textContent = user.display_name.charAt(0).toUpperCase();
+                          parent.appendChild(fallback);
+                        }
+                      }}
+                    />
+                  </div>
                 )}
               </div>
               <button

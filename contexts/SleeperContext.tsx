@@ -48,6 +48,7 @@ interface SleeperContextType {
   setIsLoading: (isLoading: boolean) => void;
   setError: (error: string | null) => void;
   fetchPlayerStats: (season: string, week: string) => Promise<void>;
+  hasInitialized: boolean;
 }
 
 const SleeperContext = createContext<SleeperContextType | undefined>(undefined);
@@ -71,6 +72,7 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [hasInitialized, setHasInitialized] = useState(false);
 
   const fetchUserData = async (userId: string) => {
     try {
@@ -422,115 +424,62 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   };
 
+  // Add a function to fetch all data in sequence
+  const fetchAllData = useCallback(async (userId: string, leagueId: string) => {
+    try {
+      // Fetch leagues first
+      const leaguesResponse = await axios.get(`https://api.sleeper.app/v1/user/${userId}/leagues/nfl/${selectedYear}`);
+      const leagues = leaguesResponse.data;
+      setLeagues(leagues);
+
+      // Find the current league
+      const league = leagues.find((l: SleeperLeague) => l.league_id === leagueId);
+      if (!league) {
+        console.error('League not found');
+        return;
+      }
+      setCurrentLeague(league);
+
+      // Fetch rosters and users in parallel
+      const [rostersResponse, usersResponse] = await Promise.all([
+        axios.get(`https://api.sleeper.app/v1/league/${leagueId}/rosters`),
+        axios.get(`https://api.sleeper.app/v1/league/${leagueId}/users`)
+      ]);
+
+      setRosters(rostersResponse.data);
+      setUsers(usersResponse.data);
+
+      // Fetch players and player stats in parallel
+      const [playersResponse, statsResponse] = await Promise.all([
+        axios.get('https://api.sleeper.app/v1/players/nfl'),
+        axios.get(`/api/player-stats?season=${selectedYear}&week=${selectedWeek}`)
+      ]);
+
+      setPlayers(playersResponse.data);
+      setPlayerStats(statsResponse.data);
+
+      setHasInitialized(true);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      setError('Failed to load league data');
+    }
+  }, [selectedYear, selectedWeek]);
+
+  // Update initialization effect
   useEffect(() => {
-    const initializeContext = async () => {
-      if (isInitialized) return;
+    const initializeData = async () => {
+      if (!user?.user_id || !currentLeague?.league_id || hasInitialized) return;
 
       try {
-        setIsLoading(true);
-        setError(null);
-        
-        // Check if we're in a browser environment
-        if (typeof window === 'undefined') {
-          console.log('Not in browser environment, skipping initialization');
-          setIsLoading(false);
-          setIsInitialized(true);
-          return;
-        }
-
-        console.log('Starting initialization...');
-        const storedUser = localStorage.getItem('sleeperUser');
-        const storedCurrentLeague = localStorage.getItem('sleeperCurrentLeague');
-        const storedSelectedYear = localStorage.getItem('sleeperSelectedYear');
-        const storedSelectedWeek = localStorage.getItem('sleeperSelectedWeek');
-        
-        console.log('Stored data:', { 
-          user: storedUser ? 'Found' : 'Not found',
-          currentLeague: storedCurrentLeague ? 'Found' : 'Not found',
-          selectedYear: storedSelectedYear ? 'Found' : 'Not found',
-          selectedWeek: storedSelectedWeek ? 'Found' : 'Not found'
-        });
-        
-        if (storedUser) {
-          try {
-            const userData = JSON.parse(storedUser);
-            console.log('Parsed user data:', userData);
-            
-            // Validate user data
-            if (!userData || !userData.user_id) {
-              console.error('Invalid user data:', userData);
-              throw new Error('Invalid user data');
-            }
-            
-            console.log('Setting user data...');
-            setUser(userData);
-            
-            // Set selected year if available
-            if (storedSelectedYear) {
-              setSelectedYearState(storedSelectedYear);
-            }
-            
-            // Set selected week if available
-            if (storedSelectedWeek) {
-              setSelectedWeekState(storedSelectedWeek);
-            }
-            
-            // Fetch league data
-            console.log('Fetching leagues...');
-            const yearToFetch = storedSelectedYear || getCurrentSeason().toString();
-            setSelectedYearState(yearToFetch);
-            const leaguesResponse = await axios.get(`https://api.sleeper.app/v1/user/${userData.user_id}/leagues/nfl/${yearToFetch}`);
-            console.log('Leagues response:', leaguesResponse.data);
-            
-            if (leaguesResponse.data && leaguesResponse.data.length > 0) {
-              // Set leagues first
-              setLeagues(leaguesResponse.data);
-              
-              // Set current league from localStorage if available
-              if (storedCurrentLeague) {
-                const parsedLeague = JSON.parse(storedCurrentLeague);
-                // Verify the league exists in the fetched leagues
-                const leagueExists = leaguesResponse.data.some((l: SleeperLeague) => l.league_id === parsedLeague.league_id);
-                if (leagueExists) {
-                  await setCurrentLeague(parsedLeague);
-                } else {
-                  await setCurrentLeague(leaguesResponse.data[0]);
-                }
-              } else {
-                await setCurrentLeague(leaguesResponse.data[0]);
-              }
-            } else {
-              setError('No leagues found for this user');
-              setLeagues([]);
-              setCurrentLeagueState(null);
-            }
-          } catch (err) {
-            console.error('Error initializing context:', err);
-            setError('Failed to initialize context');
-            localStorage.removeItem('sleeperUser');
-            setUser(null);
-          }
-        } else {
-          console.log('No stored user found');
-        }
-      } catch (err) {
-        console.error('Error during initialization:', err);
-        setError('Failed to initialize application');
-      } finally {
-        console.log('Initialization complete');
-        setIsLoading(false);
-        setIsInitialized(true);
+        await fetchAllData(user.user_id, currentLeague.league_id);
+      } catch (error) {
+        console.error('Error during initialization:', error);
+        setError('Failed to initialize data');
       }
     };
 
-    initializeContext();
-  }, [isInitialized]);
-
-  useEffect(() => {
-    if (selectedYear && selectedWeek && currentLeague) {
-      fetchPlayerStats(selectedYear, selectedWeek);
-    }
-  }, [selectedYear, selectedWeek, currentLeague, fetchPlayerStats]);
+    initializeData();
+  }, [user?.user_id, currentLeague?.league_id, hasInitialized, fetchAllData]);
 
   // Add a debug effect to log state changes
   useEffect(() => {
@@ -574,7 +523,8 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
         setLeagues,
         setIsLoading,
         setError,
-        fetchPlayerStats
+        fetchPlayerStats,
+        hasInitialized
       }}
     >
       {children}

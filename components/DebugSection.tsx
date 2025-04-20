@@ -3,7 +3,7 @@ import { useSleeper } from '../contexts/SleeperContext';
 import axios from 'axios';
 
 export default function DebugSection() {
-  const { currentLeague, setRosters, setUsers, setPlayers, setDraftPicks } = useSleeper();
+  const { currentLeague, setRosters, setUsers, setPlayers, setDraftPicks, selectedYear, selectedWeek, fetchPlayerStats } = useSleeper();
   const [apiResponse, setApiResponse] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -35,6 +35,9 @@ export default function DebugSection() {
         case 'league':
           url = `https://api.sleeper.app/v1/league/${currentLeague.league_id}`;
           break;
+        case 'playerStats':
+          await fetchPlayerStats(selectedYear, selectedWeek);
+          return;
         default:
           throw new Error('Invalid endpoint');
       }
@@ -110,6 +113,13 @@ export default function DebugSection() {
           disabled={loading}
         >
           {loading && activeButton === 'league' ? 'Loading...' : 'Fetch League'}
+        </button>
+        <button
+          onClick={() => fetchData('playerStats', 'playerStats')}
+          className={`px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 ${loading && activeButton === 'playerStats' ? 'opacity-50 cursor-not-allowed' : ''}`}
+          disabled={loading}
+        >
+          {loading && activeButton === 'playerStats' ? 'Loading...' : 'Fetch Player Stats'}
         </button>
       </div>
       {error && (

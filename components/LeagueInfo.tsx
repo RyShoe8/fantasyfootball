@@ -171,133 +171,58 @@ export const LeagueInfo: React.FC = () => {
   }
 
   return (
-    <div className="bg-white shadow rounded-lg p-4 mb-4">
-      {error && (
-        <div className="mb-4 p-4 bg-red-50 text-red-700 rounded-md">
-          {error}
-        </div>
-      )}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div className="flex-1">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Select League</label>
+    <div className="bg-white shadow rounded-lg p-6">
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-2xl font-bold text-gray-900">{currentLeague?.name}</h2>
+        <div className="flex items-center space-x-4">
           <select
-            className="w-full p-2 border rounded"
-            value={currentLeague?.league_id || ''}
-            onChange={(e: ChangeEvent<HTMLSelectElement>) => handleLeagueChange(e.target.value)}
-          >
-            <option value="">Select a league</option>
-            {leagues.map((league: SleeperLeague) => (
-              <option key={league.league_id} value={league.league_id}>
-                {league.name} ({league.league_id})
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="flex-1">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Select Year</label>
-          <select
-            className="w-full p-2 border rounded"
             value={selectedYear}
-            onChange={(e: ChangeEvent<HTMLSelectElement>) => handleYearChange(e.target.value)}
+            onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+            className="bg-white border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            {years.map((year: string) => (
+            {years.map((year) => (
               <option key={year} value={year}>
                 {year}
               </option>
             ))}
           </select>
+          <select
+            value={selectedWeek}
+            onChange={(e) => setSelectedWeek(parseInt(e.target.value))}
+            className="bg-white border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            {/* Add weeks based on the current league's season */}
+            {/* This is a placeholder and should be replaced with actual weeks */}
+            {/* For example, you can use a range from 1 to the number of weeks in the season */}
+            {/* For simplicity, we'll use a fixed range */}
+            {Array.from({ length: 17 }, (_, i) => i + 1).map((week) => (
+              <option key={week} value={week}>
+                Week {week}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
-      
-      {currentLeague && (
-        <>
-          <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div>
-              <h3 className="text-sm font-medium text-gray-500">League Name</h3>
-              <p className="mt-1">{currentLeague.name}</p>
-            </div>
-            <div>
-              <h3 className="text-sm font-medium text-gray-500">Season</h3>
-              <p className="mt-1">{currentLeague.season}</p>
-            </div>
-            <div>
-              <h3 className="text-sm font-medium text-gray-500">Status</h3>
-              <p className="mt-1">{formatStatus(currentLeague.status)}</p>
-            </div>
-            <div>
-              <h3 className="text-sm font-medium text-gray-500">Settings</h3>
-              <p className="mt-1">
-                {currentLeague.settings.type === 1 ? 'Keeper League' : 'Redraft League'} •{' '}
-                {rosters.filter((r: SleeperRoster) => r.league_id === currentLeague.league_id).length} Teams
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div>
-              <h3 className="text-sm font-medium text-gray-500">League Start</h3>
-              <p className="mt-1">{formatDate(currentLeague.settings.start_week)}</p>
-            </div>
-            <div>
-              <h3 className="text-sm font-medium text-gray-500">Trade Deadline</h3>
-              <p className="mt-1">{formatDate(currentLeague.settings.trade_deadline)}</p>
-            </div>
-            <div>
-              <h3 className="text-sm font-medium text-gray-500">Playoff Teams</h3>
-              <p className="mt-1">{currentLeague.settings.playoff_teams} Teams</p>
-            </div>
-            <div>
-              <h3 className="text-sm font-medium text-gray-500">Playoff Format</h3>
-              <p className="mt-1">
-                {formatPlayoffType(currentLeague.settings.playoff_type)} • Weeks {currentLeague.settings.playoff_week_start}-{currentLeague.settings.playoff_week_start + currentLeague.settings.playoff_teams - 1}
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div>
-                <h4 className="text-sm font-medium text-gray-500">Starting Positions</h4>
-                <p className="mt-1">{formatRosterPositions(currentLeague.roster_positions).positions}</p>
-              </div>
-              <div>
-                <h4 className="text-sm font-medium text-gray-500">Bench Slots</h4>
-                <p className="mt-1">{formatRosterPositions(currentLeague.roster_positions).benchSlots}</p>
-              </div>
-              <div>
-                <h4 className="text-sm font-medium text-gray-500">IR Slots</h4>
-                <p className="mt-1">{formatRosterPositions(currentLeague.roster_positions).irSlots}</p>
-              </div>
-              <div>
-                <h4 className="text-sm font-medium text-gray-500">Taxi Slots</h4>
-                <p className="mt-1">{formatRosterPositions(currentLeague.roster_positions).taxiSlots}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-4 p-4 bg-gray-100 rounded-lg">
-            <h3 className="text-lg font-semibold mb-2">Debug Info</h3>
-            <div className="space-y-2 text-sm">
-              <p>User ID: {user?.user_id}</p>
-              <p>League ID: {currentLeague?.league_id}</p>
-              <p>Selected Year: {selectedYear}</p>
-              <p>Selected Week: {selectedWeek}</p>
-              <p>Rosters Count: {rosters?.length}</p>
-              <p>Users Count: {users?.length}</p>
-              <p>Players Count: {Object.keys(players || {}).length}</p>
-              <p>Player Stats Count: {Object.keys(playerStats || {}).length}</p>
-              <div className="mt-2">
-                <button
-                  onClick={() => fetchPlayerStats(selectedYear, selectedWeek.toString())}
-                  className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
-                >
-                  Fetch Player Stats
-                </button>
-              </div>
-            </div>
-          </div>
-        </>
-      )}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-gray-50 p-4 rounded-lg">
+          <h3 className="text-sm font-medium text-gray-500">League ID</h3>
+          <p className="mt-1 text-lg font-semibold text-gray-900">{currentLeague?.league_id}</p>
+        </div>
+        <div className="bg-gray-50 p-4 rounded-lg">
+          <h3 className="text-sm font-medium text-gray-500">Season</h3>
+          <p className="mt-1 text-lg font-semibold text-gray-900">{currentLeague?.season}</p>
+        </div>
+        <div className="bg-gray-50 p-4 rounded-lg">
+          <h3 className="text-sm font-medium text-gray-500">Status</h3>
+          <p className="mt-1 text-lg font-semibold text-gray-900">{currentLeague?.status}</p>
+        </div>
+        <div className="bg-gray-50 p-4 rounded-lg">
+          <h3 className="text-sm font-medium text-gray-500">Settings</h3>
+          <p className="mt-1 text-lg font-semibold text-gray-900">
+            {currentLeague?.settings?.type === 'keeper' ? 'Keeper League' : 'Redraft League'}
+          </p>
+        </div>
+      </div>
     </div>
   );
 };
