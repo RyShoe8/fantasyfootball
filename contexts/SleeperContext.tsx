@@ -129,6 +129,18 @@ export function SleeperProvider({ children }: { children: React.ReactNode }) {
         throw new Error('Invalid leagues data received from API');
       }
 
+      // Log each league's data structure
+      leaguesResponse.data.forEach((league, index) => {
+        console.log(`League ${index} data:`, {
+          league_id: league.league_id,
+          name: league.name,
+          settings: league.settings ? {
+            num_teams: league.settings.num_teams,
+            has_settings: !!league.settings
+          } : 'No settings found'
+        });
+      });
+
       console.log('Leagues data:', formatApiResponse(leaguesResponse.data, 'league'));
       setLeagues(leaguesResponse.data);
 
@@ -138,6 +150,21 @@ export function SleeperProvider({ children }: { children: React.ReactNode }) {
         : leaguesResponse.data[0];
 
       if (targetLeague) {
+        console.log('Target league before setting:', {
+          league_id: targetLeague.league_id,
+          name: targetLeague.name,
+          settings: targetLeague.settings ? {
+            num_teams: targetLeague.settings.num_teams,
+            has_settings: !!targetLeague.settings
+          } : 'No settings found'
+        });
+
+        // Validate league data before setting
+        if (!targetLeague.settings || typeof targetLeague.settings.num_teams === 'undefined') {
+          console.error('Invalid league data structure:', targetLeague);
+          throw new Error('Invalid league data structure received from API');
+        }
+
         console.log('Setting target league:', formatApiResponse(targetLeague, 'league'));
         setCurrentLeague(targetLeague);
 
