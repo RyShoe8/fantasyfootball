@@ -211,6 +211,8 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
         ]);
       } else {
         setError('No leagues found for this user');
+        setLeagues([]);
+        setCurrentLeagueState(null);
       }
     } catch (err) {
       console.error('Login error:', err);
@@ -344,6 +346,8 @@ export const SleeperProvider: React.FC<{ children: React.ReactNode }> = ({ child
             } else {
               console.log('No leagues found');
               setError('No leagues found for this user');
+              setLeagues([]);
+              setCurrentLeagueState(null);
             }
           } catch (err) {
             console.error('Error initializing context:', err);
