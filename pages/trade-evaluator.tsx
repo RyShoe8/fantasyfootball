@@ -14,7 +14,7 @@
  */
 
 /** @jsxImportSource react */
-import React, { useState, useMemo, useEffect, ChangeEvent } from 'react';
+import React from 'react';
 import { useRouter } from 'next/router';
 import type { SleeperRoster, SleeperUser } from '../types/sleeper';
 import type { PlayerStats } from '../types/player';
@@ -41,18 +41,21 @@ interface TradeSide {
 }
 
 export default function TradeEvaluator() {
-  const { user, rosters, players, currentLeague, users } = useSleeper();
+  const { user } = useAuth();
+  const { currentLeague, users } = useLeague();
+  const { players } = usePlayer();
+  const { rosters } = useRoster();
   const router = useRouter();
-  const [selectedTeam, setSelectedTeam] = useState<string>('');
-  const [mySide, setMySide] = useState<TradePlayer[]>([]);
-  const [theirSide, setTheirSide] = useState<TradePlayer[]>([]);
-  const [myDraftPicks, setMyDraftPicks] = useState<{season: string; round: number; pick: number}[]>([]);
-  const [theirDraftPicks, setTheirDraftPicks] = useState<{season: string; round: number; pick: number}[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [selectedTeamRoster, setSelectedTeamRoster] = useState<SleeperRoster | null>(null);
+  const [selectedTeam, setSelectedTeam] = React.useState<string>('');
+  const [mySide, setMySide] = React.useState<TradePlayer[]>([]);
+  const [theirSide, setTheirSide] = React.useState<TradePlayer[]>([]);
+  const [myDraftPicks, setMyDraftPicks] = React.useState<{season: string; round: number; pick: number}[]>([]);
+  const [theirDraftPicks, setTheirDraftPicks] = React.useState<{season: string; round: number; pick: number}[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [selectedTeamRoster, setSelectedTeamRoster] = React.useState<SleeperRoster | null>(null);
 
   // Check if we have the necessary data, redirect if not
-  useEffect(() => {
+  React.useEffect(() => {
     // If we don't have rosters or players data, show loading state
     if ((!rosters || rosters.length === 0) || !players || Object.keys(players).length === 0) {
       console.log('Trade Evaluator page: Waiting for data...', {
@@ -67,99 +70,71 @@ export default function TradeEvaluator() {
     setIsLoading(false);
   }, [rosters, players]);
 
-  const currentRoster = useMemo(() => {
+  const currentRoster = React.useMemo(() => {
     if (!user || !rosters) return null;
     return rosters.find((r: SleeperRoster) => r.owner_id === user.user_id);
   }, [user, rosters]);
 
-  const availablePlayers = useMemo(() => {
+  const availablePlayers = React.useMemo(() => {
     if (!currentRoster || !players) return [];
     
-    // Get all player IDs that are already in either side of the trade
-    const tradedPlayerIds = new Set([
-      ...mySide.map(p => p.player_id),
-      ...theirSide.map(p => p.player_id)
-    ]);
-    
-    return [...(currentRoster.starters || []), ...(currentRoster.reserves || [])]
-      .map(playerId => {
-        const player = players[playerId as keyof typeof players];
+    // Get all players from the roster
+    const rosterPlayers = [
+      ...(currentRoster.starters || []),
+      ...(currentRoster.reserves || []),
+      ...(currentRoster.taxi || []),
+      ...(currentRoster.ir || [])
+    ];
+
+    // Filter out players that are already in the trade
+    return rosterPlayers
+      .filter((p: string) => !mySide.some((mp: TradePlayer) => mp.player_id === p))
+      .filter((p: string) => !theirSide.some((tp: TradePlayer) => tp.player_id === p))
+      .map((p: string) => {
+        const player = players[p];
         if (!player) return null;
-
-        // Skip if player is already in the trade
-        if (tradedPlayerIds.has(player.player_id)) return null;
-
-        // Get stats for the current week (using week 0 for projected stats)
-        const rawStats = (player.stats?.['0'] || {}) as Partial<PlayerStats>;
-        const weekStats: PlayerStats = {
-          ...rawStats,
-          fpts: typeof rawStats.fpts === 'number' ? rawStats.fpts : 0,
-          fpts_decimal: typeof rawStats.fpts_decimal === 'number' ? rawStats.fpts_decimal : 0,
-          projected_pts: typeof rawStats.projected_pts === 'number' ? rawStats.projected_pts : 0
-        };
-        
-        // Calculate fantasy points based on Sleeper API format
-        const fpts = weekStats.fpts || 0;
-        const fptsDecimal = weekStats.fpts_decimal || 0;
-        const totalFpts = fpts + (fptsDecimal / 100);
-        
         return {
-          ...player,
-          stats: weekStats,
-          projected_pts: weekStats.projected_pts || 0,
-          pts_ppr: totalFpts,
-          full_name: `${player.first_name} ${player.last_name}`,
-          position: player.position || '',
-          team: player.team || '',
-          player_id: player.player_id || ''
-        } as TradePlayer;
+          player_id: player.player_id,
+          full_name: player.full_name,
+          position: player.position,
+          team: player.team,
+          projected_pts: player.projected_pts || 0,
+          pts_ppr: player.pts_ppr || 0,
+          stats: player.stats || {}
+        };
       })
-      .filter((p): p is NonNullable<typeof p> => p !== null);
+      .filter((p: TradePlayer | null): p is TradePlayer => p !== null);
   }, [currentRoster, players, mySide, theirSide]);
 
-  const selectedTeamPlayers = useMemo(() => {
+  const selectedTeamPlayers = React.useMemo(() => {
     if (!selectedTeamRoster || !players) return [];
     
-    // Get all player IDs that are already in either side of the trade
-    const tradedPlayerIds = new Set([
-      ...mySide.map(p => p.player_id),
-      ...theirSide.map(p => p.player_id)
-    ]);
-    
-    return [...(selectedTeamRoster.starters || []), ...(selectedTeamRoster.reserves || [])]
-      .map(playerId => {
-        const player = players[playerId as keyof typeof players];
+    // Get all players from the selected team's roster
+    const rosterPlayers = [
+      ...(selectedTeamRoster.starters || []),
+      ...(selectedTeamRoster.reserves || []),
+      ...(selectedTeamRoster.taxi || []),
+      ...(selectedTeamRoster.ir || [])
+    ];
+
+    // Filter out players that are already in the trade
+    return rosterPlayers
+      .filter((p: string) => !mySide.some((mp: TradePlayer) => mp.player_id === p))
+      .filter((p: string) => !theirSide.some((tp: TradePlayer) => tp.player_id === p))
+      .map((p: string) => {
+        const player = players[p];
         if (!player) return null;
-
-        // Skip if player is already in the trade
-        if (tradedPlayerIds.has(player.player_id)) return null;
-
-        // Get stats for the current week (using week 0 for projected stats)
-        const rawStats = (player.stats?.['0'] || {}) as Partial<PlayerStats>;
-        const weekStats: PlayerStats = {
-          ...rawStats,
-          fpts: typeof rawStats.fpts === 'number' ? rawStats.fpts : 0,
-          fpts_decimal: typeof rawStats.fpts_decimal === 'number' ? rawStats.fpts_decimal : 0,
-          projected_pts: typeof rawStats.projected_pts === 'number' ? rawStats.projected_pts : 0
-        };
-        
-        // Calculate fantasy points based on Sleeper API format
-        const fpts = weekStats.fpts || 0;
-        const fptsDecimal = weekStats.fpts_decimal || 0;
-        const totalFpts = fpts + (fptsDecimal / 100);
-        
         return {
-          ...player,
-          stats: weekStats,
-          projected_pts: weekStats.projected_pts || 0,
-          pts_ppr: totalFpts,
-          full_name: `${player.first_name} ${player.last_name}`,
-          position: player.position || '',
-          team: player.team || '',
-          player_id: player.player_id || ''
-        } as TradePlayer;
+          player_id: player.player_id,
+          full_name: player.full_name,
+          position: player.position,
+          team: player.team,
+          projected_pts: player.projected_pts || 0,
+          pts_ppr: player.pts_ppr || 0,
+          stats: player.stats || {}
+        };
       })
-      .filter((p): p is NonNullable<typeof p> => p !== null);
+      .filter((p: TradePlayer | null): p is TradePlayer => p !== null);
   }, [selectedTeamRoster, players, mySide, theirSide]);
 
   const handleAddPlayer = (player: TradePlayer, side: 'my' | 'their') => {
@@ -178,26 +153,13 @@ export default function TradeEvaluator() {
     }
   };
 
-  const handleTeamChange = (e: ChangeEvent<HTMLSelectElement>) => {
+  const handleTeamChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const teamId = e.target.value;
     setSelectedTeam(teamId);
-    const roster = rosters.find((r: SleeperRoster) => r.roster_id.toString() === teamId);
-    if (roster) {
-      const teamUser = users?.find(u => u.user_id === roster.owner_id);
-      console.log('Selected team user:', {
-        rosterId: roster.roster_id,
-        ownerId: roster.owner_id,
-        userData: teamUser,
-        metadata: teamUser?.metadata,
-        display_name: teamUser?.display_name,
-        username: teamUser?.username
-      });
-      roster.metadata = {
-        ...roster.metadata,
-        team_name: teamUser?.metadata?.team_name || teamUser?.display_name || teamUser?.username || `Team ${roster.roster_id}`
-      };
-    }
-    setSelectedTeamRoster(roster || null);
+    
+    // Find the selected team's roster
+    const teamRoster = rosters?.find((r: SleeperRoster) => r.roster_id === teamId);
+    setSelectedTeamRoster(teamRoster || null);
   };
 
   const handleAddDraftPick = (pick: {season: string; round: number; pick: number}, side: 'my' | 'their') => {
@@ -210,9 +172,13 @@ export default function TradeEvaluator() {
 
   const handleRemoveDraftPick = (pick: {season: string; round: number; pick: number}, side: 'my' | 'their') => {
     if (side === 'my') {
-      setMyDraftPicks(myDraftPicks.filter(p => p.season !== pick.season || p.round !== pick.round || p.pick !== pick.pick));
+      setMyDraftPicks(myDraftPicks.filter((p: {season: string; round: number; pick: number}) => 
+        p.season !== pick.season || p.round !== pick.round || p.pick !== pick.pick
+      ));
     } else {
-      setTheirDraftPicks(theirDraftPicks.filter(p => p.season !== pick.season || p.round !== pick.round || p.pick !== pick.pick));
+      setTheirDraftPicks(theirDraftPicks.filter((p: {season: string; round: number; pick: number}) => 
+        p.season !== pick.season || p.round !== pick.round || p.pick !== pick.pick
+      ));
     }
   };
 
