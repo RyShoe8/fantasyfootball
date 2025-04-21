@@ -90,11 +90,13 @@ const TradeEvaluator: React.FC = () => {
   }, [user, rosters]);
 
   const availablePlayers = React.useMemo(() => {
-    if (!selectedTeam || !rosters) return [];
+    if (!selectedTeam || !rosters || !players) return [];
     const currentRoster = rosters.find((r: SleeperRoster) => r.roster_id === selectedTeam);
     if (!currentRoster) return [];
     
     return currentRoster.players
+      .map((playerId: string) => players[playerId])
+      .filter((p): p is SleeperPlayer => p !== undefined)
       .filter((p: SleeperPlayer) => !mySide.players.some((u: TradePlayer) => u.player_id === p.player_id) &&
         !theirSide.players.some((u: TradePlayer) => u.player_id === p.player_id))
       .map((p: SleeperPlayer): TradePlayer => ({
@@ -102,14 +104,16 @@ const TradeEvaluator: React.FC = () => {
         pts_ppr: p.pts_ppr || 0,
         pts_std: 0
       }));
-  }, [rosters, mySide.players, theirSide.players, selectedTeam]);
+  }, [rosters, mySide.players, theirSide.players, selectedTeam, players]);
 
   const selectedTeamPlayers = React.useMemo(() => {
-    if (!selectedTeam || !rosters) return [];
+    if (!selectedTeam || !rosters || !players) return [];
     const currentRoster = rosters.find((r: SleeperRoster) => r.roster_id === selectedTeam);
     if (!currentRoster) return [];
     
     return currentRoster.players
+      .map((playerId: string) => players[playerId])
+      .filter((p): p is SleeperPlayer => p !== undefined)
       .filter((p: SleeperPlayer) => {
         const side = selectedTeam === myTeam ? mySide : theirSide;
         return side.players.some((u: TradePlayer) => u.player_id === p.player_id);
@@ -120,7 +124,7 @@ const TradeEvaluator: React.FC = () => {
         pts_std: (p as any).pts_std || 0,
         projected_pts: p.projected_pts || 0
       }));
-  }, [rosters, mySide.players, theirSide.players, selectedTeam, myTeam]);
+  }, [rosters, mySide.players, theirSide.players, selectedTeam, myTeam, players]);
 
   const handleAddPlayer = (player: SleeperPlayer, side: 'my' | 'their') => {
     const tradePlayer: TradePlayer = {
