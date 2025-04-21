@@ -341,7 +341,7 @@ const TradeEvaluator: React.FC = () => {
                 const teamUser = users.find((u: SleeperUser) => u.user_id === team.owner_id);
                 return (
                   <option key={team.roster_id} value={team.roster_id}>
-                    {teamUser?.metadata?.team_name || teamUser?.display_name || teamUser?.username || `Team ${team.roster_id}`}
+                    {teamUser?.display_name || teamUser?.username || `Team ${team.roster_id}`}
                   </option>
                 );
               })}
