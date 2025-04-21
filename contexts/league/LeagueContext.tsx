@@ -12,7 +12,7 @@
 
 import React from 'react';
 import { SleeperLeague, SleeperRoster, SleeperUser, SleeperDraftPick } from '../../types/sleeper';
-import { ApiError } from '../../types/api';
+import { ApiError, toApiError } from '../../types/api';
 import { 
   getLeagueData, 
   saveLeagueData, 
@@ -168,7 +168,7 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
         debugLog('League data loaded successfully');
       } catch (err) {
         debugLog('Error loading league data:', err);
-        setError('Failed to load league data');
+        setError(toApiError(err));
       } finally {
         setIsLoading(false);
       }
