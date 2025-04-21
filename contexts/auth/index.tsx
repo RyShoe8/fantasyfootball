@@ -12,6 +12,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     error: null
   });
 
+  // Handle initial loading state
+  React.useEffect(() => {
+    // Set loading to false after initial mount
+    setState((prev: AuthState) => ({ ...prev, isLoading: false }));
+  }, []);
+
   const login = async (username: string) => {
     try {
       setState((prev: AuthState) => ({ ...prev, isLoading: true, error: null }));
