@@ -177,6 +177,14 @@ const TradeEvaluator: React.FC = () => {
     setSelectedTeamRoster(teamRoster || null);
   };
 
+  const handleMyTeamChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    handleTeamChange(e, 'my');
+  };
+
+  const handleTheirTeamChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    handleTeamChange(e, 'their');
+  };
+
   const handleAddDraftPick = (pick: SimpleDraftPick, side: 'my' | 'their') => {
     if (side === 'my') {
       setMySide((prev: TradeSide) => ({
@@ -324,7 +332,7 @@ const TradeEvaluator: React.FC = () => {
           <select
             className="w-full p-2 border rounded"
             value={selectedTeam}
-            onChange={handleTeamChange}
+            onChange={handleTheirTeamChange}
           >
             <option value="">Select a team</option>
             {rosters
