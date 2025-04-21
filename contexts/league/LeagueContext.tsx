@@ -60,6 +60,7 @@ const LeagueContext = React.createContext<LeagueContextType | undefined>(undefin
 export function LeagueProvider({ children }: { children: React.ReactNode }) {
   debugLog('Initializing LeagueProvider');
 
+  // Initialize state with default values
   const [leagues, setLeagues] = React.useState<SleeperLeague[]>([]);
   const [rosters, setRosters] = React.useState<SleeperRoster[]>([]);
   const [users, setUsers] = React.useState<SleeperUser[]>([]);
@@ -69,16 +70,8 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
   const [selectedYear, setSelectedYearState] = React.useState<string>(new Date().getFullYear().toString());
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
-  const [isClient, setIsClient] = React.useState(false);
-
-  // Set isClient to true when component mounts
-  React.useEffect(() => {
-    setIsClient(true);
-  }, []);
 
   const fetchRosters = React.useCallback(async (leagueId: string) => {
-    if (!isClient) return;
-    
     debugLog('Fetching rosters for league:', leagueId);
     try {
       // Check database first
@@ -105,11 +98,9 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
       setError('Failed to fetch rosters');
       setRosters([]);
     }
-  }, [selectedYear, isClient]);
+  }, [selectedYear]);
 
   const fetchUsers = React.useCallback(async (leagueId: string) => {
-    if (!isClient) return;
-    
     debugLog('Fetching users for league:', leagueId);
     try {
       // Check database first
@@ -140,11 +131,9 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
       setError('Failed to fetch users');
       setUsers([]);
     }
-  }, [selectedYear, isClient]);
+  }, [selectedYear]);
 
   const setCurrentLeague = React.useCallback(async (league: SleeperLeague | null) => {
-    if (!isClient) return;
-    
     debugLog('Setting current league:', league);
     setCurrentLeagueState(league);
     
@@ -163,18 +152,14 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
         setIsLoading(false);
       }
     }
-  }, [fetchRosters, fetchUsers, isClient]);
+  }, [fetchRosters, fetchUsers]);
 
   const setSelectedWeek = React.useCallback((week: string) => {
-    if (!isClient) return;
-    
     debugLog('Setting selected week:', week);
     setSelectedWeekState(week);
-  }, [isClient]);
+  }, []);
 
   const setSelectedYear = React.useCallback(async (year: string) => {
-    if (!isClient) return;
-    
     debugLog('Setting selected year:', year);
     setSelectedYearState(year);
     
@@ -193,7 +178,7 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
         setIsLoading(false);
       }
     }
-  }, [currentLeague, fetchRosters, fetchUsers, isClient]);
+  }, [currentLeague, fetchRosters, fetchUsers]);
 
   const value = {
     leagues,
