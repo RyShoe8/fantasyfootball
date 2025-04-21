@@ -14,19 +14,37 @@ import { RosterProvider } from './roster';
 // Debug flag - set to true to enable detailed logging
 const DEBUG = true;
 
-// Debug logging utility
+// Debug logging utility with timestamps
 const debugLog = (...args: any[]) => {
   if (DEBUG) {
-    console.log('[ContextProvider]', ...args);
+    const timestamp = new Date().toISOString();
+    console.log(`[${timestamp}] [ContextProvider]`, ...args);
   }
 };
 
 export function ContextProvider({ children }: { children: React.ReactNode }) {
-  debugLog('Initializing ContextProvider');
+  debugLog('Starting ContextProvider initialization');
+  
+  // Track mount state
+  const [isMounted, setIsMounted] = React.useState(false);
+  
+  React.useEffect(() => {
+    debugLog('ContextProvider mounted');
+    setIsMounted(true);
+    return () => {
+      debugLog('ContextProvider unmounting');
+      setIsMounted(false);
+    };
+  }, []);
 
   // Use React.memo to prevent unnecessary re-renders
-  const MemoizedChildren = React.useMemo(() => children, [children]);
+  const MemoizedChildren = React.useMemo(() => {
+    debugLog('Memoizing children');
+    return children;
+  }, [children]);
 
+  debugLog('Rendering ContextProvider with children');
+  
   return (
     <AuthProvider>
       <LeagueProvider>
@@ -40,8 +58,23 @@ export function ContextProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-// Re-export all context hooks
-export { useAuth } from './auth';
-export { useLeague } from './league/LeagueContext';
-export { usePlayer } from './player/PlayerContext';
-export { useRoster } from './roster'; 
+// Re-export all context hooks with debug wrappers
+export const useAuth = () => {
+  debugLog('useAuth hook called');
+  return require('./auth').useAuth();
+};
+
+export const useLeague = () => {
+  debugLog('useLeague hook called');
+  return require('./league/LeagueContext').useLeague();
+};
+
+export const usePlayer = () => {
+  debugLog('usePlayer hook called');
+  return require('./player/PlayerContext').usePlayer();
+};
+
+export const useRoster = () => {
+  debugLog('useRoster hook called');
+  return require('./roster').useRoster();
+}; 

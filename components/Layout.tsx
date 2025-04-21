@@ -9,10 +9,11 @@ import { SleeperLeague } from '../types/sleeper';
 // Debug flag - set to true to enable detailed logging
 const DEBUG = true;
 
-// Debug logging utility
+// Debug logging utility with timestamps
 const debugLog = (...args: any[]) => {
   if (DEBUG) {
-    console.log('[Layout]', ...args);
+    const timestamp = new Date().toISOString();
+    console.log(`[${timestamp}] [Layout]`, ...args);
   }
 };
 
@@ -21,23 +22,28 @@ interface LayoutProps {
 }
 
 const Layout = ({ children }: LayoutProps) => {
+  debugLog('Layout component rendering');
+  
   const { user, isLoading: authLoading, error: authError, logout } = useAuth();
   const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
   const [isHydrated, setIsHydrated] = React.useState(false);
   const [isMobile, setIsMobile] = React.useState(false);
   
-  // Get league context safely
+  // Get league context safely with detailed error tracking
   let leagueContext;
   try {
+    debugLog('Attempting to access league context');
     leagueContext = useLeague();
+    debugLog('League context accessed successfully:', leagueContext);
   } catch (error) {
-    debugLog('League context not available:', error);
+    debugLog('Error accessing league context:', error);
     leagueContext = { currentLeague: null, isLoading: false };
   }
 
   // Handle hydration and mobile detection
   React.useEffect(() => {
+    debugLog('Setting up hydration and mobile detection');
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 640);
     };
@@ -53,6 +59,7 @@ const Layout = ({ children }: LayoutProps) => {
 
   // Check if current page requires authentication
   const requiresAuth = !['/login'].includes(router.pathname);
+  debugLog('Auth requirements:', { requiresAuth, path: router.pathname });
 
   // Handle authentication
   React.useEffect(() => {
@@ -117,7 +124,7 @@ const Layout = ({ children }: LayoutProps) => {
   }
 
   // Show main layout
-  debugLog('Rendering main layout');
+  debugLog('Rendering main layout with children');
   return (
     <div className="min-h-screen bg-gray-100">
       {/* Navigation */}
