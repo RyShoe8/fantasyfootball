@@ -6,10 +6,10 @@
  */
 
 import React from 'react';
-import { AuthProvider } from './auth';
-import { LeagueProvider } from './league/LeagueContext';
-import { PlayerProvider } from './player/PlayerContext';
-import { RosterProvider } from './roster';
+import { AuthProvider, useAuth as useAuthOriginal } from './auth';
+import { LeagueProvider, useLeague as useLeagueOriginal } from './league/LeagueContext';
+import { PlayerProvider, usePlayer as usePlayerOriginal } from './player/PlayerContext';
+import { RosterProvider, useRoster as useRosterOriginal } from './roster';
 
 // Debug flag - set to true to enable detailed logging
 const DEBUG = true;
@@ -61,20 +61,20 @@ export function ContextProvider({ children }: { children: React.ReactNode }) {
 // Re-export all context hooks with debug wrappers
 export const useAuth = () => {
   debugLog('useAuth hook called');
-  return require('./auth').useAuth();
+  return useAuthOriginal();
 };
 
 export const useLeague = () => {
   debugLog('useLeague hook called');
-  return require('./league/LeagueContext').useLeague();
+  return useLeagueOriginal();
 };
 
 export const usePlayer = () => {
   debugLog('usePlayer hook called');
-  return require('./player/PlayerContext').usePlayer();
+  return usePlayerOriginal();
 };
 
 export const useRoster = () => {
   debugLog('useRoster hook called');
-  return require('./roster').useRoster();
+  return useRosterOriginal();
 }; 
