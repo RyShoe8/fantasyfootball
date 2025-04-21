@@ -1,7 +1,12 @@
 import '../styles/globals.css';
 import { ContextProvider } from '../contexts';
 import Layout from '../components/Layout';
-import type { AppProps } from 'next/app';
+import React from 'react';
+
+type AppProps = {
+  Component: React.ComponentType<any>;
+  pageProps: any;
+};
 
 function App({ Component, pageProps }: AppProps) {
   return (
