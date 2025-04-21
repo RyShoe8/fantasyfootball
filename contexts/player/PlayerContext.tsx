@@ -34,7 +34,7 @@ interface PlayerContextType {
   setIsLoading: (isLoading: boolean) => void;
   setError: (error: string | null) => void;
   fetchPlayers: () => Promise<void>;
-  fetchPlayerStats: (season: string, week: string) => Promise<void>;
+  fetchPlayerStats: (season: string, week: number) => Promise<void>;
 }
 
 const PlayerContext = createContext<PlayerContextType | undefined>(undefined);
@@ -92,7 +92,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const fetchPlayerStats = useCallback(async (season: string, week: string) => {
+  const fetchPlayerStats = useCallback(async (season: string, week: number) => {
     debugLog('Fetching player stats for season:', season, 'week:', week);
     try {
       setIsLoading(true);
@@ -111,15 +111,14 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       // For current season, validate week
       if (seasonNum === currentYear) {
         const currentWeek = getCurrentWeek();
-        const weekNum = parseInt(week);
-        if (weekNum > currentWeek) {
+        if (week > currentWeek) {
           debugLog('Skipping player stats fetch for future week:', week);
           setPlayerStats({});
           return;
         }
       }
 
-      const stats = await PlayerApi.getPlayerStats(season, week);
+      const stats = await PlayerApi.getPlayerStats(season, week.toString());
       setPlayerStats(stats);
     } catch (err) {
       debugLog('Error in fetchPlayerStats:', err);
