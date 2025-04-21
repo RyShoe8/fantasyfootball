@@ -16,41 +16,51 @@
 /** @jsxImportSource react */
 import React from 'react';
 import { useRouter } from 'next/router';
-import type { SleeperRoster, SleeperUser } from '../types/sleeper';
+import type { SleeperRoster, SleeperUser, SleeperPlayer, SleeperDraftPick } from '../types/sleeper';
 import type { PlayerStats } from '../types/player';
 import { useAuth } from '../contexts/auth';
 import { useLeague } from '../contexts/league';
 import { usePlayer } from '../contexts/player';
 import { useRoster } from '../contexts/roster';
 
-interface TradePlayer {
-  player_id: string;
-  full_name: string;
-  position: string;
-  team: string;
-  projected_pts: number;
-  pts_ppr: number;
-  stats: PlayerStats;
+interface TradePlayer extends SleeperPlayer {
+  pts_ppr?: number;
+  pts_std?: number;
+}
+
+interface SimpleDraftPick {
+  season: string;
+  round: number;
+  pick_no: number;
 }
 
 interface TradeSide {
   players: TradePlayer[];
-  draftPicks: {season: string; round: number; pick: number}[];
+  draftPicks: SimpleDraftPick[];
   totalProjectedPoints: number;
   totalPoints: number;
 }
 
-export default function TradeEvaluator() {
+const TradeEvaluator: React.FC = () => {
   const { user } = useAuth();
-  const { currentLeague, users } = useLeague();
+  const { league } = useLeague();
   const { players } = usePlayer();
   const { rosters } = useRoster();
   const router = useRouter();
+  const [myTeam, setMyTeam] = React.useState<string>('');
+  const [theirTeam, setTheirTeam] = React.useState<string>('');
   const [selectedTeam, setSelectedTeam] = React.useState<string>('');
-  const [mySide, setMySide] = React.useState<TradePlayer[]>([]);
-  const [theirSide, setTheirSide] = React.useState<TradePlayer[]>([]);
-  const [myDraftPicks, setMyDraftPicks] = React.useState<{season: string; round: number; pick: number}[]>([]);
-  const [theirDraftPicks, setTheirDraftPicks] = React.useState<{season: string; round: number; pick: number}[]>([]);
+
+  const [mySide, setMySide] = React.useState<TradeSide>({
+    players: [],
+    draftPicks: []
+  });
+
+  const [theirSide, setTheirSide] = React.useState<TradeSide>({
+    players: [],
+    draftPicks: []
+  });
+
   const [isLoading, setIsLoading] = React.useState(true);
   const [selectedTeamRoster, setSelectedTeamRoster] = React.useState<SleeperRoster | null>(null);
 
@@ -76,124 +86,156 @@ export default function TradeEvaluator() {
   }, [user, rosters]);
 
   const availablePlayers = React.useMemo(() => {
-    if (!currentRoster || !players) return [];
+    if (!selectedTeam || !rosters) return [];
+    const currentRoster = rosters[selectedTeam];
+    if (!currentRoster) return [];
     
-    // Get all players from the roster
-    const rosterPlayers = [
-      ...(currentRoster.starters || []),
-      ...(currentRoster.reserves || []),
-      ...(currentRoster.taxi || []),
-      ...(currentRoster.ir || [])
-    ];
-
-    // Filter out players that are already in the trade
-    return rosterPlayers
-      .filter((p: string) => !mySide.some((mp: TradePlayer) => mp.player_id === p))
-      .filter((p: string) => !theirSide.some((tp: TradePlayer) => tp.player_id === p))
-      .map((p: string) => {
-        const player = players[p];
-        if (!player) return null;
-        return {
-          player_id: player.player_id,
-          full_name: player.full_name,
-          position: player.position,
-          team: player.team,
-          projected_pts: player.projected_pts || 0,
-          pts_ppr: player.pts_ppr || 0,
-          stats: player.stats || {}
-        };
-      })
-      .filter((p: TradePlayer | null): p is TradePlayer => p !== null);
-  }, [currentRoster, players, mySide, theirSide]);
+    return currentRoster.players
+      .filter((p: SleeperPlayer) => !mySide.players.some((u: TradePlayer) => u.player_id === p.player_id) &&
+        !theirSide.players.some((u: TradePlayer) => u.player_id === p.player_id))
+      .map((p: SleeperPlayer): TradePlayer => ({
+        ...p,
+        pts_ppr: p.pts_ppr || 0,
+        pts_std: 0
+      }));
+  }, [rosters, mySide.players, theirSide.players, selectedTeam]);
 
   const selectedTeamPlayers = React.useMemo(() => {
-    if (!selectedTeamRoster || !players) return [];
+    if (!selectedTeam || !rosters) return [];
+    const currentRoster = rosters[selectedTeam];
+    if (!currentRoster) return [];
     
-    // Get all players from the selected team's roster
-    const rosterPlayers = [
-      ...(selectedTeamRoster.starters || []),
-      ...(selectedTeamRoster.reserves || []),
-      ...(selectedTeamRoster.taxi || []),
-      ...(selectedTeamRoster.ir || [])
-    ];
-
-    // Filter out players that are already in the trade
-    return rosterPlayers
-      .filter((p: string) => !mySide.some((mp: TradePlayer) => mp.player_id === p))
-      .filter((p: string) => !theirSide.some((tp: TradePlayer) => tp.player_id === p))
-      .map((p: string) => {
-        const player = players[p];
-        if (!player) return null;
-        return {
-          player_id: player.player_id,
-          full_name: player.full_name,
-          position: player.position,
-          team: player.team,
-          projected_pts: player.projected_pts || 0,
-          pts_ppr: player.pts_ppr || 0,
-          stats: player.stats || {}
-        };
+    return currentRoster.players
+      .filter((p: SleeperPlayer) => {
+        const side = selectedTeam === myTeam ? mySide : theirSide;
+        return side.players.some((u: TradePlayer) => u.player_id === p.player_id);
       })
-      .filter((p: TradePlayer | null): p is TradePlayer => p !== null);
-  }, [selectedTeamRoster, players, mySide, theirSide]);
+      .map((p: SleeperPlayer): TradePlayer => ({
+        ...p,
+        pts_ppr: p.pts_ppr || 0,
+        pts_std: (p as any).pts_std || 0,
+        projected_pts: p.projected_pts || 0
+      }));
+  }, [rosters, mySide.players, theirSide.players, selectedTeam, myTeam]);
 
-  const handleAddPlayer = (player: TradePlayer, side: 'my' | 'their') => {
+  const handleAddPlayer = (player: SleeperPlayer, side: 'my' | 'their') => {
+    const tradePlayer: TradePlayer = {
+      ...player,
+      pts_ppr: player.pts_ppr || 0,
+      pts_std: 0
+    };
+
     if (side === 'my') {
-      setMySide([...mySide, player]);
+      setMySide((prev: TradeSide) => ({
+        ...prev,
+        players: [...prev.players, tradePlayer]
+      }));
     } else {
-      setTheirSide([...theirSide, player]);
+      setTheirSide((prev: TradeSide) => ({
+        ...prev,
+        players: [...prev.players, tradePlayer]
+      }));
     }
   };
 
-  const handleRemovePlayer = (player: TradePlayer, side: 'my' | 'their') => {
+  const handleRemovePlayer = (playerId: string, side: 'my' | 'their') => {
     if (side === 'my') {
-      setMySide(mySide.filter((p: TradePlayer) => p.player_id !== player.player_id));
+      setMySide((prev: TradeSide) => ({
+        ...prev,
+        players: prev.players.filter((p: TradePlayer) => p.player_id !== playerId)
+      }));
     } else {
-      setTheirSide(theirSide.filter((p: TradePlayer) => p.player_id !== player.player_id));
+      setTheirSide((prev: TradeSide) => ({
+        ...prev,
+        players: prev.players.filter((p: TradePlayer) => p.player_id !== playerId)
+      }));
     }
   };
 
-  const handleTeamChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleTeamChange = (e: React.ChangeEvent<HTMLSelectElement>, side: 'my' | 'their') => {
     const teamId = e.target.value;
-    setSelectedTeam(teamId);
+    if (side === 'my') {
+      setSelectedTeam(teamId);
+      setMySide((prev: TradeSide) => ({ ...prev, players: [] }));
+    } else {
+      setSelectedTeam(teamId);
+      setTheirSide((prev: TradeSide) => ({ ...prev, players: [] }));
+    }
     
     // Find the selected team's roster
     const teamRoster = rosters?.find((r: SleeperRoster) => r.roster_id === teamId);
     setSelectedTeamRoster(teamRoster || null);
   };
 
-  const handleAddDraftPick = (pick: {season: string; round: number; pick: number}, side: 'my' | 'their') => {
+  const handleAddDraftPick = (pick: SimpleDraftPick, side: 'my' | 'their') => {
     if (side === 'my') {
-      setMyDraftPicks([...myDraftPicks, pick]);
+      setMySide((prev: TradeSide) => ({
+        ...prev,
+        draftPicks: [...prev.draftPicks, pick]
+      }));
     } else {
-      setTheirDraftPicks([...theirDraftPicks, pick]);
+      setTheirSide((prev: TradeSide) => ({
+        ...prev,
+        draftPicks: [...prev.draftPicks, pick]
+      }));
     }
   };
 
-  const handleRemoveDraftPick = (pick: {season: string; round: number; pick: number}, side: 'my' | 'their') => {
-    if (side === 'my') {
-      setMyDraftPicks(myDraftPicks.filter((p: {season: string; round: number; pick: number}) => 
-        p.season !== pick.season || p.round !== pick.round || p.pick !== pick.pick
-      ));
+  const handleRemoveDraftPick = (pick: SimpleDraftPick) => {
+    if (selectedTeam === myTeam) {
+      setMySide((prev: TradeSide) => ({
+        ...prev,
+        draftPicks: prev.draftPicks.filter((p: SimpleDraftPick) => 
+          p.season !== pick.season || p.round !== pick.round || p.pick_no !== pick.pick_no
+        )
+      }));
     } else {
-      setTheirDraftPicks(theirDraftPicks.filter((p: {season: string; round: number; pick: number}) => 
-        p.season !== pick.season || p.round !== pick.round || p.pick !== pick.pick
-      ));
+      setTheirSide((prev: TradeSide) => ({
+        ...prev,
+        draftPicks: prev.draftPicks.filter((p: SimpleDraftPick) => 
+          p.season !== pick.season || p.round !== pick.round || p.pick_no !== pick.pick_no
+        )
+      }));
     }
   };
 
   const mySideStats: TradeSide = {
-    players: mySide,
-    draftPicks: myDraftPicks,
-    totalProjectedPoints: mySide.reduce((sum: number, p: TradePlayer) => sum + p.projected_pts, 0),
-    totalPoints: mySide.reduce((sum: number, p: TradePlayer) => sum + p.pts_ppr, 0)
+    players: mySide.players,
+    draftPicks: mySide.draftPicks,
+    totalProjectedPoints: mySide.players.reduce((sum: number, p: TradePlayer) => {
+      const projectedPoints = p.stats?.projected_pts || 0;
+      return sum + projectedPoints;
+    }, 0),
+    totalPoints: mySide.players.reduce((sum: number, p: TradePlayer) => sum + (p.pts_ppr || 0), 0)
   };
 
   const theirSideStats: TradeSide = {
-    players: theirSide,
-    draftPicks: theirDraftPicks,
-    totalProjectedPoints: theirSide.reduce((sum: number, p: TradePlayer) => sum + p.projected_pts, 0),
-    totalPoints: theirSide.reduce((sum: number, p: TradePlayer) => sum + p.pts_ppr, 0)
+    players: theirSide.players,
+    draftPicks: theirSide.draftPicks,
+    totalProjectedPoints: theirSide.players.reduce((sum: number, p: TradePlayer) => {
+      const projectedPoints = p.stats?.projected_pts || 0;
+      return sum + projectedPoints;
+    }, 0),
+    totalPoints: theirSide.players.reduce((sum: number, p: TradePlayer) => sum + (p.pts_ppr || 0), 0)
+  };
+
+  const getPlayerValue = (player: SleeperPlayer): number => {
+    if (!player) return 0;
+    return player.projected_pts || player.pts_ppr || 0;
+  };
+
+  const getTradeValue = (side: TradeSide) => {
+    const playerValue = side.players.reduce((total, p) => {
+      return total + (p.projected_pts || 0) + (p.pts_ppr || 0);
+    }, 0);
+
+    const pickValue = side.draftPicks.reduce((total, pick) => {
+      // Higher round picks are worth more
+      const roundValue = (12 - pick.round) * 100;
+      return total + roundValue;
+    }, 0);
+
+    return playerValue + pickValue;
   };
 
   // Show loading state if data is not available
@@ -220,8 +262,8 @@ export default function TradeEvaluator() {
             My Side {currentRoster && (
               <span className="text-gray-600">
                 - {currentRoster.metadata?.team_name || 
-                  users?.find(u => u.user_id === currentRoster.owner_id)?.metadata?.team_name || 
-                  users?.find(u => u.user_id === currentRoster.owner_id)?.display_name || 
+                  league?.users?.find((user: SleeperUser) => user.user_id === currentRoster.owner_id)?.metadata?.team_name || 
+                  league?.users?.find((user: SleeperUser) => user.user_id === currentRoster.owner_id)?.display_name || 
                   `Team ${currentRoster.roster_id}`}
               </span>
             )}
@@ -230,11 +272,11 @@ export default function TradeEvaluator() {
             <div>
               <h3 className="font-medium mb-2">Players</h3>
               <div className="space-y-2">
-                {mySide.map((player: TradePlayer) => (
+                {mySide.players.map((player: TradePlayer) => (
                   <div key={player.player_id} className="flex justify-between items-center">
                     <span>{player.full_name} ({player.position})</span>
                     <button
-                      onClick={() => handleRemovePlayer(player, 'my')}
+                      onClick={() => handleRemovePlayer(player.player_id, 'my')}
                       className="text-red-500"
                     >
                       Remove
@@ -246,11 +288,11 @@ export default function TradeEvaluator() {
             <div>
               <h3 className="font-medium mb-2">Draft Picks</h3>
               <div className="space-y-2">
-                {myDraftPicks.map((pick, index) => (
+                {mySide.draftPicks.map((pick: SimpleDraftPick, index: number) => (
                   <div key={index} className="flex justify-between items-center">
-                    <span>{pick.season} Round {pick.round} Pick {pick.pick}</span>
+                    <span>{pick.season} Round {pick.round} Pick {pick.pick_no}</span>
                     <button
-                      onClick={() => handleRemoveDraftPick(pick, 'my')}
+                      onClick={() => handleRemoveDraftPick(pick)}
                       className="text-red-500"
                     >
                       Remove
@@ -278,7 +320,7 @@ export default function TradeEvaluator() {
             {rosters
               .filter((r: SleeperRoster) => r.owner_id !== user?.user_id)
               .map((team: SleeperRoster) => {
-                const teamUser = users?.find(u => u.user_id === team.owner_id);
+                const teamUser = league?.users?.find((u: SleeperUser) => u.user_id === team.owner_id);
                 return (
                   <option key={team.roster_id} value={team.roster_id}>
                     {teamUser?.metadata?.team_name || teamUser?.display_name || teamUser?.username || `Team ${team.roster_id}`}
@@ -292,11 +334,11 @@ export default function TradeEvaluator() {
               <div>
                 <h3 className="font-medium mb-2">Players</h3>
                 <div className="space-y-2">
-                  {theirSide.map((player: TradePlayer) => (
+                  {theirSide.players.map((player: TradePlayer) => (
                     <div key={player.player_id} className="flex justify-between items-center">
                       <span>{player.full_name} ({player.position})</span>
                       <button
-                        onClick={() => handleRemovePlayer(player, 'their')}
+                        onClick={() => handleRemovePlayer(player.player_id, 'their')}
                         className="text-red-500"
                       >
                         Remove
@@ -308,11 +350,11 @@ export default function TradeEvaluator() {
               <div>
                 <h3 className="font-medium mb-2">Draft Picks</h3>
                 <div className="space-y-2">
-                  {theirDraftPicks.map((pick, index) => (
+                  {theirSide.draftPicks.map((pick: SimpleDraftPick, index: number) => (
                     <div key={index} className="flex justify-between items-center">
-                      <span>{pick.season} Round {pick.round} Pick {pick.pick}</span>
+                      <span>{pick.season} Round {pick.round} Pick {pick.pick_no}</span>
                       <button
-                        onClick={() => handleRemoveDraftPick(pick, 'their')}
+                        onClick={() => handleRemoveDraftPick(pick)}
                         className="text-red-500"
                       >
                         Remove
@@ -353,19 +395,18 @@ export default function TradeEvaluator() {
               <h3 className="font-medium mb-2">My Draft Picks</h3>
               <div className="space-y-2">
                 {currentRoster.draft_picks
-                  .filter(pick => {
-                    // Check if this pick is already in either side of the trade
-                    const isInMySide = myDraftPicks.some(p => 
-                      p.season === pick.season && p.round === pick.round && p.pick === pick.pick
+                  .filter((pick: SimpleDraftPick) => {
+                    const isInMySide = mySide.draftPicks.some((p: SimpleDraftPick) => 
+                      p.season === pick.season && p.round === pick.round && p.pick_no === pick.pick_no
                     );
-                    const isInTheirSide = theirDraftPicks.some(p => 
-                      p.season === pick.season && p.round === pick.round && p.pick === pick.pick
+                    const isInTheirSide = theirSide.draftPicks.some((p: SimpleDraftPick) => 
+                      p.season === pick.season && p.round === pick.round && p.pick_no === pick.pick_no
                     );
                     return !isInMySide && !isInTheirSide;
                   })
-                  .map((pick, index) => (
+                  .map((pick: SimpleDraftPick, index: number) => (
                     <div key={index} className="flex justify-between items-center">
-                      <span>{pick.season} Round {pick.round} Pick {pick.pick}</span>
+                      <span>{pick.season} Round {pick.round} Pick {pick.pick_no}</span>
                       <button
                         onClick={() => handleAddDraftPick(pick, 'my')}
                         className="text-blue-500"
@@ -402,19 +443,18 @@ export default function TradeEvaluator() {
                   <h3 className="font-medium mb-2">Their Draft Picks</h3>
                   <div className="space-y-2">
                     {selectedTeamRoster.draft_picks
-                      .filter(pick => {
-                        // Check if this pick is already in either side of the trade
-                        const isInMySide = myDraftPicks.some(p => 
-                          p.season === pick.season && p.round === pick.round && p.pick === pick.pick
+                      .filter((pick: SimpleDraftPick) => {
+                        const isInMySide = mySide.draftPicks.some((p: SimpleDraftPick) => 
+                          p.season === pick.season && p.round === pick.round && p.pick_no === pick.pick_no
                         );
-                        const isInTheirSide = theirDraftPicks.some(p => 
-                          p.season === pick.season && p.round === pick.round && p.pick === pick.pick
+                        const isInTheirSide = theirSide.draftPicks.some((p: SimpleDraftPick) => 
+                          p.season === pick.season && p.round === pick.round && p.pick_no === pick.pick_no
                         );
                         return !isInMySide && !isInTheirSide;
                       })
-                      .map((pick, index) => (
+                      .map((pick: SimpleDraftPick, index: number) => (
                         <div key={index} className="flex justify-between items-center">
-                          <span>{pick.season} Round {pick.round} Pick {pick.pick}</span>
+                          <span>{pick.season} Round {pick.round} Pick {pick.pick_no}</span>
                           <button
                             onClick={() => handleAddDraftPick(pick, 'their')}
                             className="text-blue-500"
@@ -436,4 +476,6 @@ export default function TradeEvaluator() {
       </div>
     </div>
   );
-} 
+};
+
+export default TradeEvaluator; 
