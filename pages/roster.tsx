@@ -62,7 +62,7 @@ const Roster: React.FC = () => {
   const { rosters, loading: rosterLoading, error: rosterError } = useRoster();
   const { players, playerStats } = usePlayer();
   const { currentLeague, leagues, setCurrentLeague, selectedYear, setSelectedYear } = useLeague();
-  const [selectedWeek, setSelectedWeek] = React.useState('0');
+  const [selectedWeek, setSelectedWeek] = React.useState(0);
   const [sortField, setSortField] = React.useState<keyof PlayerStats>('pts_ppr');
   const [sortDirection, setSortDirection] = React.useState<'asc' | 'desc'>('desc');
 
@@ -182,7 +182,7 @@ const Roster: React.FC = () => {
   }
 
   const handleWeekChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setSelectedWeek(e.currentTarget.value);
+    setSelectedWeek(parseInt(e.currentTarget.value, 10));
   };
 
   const handleSort = (field: keyof PlayerStats) => (e: React.MouseEvent<HTMLTableHeaderCellElement>) => {
@@ -452,8 +452,8 @@ const Roster: React.FC = () => {
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-2xl font-bold text-gray-900">Team Overview</h2>
           <select
-            className="mt-1 block w-32 pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-            value={selectedWeek}
+            className="form-select"
+            value={selectedWeek.toString()}
             onChange={handleWeekChange}
           >
             {Array.from({ length: 18 }, (_, i) => (

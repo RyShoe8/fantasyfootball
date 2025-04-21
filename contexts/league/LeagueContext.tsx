@@ -40,12 +40,12 @@ interface LeagueContextType {
   users: SleeperUser[];
   draftPicks: SleeperDraftPick[];
   currentLeague: SleeperLeague | null;
-  selectedWeek: string;
+  selectedWeek: number;
   selectedYear: string;
   isLoading: boolean;
   error: string | null;
   setCurrentLeague: (league: SleeperLeague | null) => Promise<void>;
-  setSelectedWeek: (week: string) => void;
+  setSelectedWeek: (week: number) => void;
   setSelectedYear: (year: string) => Promise<void>;
   setRosters: (rosters: SleeperRoster[]) => void;
   setUsers: (users: SleeperUser[]) => void;
@@ -66,7 +66,7 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
   const [users, setUsers] = React.useState<SleeperUser[]>([]);
   const [draftPicks, setDraftPicks] = React.useState<SleeperDraftPick[]>([]);
   const [currentLeague, setCurrentLeagueState] = React.useState<SleeperLeague | null>(null);
-  const [selectedWeek, setSelectedWeekState] = React.useState<string>('1');
+  const [selectedWeek, setSelectedWeekState] = React.useState<number>(1);
   const [selectedYear, setSelectedYearState] = React.useState<string>(new Date().getFullYear().toString());
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -154,7 +154,7 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
     }
   }, [fetchRosters, fetchUsers]);
 
-  const setSelectedWeek = React.useCallback((week: string) => {
+  const setSelectedWeek = React.useCallback((week: number) => {
     debugLog('Setting selected week:', week);
     setSelectedWeekState(week);
   }, []);
