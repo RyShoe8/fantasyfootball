@@ -12,6 +12,11 @@ type PositionGroup = keyof typeof POSITION_GROUPS;
 type SortOption = typeof SORT_OPTIONS[keyof typeof SORT_OPTIONS];
 type FilterOption = typeof FILTER_OPTIONS[keyof typeof FILTER_OPTIONS];
 
+// Type guard to check if a string is a valid position
+function isValidPosition(position: string): position is PositionGroup {
+  return position in POSITION_GROUPS;
+}
+
 interface Player {
   id: string;
   name: string;
@@ -69,7 +74,7 @@ export function usePlayerFilters(
       // Filter by position
       .filter((player: SleeperPlayer & { stats?: PlayerStats }) => 
         filters.positions.size === 0 || 
-        filters.positions.has(player.position || '')
+        (player.position && isValidPosition(player.position) && filters.positions.has(player.position))
       )
       // Filter by search term
       .filter((player: SleeperPlayer & { stats?: PlayerStats }) => {
