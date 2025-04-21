@@ -14,7 +14,7 @@ export default function LeaguePage() {
   const router = useRouter();
   const { leagueId } = router.query;
   const { user } = useAuth();
-  const { league, loading: leagueLoading, error: leagueError } = useLeague();
+  const { currentLeague, isLoading: leagueLoading, error: leagueError } = useLeague();
   const { players, loading: playersLoading, error: playersError } = usePlayer();
   const { rosters, loading: rostersLoading, error: rostersError } = useRoster();
   const [activeTab, setActiveTab] = useState('overview');
@@ -33,13 +33,13 @@ export default function LeaguePage() {
     return <div>Error loading league data</div>;
   }
 
-  if (!league) {
+  if (!currentLeague) {
     return <div>League not found</div>;
   }
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <LeagueInfo league={league} />
+      <LeagueInfo league={currentLeague} />
       <div className="mt-8">
         <div className="flex space-x-4 mb-4">
           <button
