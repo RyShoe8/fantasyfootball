@@ -1,5 +1,4 @@
 import React from 'react';
-import { useState } from 'react';
 import axios from 'axios';
 import { useAuth } from '../contexts/auth';
 import { useLeague } from '../contexts/league';
@@ -13,10 +12,10 @@ export default function DebugSection() {
   const { setUsers } = useLeague();
   const { setPlayers, fetchPlayerStats } = usePlayer();
   const { selectedYear, selectedWeek } = useLeague();
-  const [apiResponse, setApiResponse] = useState<any>(null);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
-  const [activeButton, setActiveButton] = useState<string | null>(null);
+  const [apiResponse, setApiResponse] = React.useState<any>(null);
+  const [loading, setLoading] = React.useState<boolean>(false);
+  const [error, setError] = React.useState<string | null>(null);
+  const [activeButton, setActiveButton] = React.useState<string | null>(null);
 
   const fetchData = async (endpoint: string, buttonName: string) => {
     if (!currentLeague) return;
@@ -45,7 +44,7 @@ export default function DebugSection() {
           url = `https://api.sleeper.app/v1/league/${currentLeague.league_id}`;
           break;
         case 'playerStats':
-          await fetchPlayerStats(selectedYear, selectedWeek);
+          await fetchPlayerStats(selectedYear, selectedWeek.toString());
           return;
         default:
           throw new Error('Invalid endpoint');
