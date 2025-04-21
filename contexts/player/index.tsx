@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState } from 'react';
-import type { PlayerContextType, PlayerState } from '../../types/player';
-import { SleeperPlayer, PlayerStats } from '../../types/sleeper';
+import type { PlayerContextType, PlayerState, PlayerStats } from '../../types/player';
+import { SleeperPlayer } from '../../types/sleeper';
 import axios from 'axios';
 
 const PlayerContext = createContext<PlayerContextType | undefined>(undefined);
