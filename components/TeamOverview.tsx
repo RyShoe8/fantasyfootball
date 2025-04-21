@@ -121,7 +121,7 @@ const TeamOverview: React.FC<TeamOverviewProps> = ({ rosterId }: TeamOverviewPro
               </div>
             ))}
           </div>
-        </div>
+      </div>
       )}
     </div>
   );

@@ -16,16 +16,16 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/router';
-import LeagueInfo from '../components/LeagueInfo';
-import LeagueStandings from '../components/LeagueStandings';
-import { SleeperLeague } from '../types/sleeper';
-import axios from 'axios';
-import DebugSection from '../components/DebugSection';
-import Link from 'next/link';
-import TeamOverview from '../components/TeamOverview';
-import PlayerRankings from '../components/PlayerRankings';
 import { useAuth } from '../contexts/auth';
 import { useLeague } from '../contexts/league';
+import LeagueInfo from '../components/LeagueInfo';
+import TeamOverview from '../components/TeamOverview';
+import LeagueStandings from '../components/LeagueStandings';
+import DebugSection from '../components/DebugSection';
+import { SleeperLeague } from '../types/sleeper';
+import axios from 'axios';
+import Link from 'next/link';
+import PlayerRankings from '../components/PlayerRankings';
 import { usePlayer } from '../contexts/player';
 import { useRoster } from '../contexts/roster';
 
@@ -88,6 +88,7 @@ const formatApiResponse = (data: any, type: string) => {
 const Home: React.FC = () => {
   const router = useRouter();
   const { user, login, isLoading, error } = useAuth();
+  const { currentLeague } = useLeague();
   const [username, setUsername] = useState('');
   const [userLeagues, setUserLeagues] = useState<SleeperLeague[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -165,7 +166,7 @@ const Home: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-100 py-6 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
-        <LeagueInfo />
+        {currentLeague && <LeagueInfo league={currentLeague} />}
         <TeamOverview />
         <LeagueStandings />
         <DebugSection />
