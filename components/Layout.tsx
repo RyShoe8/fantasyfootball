@@ -83,11 +83,14 @@ const Layout = ({ children }: LayoutProps) => {
   // Show error state
   if (authError) {
     debugLog('Showing error state:', authError);
+    const errorMessage = typeof authError === 'object' && authError !== null && 'message' in authError 
+      ? (authError as { message: string }).message 
+      : 'An error occurred';
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-red-600 mb-4">Error</h1>
-          <p className="text-gray-600 mb-4">{typeof authError === 'object' && 'message' in authError ? authError.message : 'An error occurred'}</p>
+          <p className="text-gray-600 mb-4">{errorMessage}</p>
           <button
             onClick={() => router.push('/login')}
             className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
