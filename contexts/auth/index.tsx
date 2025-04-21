@@ -8,20 +8,20 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<AuthState>({
     user: null,
-    loading: true,
+    isLoading: true,
     error: null
   });
 
   const login = async (username: string) => {
     try {
-      setState(prev => ({ ...prev, loading: true, error: null }));
+      setState(prev => ({ ...prev, isLoading: true, error: null }));
       const response = await axios.get(`https://api.sleeper.app/v1/user/${username}`);
       const user: SleeperUser = response.data;
-      setState(prev => ({ ...prev, user, loading: false }));
+      setState(prev => ({ ...prev, user, isLoading: false }));
     } catch (error) {
       setState(prev => ({
         ...prev,
-        loading: false,
+        isLoading: false,
         error: error instanceof Error ? error : new Error('Failed to login')
       }));
     }

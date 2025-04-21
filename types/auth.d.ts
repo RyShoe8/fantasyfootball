@@ -7,7 +7,7 @@ import { ApiError } from './api';
 
 export interface AuthState {
   user: SleeperUser | null;
-  loading: boolean;
+  isLoading: boolean;
   error: ApiError | null;
 }
 
