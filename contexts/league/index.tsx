@@ -192,6 +192,7 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
     selectedWeek,
     selectedYear,
     isLoading,
+    loading: isLoading,
     error,
     setCurrentLeague,
     setSelectedWeek,
