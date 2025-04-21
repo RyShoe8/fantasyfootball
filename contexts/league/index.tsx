@@ -122,9 +122,9 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
     }
   }, [fetchRosters, fetchUsers]);
 
-  const setSelectedWeek = React.useCallback((week: string) => {
+  const setSelectedWeek = React.useCallback((week: number) => {
     debugLog('Setting selected week:', week);
-    setSelectedWeekState(week);
+    setSelectedWeekState(week.toString());
   }, []);
 
   const setSelectedYear = React.useCallback(async (year: string) => {
