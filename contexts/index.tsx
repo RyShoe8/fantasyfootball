@@ -24,12 +24,15 @@ const debugLog = (...args: any[]) => {
 export function ContextProvider({ children }: { children: React.ReactNode }) {
   debugLog('Initializing ContextProvider');
 
+  // Use React.memo to prevent unnecessary re-renders
+  const MemoizedChildren = React.useMemo(() => children, [children]);
+
   return (
     <AuthProvider>
       <LeagueProvider>
         <PlayerProvider>
           <RosterProvider>
-            {children}
+            {MemoizedChildren}
           </RosterProvider>
         </PlayerProvider>
       </LeagueProvider>

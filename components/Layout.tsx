@@ -5,7 +5,6 @@ import Login from './auth/Login';
 import Spinner from './Spinner';
 import Link from 'next/link';
 import { SleeperLeague } from '../types/sleeper';
-import { LeagueContextType } from '../types/league';
 
 // Debug flag - set to true to enable detailed logging
 const DEBUG = true;
@@ -21,29 +20,20 @@ interface LayoutProps {
   children: React.ReactNode;
 }
 
-interface LeagueContextState {
-  currentLeague: SleeperLeague | null;
-  isLoading: boolean;
-}
-
 const Layout = ({ children }: LayoutProps) => {
   const { user, isLoading: authLoading, error: authError, logout } = useAuth();
   const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
   const [isHydrated, setIsHydrated] = React.useState(false);
   const [isMobile, setIsMobile] = React.useState(false);
-  const [isLeagueLoading, setIsLeagueLoading] = React.useState(true);
-
-  // Get league context at the top level
-  let leagueContext: LeagueContextState | undefined;
+  
+  // Get league context safely
+  let leagueContext;
   try {
-    const context = useLeague();
-    leagueContext = {
-      currentLeague: context.currentLeague,
-      isLoading: context.isLoading
-    };
+    leagueContext = useLeague();
   } catch (error) {
     debugLog('League context not available:', error);
+    leagueContext = { currentLeague: null, isLoading: false };
   }
 
   // Handle hydration and mobile detection
@@ -61,13 +51,6 @@ const Layout = ({ children }: LayoutProps) => {
     };
   }, []);
 
-  // Initialize league loading state
-  React.useEffect(() => {
-    if (leagueContext) {
-      setIsLeagueLoading(false);
-    }
-  }, [leagueContext]);
-
   // Check if current page requires authentication
   const requiresAuth = !['/login'].includes(router.pathname);
 
@@ -84,7 +67,7 @@ const Layout = ({ children }: LayoutProps) => {
     });
 
     // Only redirect if we're hydrated and not loading
-    if (isHydrated && !authLoading && !isLeagueLoading) {
+    if (isHydrated && !authLoading) {
       if (requiresAuth && !user) {
         debugLog('Redirecting to login - no user');
         router.push('/login');
@@ -93,10 +76,10 @@ const Layout = ({ children }: LayoutProps) => {
         router.push('/');
       }
     }
-  }, [isHydrated, authLoading, isLeagueLoading, requiresAuth, user, leagueContext, router, isMobile]);
+  }, [isHydrated, authLoading, requiresAuth, user, leagueContext, router, isMobile]);
 
   // Show loading state
-  if (!isHydrated || authLoading || isLeagueLoading) {
+  if (!isHydrated || authLoading) {
     debugLog('Showing loading state');
     return (
       <div className="min-h-screen flex items-center justify-center">
