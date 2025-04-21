@@ -2,7 +2,7 @@
  * Custom hook for managing roster data
  */
 
-import { useState, useEffect, useMemo } from 'react';
+import React from 'react';
 import { useAuth } from '../contexts/auth';
 import { useLeague } from '../contexts/league';
 import { usePlayer } from '../contexts/player';
@@ -38,23 +38,23 @@ export function useRosterData(rosterId?: string): UseRosterDataReturn {
   const { user } = useAuth();
   const { currentLeague } = useLeague();
   const { rosters } = useRoster();
-  const { players, playerStats, isLoading: playersLoading } = usePlayer();
-  const [error, setError] = useState<string | null>(null);
+  const { players, playerStats, loading: playersLoading } = usePlayer();
+  const [error, setError] = React.useState<string | null>(null);
 
   // Find the roster we're interested in
-  const roster = useMemo(() => {
+  const roster = React.useMemo(() => {
     if (!rosters || !rosterId) return null;
     return rosters.find((r: SleeperRoster) => r.roster_id === rosterId) || null;
   }, [rosters, rosterId]);
 
   // Get all players in the roster
-  const rosterPlayers = useMemo(() => {
+  const rosterPlayers = React.useMemo(() => {
     if (!roster || !players) return [];
     return roster.players.map((id: string) => players[id]).filter(Boolean);
   }, [roster, players]);
 
   // Calculate roster statistics
-  const rosterStats = useMemo(() => {
+  const rosterStats = React.useMemo(() => {
     if (!roster || !players || !playerStats) {
       return {
         totalPoints: 0,
@@ -80,22 +80,22 @@ export function useRosterData(rosterId?: string): UseRosterDataReturn {
         };
       }
 
-      const playerStats = playerStats[player.player_id];
+      const playerStatsForPlayer = playerStats[player.player_id];
       stats.positionBreakdown[position].count++;
-      stats.positionBreakdown[position].points += playerStats?.pts_ppr || 0;
-      stats.positionBreakdown[position].projected += player.projected_pts || 0;
+      stats.positionBreakdown[position].points += playerStatsForPlayer?.pts_ppr || 0;
+      stats.positionBreakdown[position].projected += (player as any).projected_pts || 0;
     });
 
     return stats;
   }, [roster, players, playerStats, rosterPlayers]);
 
   // Separate players by roster slot
-  const starters = useMemo(() => {
+  const starters = React.useMemo(() => {
     if (!roster || !players) return [];
     return roster.starters.map((id: string) => players[id]).filter(Boolean);
   }, [roster, players]);
 
-  const bench = useMemo(() => {
+  const bench = React.useMemo(() => {
     if (!roster || !players) return [];
     const starterIds = new Set(roster.starters);
     const irIds = new Set(roster.ir || []);
@@ -106,18 +106,18 @@ export function useRosterData(rosterId?: string): UseRosterDataReturn {
       .filter(Boolean);
   }, [roster, players]);
 
-  const ir = useMemo(() => {
+  const ir = React.useMemo(() => {
     if (!roster || !players || !roster.ir) return [];
     return roster.ir.map((id: string) => players[id]).filter(Boolean);
   }, [roster, players]);
 
-  const taxi = useMemo(() => {
+  const taxi = React.useMemo(() => {
     if (!roster || !players || !roster.taxi) return [];
     return roster.taxi.map((id: string) => players[id]).filter(Boolean);
   }, [roster, players]);
 
   // Set error if roster not found
-  useEffect(() => {
+  React.useEffect(() => {
     if (rosterId && rosters && !roster) {
       setError('Roster not found');
     } else {
