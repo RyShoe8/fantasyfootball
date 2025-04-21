@@ -5,8 +5,12 @@ import { useLeague } from '../contexts/league';
 import { useRoster } from '../contexts/roster';
 import { usePlayer } from '../contexts/player';
 
-const LeagueInfo: React.FC = () => {
-  const { currentLeague, setCurrentLeague, selectedYear, setSelectedYear } = useLeague();
+interface LeagueInfoProps {
+  league: SleeperLeague;
+}
+
+const LeagueInfo: React.FC<LeagueInfoProps> = ({ league }) => {
+  const { setCurrentLeague, selectedYear, setSelectedYear } = useLeague();
   const { rosters } = useRoster();
   const { players, playerStats } = usePlayer();
 
@@ -18,7 +22,7 @@ const LeagueInfo: React.FC = () => {
   const currentYear = new Date().getFullYear();
   const availableYears = Array.from({ length: 3 }, (_, i) => (currentYear - i).toString());
 
-  if (!currentLeague) return null;
+  if (!league) return null;
 
   // Helper function to determine scoring type
   const getScoringType = (league: SleeperLeague) => {
@@ -53,14 +57,14 @@ const LeagueInfo: React.FC = () => {
     return league.roster_positions.filter(pos => pos === 'IR').length;
   };
 
-  const rosterBreakdown = getRosterBreakdown(currentLeague);
+  const rosterBreakdown = getRosterBreakdown(league);
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6 mb-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{currentLeague.name}</h1>
-          <p className="text-gray-600">Season {currentLeague.season}</p>
+          <h1 className="text-2xl font-bold text-gray-900">{league.name}</h1>
+          <p className="text-gray-600">Season {league.season}</p>
         </div>
         <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
           <select
@@ -81,13 +85,13 @@ const LeagueInfo: React.FC = () => {
         <div className="bg-gray-50 p-4 rounded-lg">
           <h3 className="text-sm font-medium text-gray-500">League Status</h3>
           <p className="mt-1 text-lg font-semibold text-gray-900">
-            {currentLeague.status === 'complete' ? 'Completed' : 'In Progress'}
+            {league.status === 'complete' ? 'Completed' : 'In Progress'}
           </p>
         </div>
         <div className="bg-gray-50 p-4 rounded-lg">
           <h3 className="text-sm font-medium text-gray-500">Scoring Settings</h3>
           <p className="mt-1 text-lg font-semibold text-gray-900">
-            {getScoringType(currentLeague)}
+            {getScoringType(league)}
           </p>
         </div>
         <div className="bg-gray-50 p-4 rounded-lg">
@@ -99,7 +103,7 @@ const LeagueInfo: React.FC = () => {
         <div className="bg-gray-50 p-4 rounded-lg">
           <h3 className="text-sm font-medium text-gray-500">League ID</h3>
           <p className="mt-1 text-lg font-semibold text-gray-900">
-            {currentLeague.league_id}
+            {league.league_id}
           </p>
         </div>
       </div>
@@ -121,10 +125,10 @@ const LeagueInfo: React.FC = () => {
             <h4 className="text-sm font-medium text-gray-500">Bench & Reserve</h4>
             <div className="mt-2 space-y-1">
               <p className="text-sm text-gray-900">
-                <span className="font-medium">Bench Spots:</span> {getBenchSize(currentLeague)}
+                <span className="font-medium">Bench Spots:</span> {getBenchSize(league)}
               </p>
               <p className="text-sm text-gray-900">
-                <span className="font-medium">IR Slots:</span> {getIRSlots(currentLeague)}
+                <span className="font-medium">IR Slots:</span> {getIRSlots(league)}
               </p>
             </div>
           </div>
