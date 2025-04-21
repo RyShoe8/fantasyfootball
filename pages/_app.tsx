@@ -76,7 +76,7 @@ function AppContent({ Component, pageProps }: AppProps) {
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-red-500">
           <h1 className="text-2xl font-bold mb-4">Error</h1>
-          <p>{error}</p>
+          <p>{error.message}</p>
         </div>
       </div>
     );
