@@ -101,8 +101,8 @@ const TradeEvaluator: React.FC = () => {
         !theirSide.players.some((u: TradePlayer) => u.player_id === p.player_id))
       .map((p: SleeperPlayer): TradePlayer => ({
         ...p,
-        pts_ppr: p.pts_ppr || 0,
-        pts_std: 0
+        pts_ppr: p.stats?.pts_ppr || 0,
+        pts_std: p.stats?.pts_std || 0
       }));
   }, [rosters, mySide.players, theirSide.players, selectedTeam, players]);
 
@@ -120,8 +120,8 @@ const TradeEvaluator: React.FC = () => {
       })
       .map((p: SleeperPlayer): TradePlayer => ({
         ...p,
-        pts_ppr: p.pts_ppr || 0,
-        pts_std: (p as any).pts_std || 0,
+        pts_ppr: p.stats?.pts_ppr || 0,
+        pts_std: p.stats?.pts_std || 0,
         projected_pts: p.projected_pts || 0
       }));
   }, [rosters, mySide.players, theirSide.players, selectedTeam, myTeam, players]);
