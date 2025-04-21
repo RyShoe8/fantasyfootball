@@ -26,6 +26,7 @@ import { useRoster } from '../contexts/roster';
 interface TradePlayer extends SleeperPlayer {
   pts_ppr?: number;
   pts_std?: number;
+  projected_pts?: number;
 }
 
 interface SimpleDraftPick {
