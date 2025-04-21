@@ -412,8 +412,9 @@ const TradeEvaluator: React.FC = () => {
             <div className="mt-4 pt-4 border-t">
               <h3 className="font-medium mb-2">My Draft Picks</h3>
               <div className="space-y-2">
-                {currentRoster.draft_picks
-                  .filter((pick: SimpleDraftPick) => {
+                {draftPicks
+                  .filter((pick: SleeperDraftPick) => pick.roster_id === currentRoster?.roster_id)
+                  .filter((pick: SleeperDraftPick) => {
                     const isInMySide = mySide.draftPicks.some((p: SimpleDraftPick) => 
                       p.season === pick.season && p.round === pick.round && p.pick_no === pick.pick_no
                     );
@@ -422,7 +423,7 @@ const TradeEvaluator: React.FC = () => {
                     );
                     return !isInMySide && !isInTheirSide;
                   })
-                  .map((pick: SimpleDraftPick, index: number) => (
+                  .map((pick: SleeperDraftPick, index: number) => (
                     <div key={index} className="flex justify-between items-center">
                       <span>{pick.season} Round {pick.round} Pick {pick.pick_no}</span>
                       <button
