@@ -80,6 +80,7 @@ export interface SleeperRoster {
   starters: string[];
   reserves: string[];
   taxi: string[];
+  ir: string[];
   settings: {
     wins: number;
     losses: number;
