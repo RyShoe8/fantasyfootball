@@ -91,7 +91,7 @@ const TradeEvaluator: React.FC = () => {
 
   const availablePlayers = React.useMemo(() => {
     if (!selectedTeam || !rosters) return [];
-    const currentRoster = rosters[selectedTeam];
+    const currentRoster = rosters.find((r: SleeperRoster) => r.roster_id === selectedTeam);
     if (!currentRoster) return [];
     
     return currentRoster.players
@@ -106,7 +106,7 @@ const TradeEvaluator: React.FC = () => {
 
   const selectedTeamPlayers = React.useMemo(() => {
     if (!selectedTeam || !rosters) return [];
-    const currentRoster = rosters[selectedTeam];
+    const currentRoster = rosters.find((r: SleeperRoster) => r.roster_id === selectedTeam);
     if (!currentRoster) return [];
     
     return currentRoster.players
