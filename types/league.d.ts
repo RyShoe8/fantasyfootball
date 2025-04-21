@@ -21,4 +21,5 @@ export interface LeagueContextType extends LeagueState {
   setSelectedYear: (year: string) => void;
   setSelectedWeek: (week: number) => void;
   refreshLeague: (leagueId: string) => Promise<void>;
+  fetchLeagues: (userId: string) => Promise<void>;
 } 
