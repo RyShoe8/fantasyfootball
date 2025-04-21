@@ -1,6 +1,7 @@
 import React from 'react';
 import type { LeagueContextType, LeagueState } from '../../types/league';
 import { SleeperLeague, SleeperUser, SleeperRoster, SleeperDraftPick } from '../../types/sleeper';
+import { ApiError, toApiError } from '../../types/api';
 import { 
   getLeagueData, 
   saveLeagueData, 
@@ -37,7 +38,7 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
   const [selectedWeek, setSelectedWeekState] = React.useState<number>(1);
   const [selectedYear, setSelectedYearState] = React.useState<string>(new Date().getFullYear().toString());
   const [isLoading, setIsLoading] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
+  const [error, setError] = React.useState<ApiError | null>(null);
 
   const fetchRosters = React.useCallback(async (leagueId: string) => {
     debugLog('Fetching rosters for league:', leagueId);
@@ -63,7 +64,7 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
       debugLog('Rosters saved and state updated');
     } catch (err) {
       debugLog('Error in fetchRosters:', err);
-      setError('Failed to fetch rosters');
+      setError(toApiError(err));
       setRosters([]);
     }
   }, [selectedYear]);
@@ -96,7 +97,7 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
       debugLog('Users saved and state updated');
     } catch (err) {
       debugLog('Error in fetchUsers:', err);
-      setError('Failed to fetch users');
+      setError(toApiError(err));
       setUsers([]);
     }
   }, [selectedYear]);
@@ -115,7 +116,7 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
         debugLog('League data loaded successfully');
       } catch (err) {
         debugLog('Error loading league data:', err);
-        setError('Failed to load league data');
+        setError(toApiError(err));
       } finally {
         setIsLoading(false);
       }
@@ -141,7 +142,7 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
         debugLog('League data reloaded for new year');
       } catch (err) {
         debugLog('Error reloading league data:', err);
-        setError('Failed to reload league data');
+        setError(toApiError(err));
       } finally {
         setIsLoading(false);
       }
@@ -162,7 +163,7 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
       debugLog('League refreshed successfully');
     } catch (err) {
       debugLog('Error refreshing league:', err);
-      setError('Failed to refresh league');
+      setError(toApiError(err));
     } finally {
       setIsLoading(false);
     }
@@ -177,7 +178,7 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
       debugLog('Leagues fetched successfully');
     } catch (err) {
       debugLog('Error fetching leagues:', err);
-      setError('Failed to fetch leagues');
+      setError(toApiError(err));
     } finally {
       setIsLoading(false);
     }
