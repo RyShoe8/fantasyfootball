@@ -19,7 +19,7 @@ import { useRouter } from 'next/router';
 import type { SleeperRoster, SleeperUser, SleeperPlayer, SleeperDraftPick } from '../types/sleeper';
 import type { PlayerStats } from '../types/player';
 import { useAuth } from '../contexts/auth';
-import { useLeague } from '../contexts/league';
+import { useLeague } from '../contexts/league/LeagueContext';
 import { usePlayer } from '../contexts/player';
 import { useRoster } from '../contexts/roster';
 
