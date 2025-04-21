@@ -272,8 +272,8 @@ const TradeEvaluator: React.FC = () => {
             My Side {currentRoster && (
               <span className="text-gray-600">
                 - {currentRoster.metadata?.team_name || 
-                  currentLeague?.users?.find((user: SleeperUser) => user.user_id === currentRoster.owner_id)?.metadata?.team_name || 
-                  currentLeague?.users?.find((user: SleeperUser) => user.user_id === currentRoster.owner_id)?.display_name || 
+                  users.find((user: SleeperUser) => user.user_id === currentRoster.owner_id)?.metadata?.team_name || 
+                  users.find((user: SleeperUser) => user.user_id === currentRoster.owner_id)?.display_name || 
                   `Team ${currentRoster.roster_id}`}
               </span>
             )}
