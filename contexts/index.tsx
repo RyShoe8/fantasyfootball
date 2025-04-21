@@ -6,7 +6,7 @@
  */
 
 import React from 'react';
-import { AuthProvider } from './auth/AuthContext';
+import { AuthProvider } from './auth';
 import { LeagueProvider } from './league/LeagueContext';
 import { PlayerProvider } from './player/PlayerContext';
 import { RosterProvider } from './roster';
@@ -38,7 +38,7 @@ export function ContextProvider({ children }: { children: React.ReactNode }) {
 }
 
 // Re-export all context hooks
-export { useAuth } from './auth/AuthContext';
+export { useAuth } from './auth';
 export { useLeague } from './league/LeagueContext';
 export { usePlayer } from './player/PlayerContext';
 export { useRoster } from './roster'; 
