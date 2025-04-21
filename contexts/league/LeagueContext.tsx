@@ -195,7 +195,7 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
         debugLog('League data reloaded for new year');
       } catch (err) {
         debugLog('Error reloading league data:', err);
-        setError('Failed to reload league data');
+        setError(toApiError(err));
       } finally {
         setIsLoading(false);
       }
