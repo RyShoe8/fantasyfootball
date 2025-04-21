@@ -11,40 +11,13 @@
  * - Provides a back button to return to the dashboard
  */
 
-/** @jsxImportSource react */
-import React, { useState, useMemo, SyntheticEvent } from 'react';
+import React from 'react';
 import { SleeperRoster, SleeperPlayer, SleeperLeague } from '../types/sleeper';
+import { PlayerStats } from '../types/player';
 import { useAuth } from '../contexts/auth';
 import { useLeague } from '../contexts/league';
 import { usePlayer } from '../contexts/player';
 import { useRoster } from '../contexts/roster';
-
-interface PlayerStats {
-  pts_ppr?: number;
-  pts_half_ppr?: number;
-  pts_std?: number;
-  projected_pts?: number;
-  fpts?: number;
-  fpts_decimal?: number;
-  fpts_against?: number;
-  fpts_against_decimal?: number;
-  // Position-specific stats
-  passing_yards?: number;
-  passing_tds?: number;
-  passing_ints?: number;
-  rushing_yards?: number;
-  rushing_tds?: number;
-  receiving_yards?: number;
-  receiving_tds?: number;
-  receptions?: number;
-  tackles?: number;
-  sacks?: number;
-  interceptions?: number;
-  fumbles?: number;
-  fumbles_lost?: number;
-  games_played?: number;
-  [key: string]: any;
-}
 
 interface Player extends SleeperPlayer {
   stats?: PlayerStats;
@@ -85,20 +58,13 @@ interface RosterData {
 }
 
 const Roster: React.FC = () => {
-  const { 
-    user, 
-    rosters, 
-    players, 
-    currentLeague, 
-    playerStats, 
-    leagues,
-    setCurrentLeague,
-    selectedYear,
-    setSelectedYear
-  } = useRoster();
-  const [selectedWeek, setSelectedWeek] = useState('0');
-  const [sortField, setSortField] = useState<keyof PlayerStats>('pts_ppr');
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const { user } = useAuth();
+  const { rosters, loading: rosterLoading, error: rosterError } = useRoster();
+  const { players, playerStats } = usePlayer();
+  const { currentLeague, leagues, setCurrentLeague, selectedYear, setSelectedYear } = useLeague();
+  const [selectedWeek, setSelectedWeek] = React.useState('0');
+  const [sortField, setSortField] = React.useState<keyof PlayerStats>('pts_ppr');
+  const [sortDirection, setSortDirection] = React.useState<'asc' | 'desc'>('desc');
 
   // Get current season helper function
   const getCurrentSeason = () => {
@@ -106,7 +72,7 @@ const Roster: React.FC = () => {
     return now.getMonth() >= 8 ? now.getFullYear() : now.getFullYear() - 1;
   };
 
-  const rosterData = useMemo<RosterData | null>(() => {
+  const rosterData = React.useMemo<RosterData | null>(() => {
     if (!user || !rosters || !players || !currentLeague) return null;
 
     // Filter rosters to only include those from the current league
@@ -215,7 +181,11 @@ const Roster: React.FC = () => {
     return <div>Loading...</div>;
   }
 
-  const handleSort = (field: keyof PlayerStats) => {
+  const handleWeekChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedWeek(e.currentTarget.value);
+  };
+
+  const handleSort = (field: keyof PlayerStats) => (e: React.MouseEvent<HTMLButtonElement>) => {
     if (sortField === field) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
     } else {
@@ -224,7 +194,11 @@ const Roster: React.FC = () => {
     }
   };
 
-  const teamStats = useMemo(() => {
+  const handleYearChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedYear(e.currentTarget.value);
+  };
+
+  const teamStats = React.useMemo(() => {
     if (!user || !rosters) return null;
 
     const userRoster = rosters.find((r: SleeperRoster) => r.owner_id === user.user_id);
@@ -344,7 +318,7 @@ const Roster: React.FC = () => {
             <select
               className="mt-1 block w-32 pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
               value={selectedYear}
-              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedYear(e.target.value)}
+              onChange={handleYearChange}
             >
               {Array.from({ length: 3 }, (_, i) => {
                 const year = (getCurrentSeason() - i).toString();
@@ -393,15 +367,15 @@ const Roster: React.FC = () => {
                   Stats
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                    onClick={() => handleSort('pts_ppr')}>
+                    onClick={(e: React.MouseEvent<HTMLTableHeaderCellElement>) => handleSort('pts_ppr')(e as React.MouseEvent<HTMLButtonElement>)}>
                   Season Points
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                    onClick={() => handleSort('projected_pts')}>
+                    onClick={(e: React.MouseEvent<HTMLTableHeaderCellElement>) => handleSort('projected_pts')(e as React.MouseEvent<HTMLButtonElement>)}>
                   Projected Season
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                    onClick={() => handleSort('pts_ppr')}>
+                    onClick={(e: React.MouseEvent<HTMLTableHeaderCellElement>) => handleSort('pts_ppr')(e as React.MouseEvent<HTMLButtonElement>)}>
                   Avg Points/Game
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -419,7 +393,7 @@ const Roster: React.FC = () => {
                           className="h-10 w-10 rounded-full object-cover absolute inset-0"
                           src={`https://sleepercdn.com/players/avatar/${player.player_id}`}
                           alt={player.full_name}
-                          onError={(e) => {
+                          onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
                             const target = e.target as HTMLImageElement;
                             target.style.display = 'none';
                             const parent = target.parentElement;
@@ -480,7 +454,7 @@ const Roster: React.FC = () => {
           <select
             className="mt-1 block w-32 pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
             value={selectedWeek}
-            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedWeek(e.target.value)}
+            onChange={handleWeekChange}
           >
             {Array.from({ length: 18 }, (_, i) => (
               <option key={i} value={i.toString()}>
@@ -495,23 +469,23 @@ const Roster: React.FC = () => {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                    onClick={() => handleSort('teamName')}>
+                    onClick={(e: React.MouseEvent<HTMLTableHeaderCellElement>) => handleSort('teamName')(e as React.MouseEvent<HTMLButtonElement>)}>
                   Team Name
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                    onClick={() => handleSort('wins')}>
+                    onClick={(e: React.MouseEvent<HTMLTableHeaderCellElement>) => handleSort('wins')(e as React.MouseEvent<HTMLButtonElement>)}>
                   W
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                    onClick={() => handleSort('losses')}>
+                    onClick={(e: React.MouseEvent<HTMLTableHeaderCellElement>) => handleSort('losses')(e as React.MouseEvent<HTMLButtonElement>)}>
                   L
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                    onClick={() => handleSort('ties')}>
+                    onClick={(e: React.MouseEvent<HTMLTableHeaderCellElement>) => handleSort('ties')(e as React.MouseEvent<HTMLButtonElement>)}>
                   T
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                    onClick={() => handleSort('totalPoints')}>
+                    onClick={(e: React.MouseEvent<HTMLTableHeaderCellElement>) => handleSort('totalPoints')(e as React.MouseEvent<HTMLButtonElement>)}>
                   Total Points
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -581,7 +555,7 @@ const Roster: React.FC = () => {
                               className="h-10 w-10 rounded-full object-cover absolute inset-0"
                               src={`https://sleepercdn.com/players/avatar/${player.player_id}`}
                               alt={player.full_name}
-                              onError={(e) => {
+                              onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
                                 const target = e.target as HTMLImageElement;
                                 target.style.display = 'none';
                                 const parent = target.parentElement;
@@ -645,7 +619,7 @@ const Roster: React.FC = () => {
                               className="h-10 w-10 rounded-full object-cover absolute inset-0"
                               src={`https://sleepercdn.com/players/avatar/${player.player_id}`}
                               alt={player.full_name}
-                              onError={(e) => {
+                              onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
                                 const target = e.target as HTMLImageElement;
                                 target.style.display = 'none';
                                 const parent = target.parentElement;
