@@ -5,10 +5,10 @@ import { useAuth } from '../../contexts/auth';
 import { useLeague } from '../../contexts/league';
 import { usePlayer } from '../../contexts/player';
 import { useRoster } from '../../contexts/roster';
-import LeagueInfo from '../../components/league/LeagueInfo';
-import LeagueStandings from '../../components/league/LeagueStandings';
-import TeamOverview from '../../components/league/TeamOverview';
-import PlayerRankings from '../../components/league/PlayerRankings';
+import LeagueInfo from '../../components/LeagueInfo';
+import LeagueStandings from '../../components/LeagueStandings';
+import TeamOverview from '../../components/TeamOverview';
+import PlayerRankings from '../../components/PlayerRankings';
 
 export default function LeaguePage() {
   const router = useRouter();
