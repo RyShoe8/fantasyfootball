@@ -6,6 +6,7 @@ import Login from './auth/Login';
 import Spinner from './Spinner';
 import Link from 'next/link';
 import { SleeperLeague } from '../types/sleeper';
+import { LeagueContextType } from '../types/league';
 
 // Debug flag - set to true to enable detailed logging
 const DEBUG = true;
@@ -27,8 +28,15 @@ const Layout = ({ children }: LayoutProps) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
   const [isHydrated, setIsHydrated] = React.useState(false);
   const [isMobile, setIsMobile] = React.useState(false);
-  const [currentLeague, setCurrentLeague] = React.useState<SleeperLeague | null>(null);
   const [isLeagueLoading, setIsLeagueLoading] = React.useState(true);
+
+  // Get league context at the top level
+  let leagueContext: LeagueContextType | undefined;
+  try {
+    leagueContext = useLeague();
+  } catch (error) {
+    debugLog('League context not available:', error);
+  }
 
   // Handle hydration and mobile detection
   React.useEffect(() => {
@@ -45,17 +53,12 @@ const Layout = ({ children }: LayoutProps) => {
     };
   }, []);
 
-  // Safely access league context
+  // Initialize league loading state
   React.useEffect(() => {
-    try {
-      const leagueContext = useLeague();
-      setCurrentLeague(leagueContext.currentLeague);
-    } catch (error) {
-      debugLog('League context not available:', error);
-    } finally {
+    if (leagueContext) {
       setIsLeagueLoading(false);
     }
-  }, []);
+  }, [leagueContext]);
 
   // Check if current page requires authentication
   const requiresAuth = !['/login'].includes(router.pathname);
@@ -67,7 +70,7 @@ const Layout = ({ children }: LayoutProps) => {
       authLoading,
       requiresAuth,
       hasUser: !!user,
-      hasLeague: !!currentLeague,
+      hasLeague: !!leagueContext?.currentLeague,
       path: router.pathname,
       isMobile
     });
@@ -82,7 +85,7 @@ const Layout = ({ children }: LayoutProps) => {
         router.push('/');
       }
     }
-  }, [isHydrated, authLoading, isLeagueLoading, requiresAuth, user, currentLeague, router, isMobile]);
+  }, [isHydrated, authLoading, isLeagueLoading, requiresAuth, user, leagueContext, router, isMobile]);
 
   // Show loading state
   if (!isHydrated || authLoading || isLeagueLoading) {
