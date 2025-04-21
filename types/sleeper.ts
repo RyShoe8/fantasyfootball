@@ -119,6 +119,8 @@ export interface SleeperPlayer {
   active: boolean;
   search_rank: number;
   fantasy_positions: string[];
+  projected_pts?: number;
+  pts_ppr?: number;
   stats?: {
     [key: string]: number;
   };
