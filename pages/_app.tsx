@@ -8,11 +8,21 @@ type AppProps = {
   pageProps: any;
 };
 
+interface LayoutProps {
+  children: React.ReactNode;
+}
+
+interface ContextProviderProps {
+  children: React.ReactNode;
+}
+
 function App({ Component, pageProps }: AppProps) {
+  const content = <Component {...pageProps} />;
+  
   return (
-    <ContextProvider>
-      <Layout>
-        <Component {...pageProps} />
+    <ContextProvider {...({} as ContextProviderProps)}>
+      <Layout {...({} as LayoutProps)}>
+        {content}
       </Layout>
     </ContextProvider>
   );
