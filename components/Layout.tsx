@@ -1,7 +1,6 @@
 import React from 'react';
 import { useRouter } from 'next/router';
-import { useAuth } from '../contexts';
-import { useLeague } from '../contexts/league/LeagueContext';
+import { useAuth, useLeague } from '../contexts';
 import Login from './auth/Login';
 import Spinner from './Spinner';
 import Link from 'next/link';
