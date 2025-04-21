@@ -6,6 +6,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../contexts/auth';
 import { useLeague } from '../contexts/league';
 import { usePlayer } from '../contexts/player';
+import { useRoster } from '../contexts/roster';
 import { SleeperRoster, SleeperPlayer } from '../types/sleeper';
 import { PlayerStats } from '../types/player';
 import { calculateRosterPoints, calculateProjectedPoints } from '../utils/calculators';
@@ -35,7 +36,8 @@ interface UseRosterDataReturn {
 
 export function useRosterData(rosterId?: string): UseRosterDataReturn {
   const { user } = useAuth();
-  const { currentLeague, rosters } = useLeague();
+  const { currentLeague } = useLeague();
+  const { rosters } = useRoster();
   const { players, playerStats, isLoading: playersLoading } = usePlayer();
   const [error, setError] = useState<string | null>(null);
 
