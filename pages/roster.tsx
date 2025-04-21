@@ -185,7 +185,7 @@ const Roster: React.FC = () => {
     setSelectedWeek(e.currentTarget.value);
   };
 
-  const handleSort = (field: keyof PlayerStats) => (e: React.MouseEvent<HTMLButtonElement>) => {
+  const handleSort = (field: keyof PlayerStats) => (e: React.MouseEvent<HTMLTableHeaderCellElement>) => {
     if (sortField === field) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
     } else {
@@ -367,15 +367,15 @@ const Roster: React.FC = () => {
                   Stats
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                    onClick={(e: React.MouseEvent<HTMLTableHeaderCellElement>) => handleSort('pts_ppr')(e as React.MouseEvent<HTMLButtonElement>)}>
+                    onClick={(e: React.MouseEvent<HTMLTableHeaderCellElement>) => handleSort('pts_ppr')(e as React.MouseEvent<HTMLTableHeaderCellElement>)}>
                   Season Points
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                    onClick={(e: React.MouseEvent<HTMLTableHeaderCellElement>) => handleSort('projected_pts')(e as React.MouseEvent<HTMLButtonElement>)}>
+                    onClick={(e: React.MouseEvent<HTMLTableHeaderCellElement>) => handleSort('projected_pts')(e as React.MouseEvent<HTMLTableHeaderCellElement>)}>
                   Projected Season
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                    onClick={(e: React.MouseEvent<HTMLTableHeaderCellElement>) => handleSort('pts_ppr')(e as React.MouseEvent<HTMLButtonElement>)}>
+                    onClick={(e: React.MouseEvent<HTMLTableHeaderCellElement>) => handleSort('pts_ppr')(e as React.MouseEvent<HTMLTableHeaderCellElement>)}>
                   Avg Points/Game
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -469,23 +469,23 @@ const Roster: React.FC = () => {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                    onClick={(e: React.MouseEvent<HTMLTableHeaderCellElement>) => handleSort('teamName')(e as React.MouseEvent<HTMLButtonElement>)}>
+                    onClick={(e: React.MouseEvent<HTMLTableHeaderCellElement>) => handleSort('teamName')(e as React.MouseEvent<HTMLTableHeaderCellElement>)}>
                   Team Name
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                    onClick={(e: React.MouseEvent<HTMLTableHeaderCellElement>) => handleSort('wins')(e as React.MouseEvent<HTMLButtonElement>)}>
+                    onClick={(e: React.MouseEvent<HTMLTableHeaderCellElement>) => handleSort('wins')(e as React.MouseEvent<HTMLTableHeaderCellElement>)}>
                   W
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                    onClick={(e: React.MouseEvent<HTMLTableHeaderCellElement>) => handleSort('losses')(e as React.MouseEvent<HTMLButtonElement>)}>
+                    onClick={(e: React.MouseEvent<HTMLTableHeaderCellElement>) => handleSort('losses')(e as React.MouseEvent<HTMLTableHeaderCellElement>)}>
                   L
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                    onClick={(e: React.MouseEvent<HTMLTableHeaderCellElement>) => handleSort('ties')(e as React.MouseEvent<HTMLButtonElement>)}>
+                    onClick={(e: React.MouseEvent<HTMLTableHeaderCellElement>) => handleSort('ties')(e as React.MouseEvent<HTMLTableHeaderCellElement>)}>
                   T
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                    onClick={(e: React.MouseEvent<HTMLTableHeaderCellElement>) => handleSort('totalPoints')(e as React.MouseEvent<HTMLButtonElement>)}>
+                    onClick={(e: React.MouseEvent<HTMLTableHeaderCellElement>) => handleSort('totalPoints')(e as React.MouseEvent<HTMLTableHeaderCellElement>)}>
                   Total Points
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
