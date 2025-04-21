@@ -1,7 +1,7 @@
 import React from 'react';
 import { useRouter } from 'next/router';
 import { useAuth } from '../contexts';
-import { useLeague } from '../contexts';
+import { useLeague } from '../contexts/league/LeagueContext';
 import Login from './auth/Login';
 import Spinner from './Spinner';
 import Link from 'next/link';
@@ -22,6 +22,11 @@ interface LayoutProps {
   children: React.ReactNode;
 }
 
+interface LeagueContextState {
+  currentLeague: SleeperLeague | null;
+  isLoading: boolean;
+}
+
 const Layout = ({ children }: LayoutProps) => {
   const { user, isLoading: authLoading, error: authError, logout } = useAuth();
   const router = useRouter();
@@ -31,7 +36,7 @@ const Layout = ({ children }: LayoutProps) => {
   const [isLeagueLoading, setIsLeagueLoading] = React.useState(true);
 
   // Get league context at the top level
-  let leagueContext: Pick<LeagueContextType, 'currentLeague' | 'isLoading'> | undefined;
+  let leagueContext: LeagueContextState | undefined;
   try {
     const context = useLeague();
     leagueContext = {
