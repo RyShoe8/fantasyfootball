@@ -197,4 +197,64 @@ Open an issue for:
 1. Clone the repository
 2. Open the project in your code editor
 3. Ensure TypeScript compilation is working
-4. Start developing! 
+4. Start developing!
+
+## ⚠️ IMPORTANT WARNING ⚠️
+
+**DO NOT RUN NPM COMMANDS OR ATTEMPT TO INSTALL PACKAGES.** The development environment is already set up and configured. Any attempts to run npm commands or install packages will be rejected.
+
+**ALWAYS CHECK THIS FILE BEFORE MAKING ANY UPDATES** to ensure compliance with project guidelines and avoid unnecessary package installation attempts.
+
+## Communication Rules
+
+1. **Be Clear and Concise**
+   - Use clear, descriptive commit messages
+   - Keep pull request descriptions focused and informative
+   - Document complex logic or decisions in code comments
+
+2. **Be Respectful**
+   - Use professional language
+   - Respect different opinions and approaches
+   - Provide constructive feedback
+
+3. **Be Collaborative**
+   - Share knowledge and insights
+   - Help others understand your changes
+   - Be open to suggestions and improvements
+
+4. **Code Review Guidelines**
+   - Review code for functionality, readability, and maintainability
+   - Suggest improvements when appropriate
+   - Approve only when satisfied with the changes
+
+5. **Issue Management**
+   - Use clear, descriptive issue titles
+   - Provide detailed information about bugs or feature requests
+   - Update issues with progress and resolution
+
+6. **Documentation**
+   - Keep documentation up-to-date with code changes
+   - Document new features and significant changes
+   - Include examples for complex functionality
+
+7. **Testing**
+   - Write tests for new features
+   - Ensure existing tests pass before submitting changes
+   - Document test coverage and edge cases
+
+8. **Version Control**
+   - Use feature branches for new work
+   - Keep commits focused and atomic
+   - Follow the project's branching strategy
+
+9. **Security**
+   - Report security vulnerabilities privately
+   - Follow security best practices
+   - Protect sensitive information
+
+10. **Project Structure**
+    - Follow the established project structure
+    - Place files in appropriate directories
+    - Maintain consistent naming conventions
+
+Remember: These guidelines are designed to maintain code quality and foster a positive development environment. Always refer to this document before making any changes or attempting to modify the development environment. 
