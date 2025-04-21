@@ -44,7 +44,7 @@ export default function DebugSection() {
           url = `https://api.sleeper.app/v1/league/${currentLeague.league_id}`;
           break;
         case 'playerStats':
-          await fetchPlayerStats(selectedYear, selectedWeek.toString());
+          await fetchPlayerStats(selectedYear, selectedWeek);
           return;
         default:
           throw new Error('Invalid endpoint');
