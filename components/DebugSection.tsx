@@ -1,12 +1,18 @@
-import React, { useState } from 'react';
-import { useSleeper } from '../contexts/SleeperContext';
+import React from 'react';
+import { useState } from 'react';
 import axios from 'axios';
 import { useAuth } from '../contexts/auth';
 import { useLeague } from '../contexts/league';
 import { usePlayer } from '../contexts/player';
+import { useRoster } from '../contexts/roster';
+import type { SleeperLeague } from '../types/sleeper';
 
 export default function DebugSection() {
-  const { currentLeague, setRosters, setUsers, setPlayers, setDraftPicks, selectedYear, selectedWeek, fetchPlayerStats } = useSleeper();
+  const { currentLeague } = useLeague();
+  const { setRosters } = useRoster();
+  const { setUsers } = useLeague();
+  const { setPlayers, fetchPlayerStats } = usePlayer();
+  const { selectedYear, selectedWeek } = useLeague();
   const [apiResponse, setApiResponse] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -61,7 +67,7 @@ export default function DebugSection() {
           setPlayers(response.data);
           break;
         case 'draftPicks':
-          setDraftPicks(response.data);
+          // TODO: Add draft picks context
           break;
       }
       

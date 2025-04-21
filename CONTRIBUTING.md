@@ -1,4 +1,75 @@
-# Contributing Guidelines
+# Contributing to Fantasy Football App
+
+## Development Workflow
+
+This project is deployed through Netlify, which handles all dependency installation and build processes. Local development should focus on code changes rather than dependency management.
+
+### Important Notes
+
+1. **Dependencies**
+   - Do not run `npm` or `yarn` commands locally
+   - All dependencies are managed through `package.json`
+   - Netlify handles installation during deployment
+   - To add new dependencies:
+     - Add them to `package.json`
+     - Commit the change
+     - Netlify will install them during the next deployment
+
+2. **Type Declarations**
+   - `.ts` files contain implementation code
+   - `.d.ts` files contain type declarations only
+   - Type declarations should be in the `types/` directory
+   - Implementation files should be in their respective feature directories
+
+3. **Build Process**
+   - Builds are handled by Netlify
+   - Build configuration is in `netlify.toml`
+   - Environment variables are managed in Netlify dashboard
+
+4. **Development Best Practices**
+   - Always include proper type declarations
+   - Use debug flags for development
+   - Keep contexts small and focused
+   - Document complex logic
+   - Test changes locally before pushing
+
+5. **File Structure**
+   ```
+   ├── components/     # React components
+   ├── contexts/      # React contexts
+   ├── pages/         # Next.js pages
+   ├── services/      # API services
+   ├── types/         # Type declarations (.d.ts files)
+   ├── utils/         # Utility functions
+   └── public/        # Static assets
+   ```
+
+6. **Debugging**
+   - Use the debug section in development
+   - Log important state changes
+   - Check Netlify deploy logs for build issues
+
+7. **Common Issues**
+   - Missing type declarations
+   - Incorrect import paths
+   - Missing dependencies in package.json
+   - Environment variables not set in Netlify
+
+### Getting Started
+
+1. Clone the repository
+2. Create a new branch for your changes
+3. Make your changes
+4. Push your changes
+5. Create a pull request
+6. Wait for Netlify to deploy your changes
+
+### Deployment
+
+- All deployments are handled by Netlify
+- Pushing to main triggers a production deployment
+- Pull requests create preview deployments
+- Check Netlify dashboard for build status and logs
 
 ## Communication Rules
 
