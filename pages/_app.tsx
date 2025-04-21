@@ -1,9 +1,8 @@
 import '../styles/globals.css';
-import type { AppProps } from 'next/app';
 import { ContextProvider } from '../contexts';
 import { useAuth } from '../contexts';
 import Layout from '../components/Layout';
-import { useEffect } from 'react';
+import React from 'react';
 import { useRouter } from 'next/router';
 
 // Debug flag - set to true to enable detailed logging
@@ -16,13 +15,18 @@ const debugLog = (...args: any[]) => {
   }
 };
 
+type AppProps = {
+  Component: React.ComponentType<any>;
+  pageProps: any;
+};
+
 // Custom wrapper component to handle initialization
 function AppContent({ Component, pageProps }: AppProps) {
   const router = useRouter();
   const { user, isLoading, error, isAuthenticated } = useAuth();
   
   // Handle routing based on authentication state
-  useEffect(() => {
+  React.useEffect(() => {
     debugLog('Route change detected:', {
       path: router.pathname,
       isAuthenticated,
@@ -48,76 +52,43 @@ function AppContent({ Component, pageProps }: AppProps) {
     // If there's no user or there's an error, redirect to login
     if (!isAuthenticated || error) {
       debugLog('Redirecting to login:', {
-        reason: !isAuthenticated ? 'Not authenticated' : 'Error occurred',
+        isAuthenticated,
         error
       });
-      router.replace('/login');
+      router.push('/login');
     }
-  }, [isAuthenticated, isLoading, router.pathname, error]);
+  }, [router.pathname, isAuthenticated, isLoading, error]);
 
-  // Log state changes for debugging
-  useEffect(() => {
-    debugLog('App state updated:', {
-      isAuthenticated,
-      isLoading,
-      user: user ? 'Present' : 'Not present',
-      currentPath: router.pathname,
-      error
-    });
-  }, [isAuthenticated, isLoading, user, router.pathname, error]);
-
-  // Show loading state only while loading and not on login page
-  if (isLoading && router.pathname !== '/login') {
+  // Show loading state
+  if (isLoading) {
     debugLog('Showing loading state');
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
-        </div>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-blue-500"></div>
       </div>
     );
   }
 
-  // Show error state if there's an error
-  if (error && router.pathname !== '/login') {
+  // Show error state
+  if (error) {
     debugLog('Showing error state:', error);
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <p className="text-red-600">{error}</p>
-          <button 
-            onClick={() => router.push('/login')}
-            className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
-          >
-            Return to Login
-          </button>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-red-500">
+          <h1 className="text-2xl font-bold mb-4">Error</h1>
+          <p>{error}</p>
         </div>
       </div>
     );
   }
 
-  // Don't wrap login page in Layout
-  if (router.pathname === '/login') {
-    debugLog('Rendering login page without layout');
-    return <Component {...pageProps} />;
+  // If not authenticated and not on a public route, show nothing (will redirect)
+  if (!isAuthenticated && !['/login'].includes(router.pathname)) {
+    debugLog('Not authenticated and not on public route, showing nothing');
+    return null;
   }
-  
-  // If there's no user and we're not on a public route, redirect to login
-  if (!isAuthenticated) {
-    debugLog('Not authenticated, redirecting to login');
-    router.replace('/login');
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Redirecting to login...</p>
-        </div>
-      </div>
-    );
-  }
-  
-  debugLog('Rendering page with layout');
+
+  debugLog('Rendering app content');
   return (
     <Layout>
       <Component {...pageProps} />
@@ -125,16 +96,16 @@ function AppContent({ Component, pageProps }: AppProps) {
   );
 }
 
-function AppWrapper(props: AppProps) {
-  debugLog('Initializing AppWrapper');
+// Wrap the app with context providers
+function AppWrapper({ Component, pageProps }: AppProps) {
   return (
     <ContextProvider>
-      <AppContent {...props} />
+      <AppContent Component={Component} pageProps={pageProps} />
     </ContextProvider>
   );
 }
 
-export default function App(props: AppProps) {
-  debugLog('Initializing App');
-  return <AppWrapper {...props} />;
+// Export the wrapped app
+export default function App({ Component, pageProps }: AppProps) {
+  return <AppWrapper Component={Component} pageProps={pageProps} />;
 } 
