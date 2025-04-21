@@ -68,7 +68,7 @@ export default function LeaguePage() {
           </button>
         </div>
         {activeTab === 'overview' && <TeamOverview />}
-        {activeTab === 'standings' && <LeagueStandings rosters={rosters} />}
+        {activeTab === 'standings' && <LeagueStandings />}
         {activeTab === 'players' && <PlayerRankings players={players} />}
       </div>
     </div>
