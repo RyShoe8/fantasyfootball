@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import { useAuth } from '../../contexts/auth';
 import { useLeague } from '../../contexts/league';
-import { usePlayer } from '../../contexts/player';
+import { usePlayer } from '../../contexts/player/PlayerContext';
 import { useRoster } from '../../contexts/roster';
 import LeagueInfo from '../../components/LeagueInfo';
 import LeagueStandings from '../../components/LeagueStandings';
