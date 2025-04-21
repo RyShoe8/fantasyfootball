@@ -33,7 +33,7 @@ interface UsePlayerStatsReturn {
 }
 
 export function usePlayerStats(): UsePlayerStatsReturn {
-  const { players, playerStats, isLoading } = usePlayer();
+  const { players, playerStats, loading } = usePlayer();
   const [error, setError] = useState<string | null>(null);
 
   // Calculate stats for each position
@@ -120,7 +120,7 @@ export function usePlayerStats(): UsePlayerStatsReturn {
     topPerformers,
     getPlayerProjection,
     getPlayerPoints,
-    isLoading,
+    isLoading: loading,
     error
   };
 } 
