@@ -15,7 +15,6 @@
  */
 
 import React, { useState } from 'react';
-import { useSleeper } from '../contexts/SleeperContext';
 import { useRouter } from 'next/router';
 import LeagueInfo from '../components/LeagueInfo';
 import LeagueStandings from '../components/LeagueStandings';
@@ -28,6 +27,7 @@ import PlayerRankings from '../components/PlayerRankings';
 import { useAuth } from '../contexts/auth';
 import { useLeague } from '../contexts/league';
 import { usePlayer } from '../contexts/player';
+import { useRoster } from '../contexts/roster';
 
 const SLEEPER_API_BASE = 'https://api.sleeper.app/v1';
 
@@ -86,20 +86,24 @@ const formatApiResponse = (data: any, type: string) => {
 };
 
 const Home: React.FC = () => {
-  const { user, login, isLoading, error } = useSleeper();
-  const [username, setUsername] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
+  const { user, login, isLoading, error } = useAuth();
+  const [username, setUsername] = useState('');
+  const [userLeagues, setUserLeagues] = useState<SleeperLeague[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!username.trim()) return;
+    if (!username) return;
 
     setIsSubmitting(true);
     try {
+      const response = await axios.get(`https://api.sleeper.app/v1/user/${username}/leagues/nfl/2023`);
+      const leagues: SleeperLeague[] = response.data;
+      setUserLeagues(leagues);
       await login(username);
-    } catch (err) {
-      console.error('Login error:', err);
+    } catch (error) {
+      console.error('Error fetching leagues:', error);
     } finally {
       setIsSubmitting(false);
     }
