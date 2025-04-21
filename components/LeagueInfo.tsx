@@ -1,24 +1,17 @@
 import React from 'react';
-import { useSleeper } from '../contexts/SleeperContext';
 import { SleeperLeague } from '../types/sleeper';
 import { useAuth } from '../contexts/auth';
 import { useLeague } from '../contexts/league';
+import { useRoster } from '../contexts/roster';
+import { usePlayer } from '../contexts/player';
 
 const LeagueInfo: React.FC = () => {
-  const { 
-    currentLeague, 
-    leagues, 
-    setCurrentLeague, 
-    selectedYear, 
-    setSelectedYear,
-    rosters,
-    users,
-    players,
-    playerStats
-  } = useSleeper();
+  const { currentLeague, setCurrentLeague, selectedYear, setSelectedYear, leagues } = useLeague();
+  const { rosters } = useRoster();
+  const { players, playerStats } = usePlayer();
 
   const handleLeagueChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const selectedLeague = leagues.find(league => league.league_id === e.target.value);
+    const selectedLeague = leagues.find((league: SleeperLeague) => league.league_id === e.target.value);
     if (selectedLeague) {
       setCurrentLeague(selectedLeague);
     }
@@ -36,9 +29,8 @@ const LeagueInfo: React.FC = () => {
 
   // Helper function to determine scoring type
   const getScoringType = (league: SleeperLeague) => {
-    if (league.scoring_settings?.pts_per_reception) {
-      return 'PPR';
-    }
+    // For now, we'll default to Standard scoring since we don't have direct access to PPR settings
+    // This can be enhanced later when we have access to the scoring settings
     return 'Standard';
   };
 
@@ -109,7 +101,7 @@ const LeagueInfo: React.FC = () => {
             onChange={handleLeagueChange}
             className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            {leagues.map(league => (
+            {leagues.map((league: SleeperLeague) => (
               <option key={league.league_id} value={league.league_id}>
                 {league.name} ({league.season})
               </option>
