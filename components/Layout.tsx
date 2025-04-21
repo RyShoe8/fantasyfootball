@@ -5,6 +5,7 @@ import { useLeague } from '../contexts';
 import Login from './auth/Login';
 import Spinner from './Spinner';
 import Link from 'next/link';
+import { SleeperLeague } from '../types/sleeper';
 
 // Debug flag - set to true to enable detailed logging
 const DEBUG = true;
@@ -26,7 +27,7 @@ const Layout = ({ children }: LayoutProps) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
   const [isHydrated, setIsHydrated] = React.useState(false);
   const [isMobile, setIsMobile] = React.useState(false);
-  const [currentLeague, setCurrentLeague] = React.useState(null);
+  const [currentLeague, setCurrentLeague] = React.useState<SleeperLeague | null>(null);
   const [isLeagueLoading, setIsLeagueLoading] = React.useState(true);
 
   // Handle hydration and mobile detection
