@@ -142,7 +142,7 @@ const Home: React.FC = () => {
             </div>
             {error && (
               <div className="text-red-500 text-sm mt-2">
-                {error}
+                {error.message}
               </div>
             )}
             <button
