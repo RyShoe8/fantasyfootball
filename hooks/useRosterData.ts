@@ -98,17 +98,17 @@ export function useRosterData(rosterId?: string): UseRosterDataReturn {
   const bench = React.useMemo(() => {
     if (!roster || !players) return [];
     const starterIds = new Set(roster.starters);
-    const irIds = new Set(roster.ir || []);
+    const reserveIds = new Set(roster.reserves || []);
     const taxiIds = new Set(roster.taxi || []);
     return roster.players
-      .filter((id: string) => !starterIds.has(id) && !irIds.has(id) && !taxiIds.has(id))
+      .filter((id: string) => !starterIds.has(id) && !reserveIds.has(id) && !taxiIds.has(id))
       .map((id: string) => players[id])
       .filter(Boolean);
   }, [roster, players]);
 
   const ir = React.useMemo(() => {
-    if (!roster || !players || !roster.ir) return [];
-    return roster.ir.map((id: string) => players[id]).filter(Boolean);
+    if (!roster || !players || !roster.reserves) return [];
+    return roster.reserves.map((id: string) => players[id]).filter(Boolean);
   }, [roster, players]);
 
   const taxi = React.useMemo(() => {
