@@ -57,7 +57,7 @@ interface Player extends SleeperPlayer {
   overall_rank?: number;
   position_rank?: number;
   roster_slot?: 'starter' | 'bench' | 'ir' | 'taxi';
-  age?: number;
+  age: number;
 }
 
 interface RosterPlayer extends Player {
