@@ -1,77 +1,236 @@
 import React from 'react';
 import type { LeagueContextType, LeagueState } from '../../types/league';
-import { SleeperLeague, SleeperUser } from '../../types/sleeper';
-import axios from 'axios';
+import { SleeperLeague, SleeperUser, SleeperRoster, SleeperDraftPick } from '../../types/sleeper';
+import { 
+  getLeagueData, 
+  saveLeagueData, 
+  getRosterData, 
+  saveRosterData, 
+  getUserData, 
+  saveUserData, 
+  getDraftPicks, 
+  saveDraftPick 
+} from '../../lib/db';
+import { LeagueApi, RosterApi, UserApi } from '../../services/api';
+
+// Debug flag - set to true to enable detailed logging
+const DEBUG = true;
+
+// Debug logging utility
+const debugLog = (...args: any[]) => {
+  if (DEBUG) {
+    console.log('[LeagueContext]', ...args);
+  }
+};
 
 const LeagueContext = React.createContext<LeagueContextType | undefined>(undefined);
 
 export function LeagueProvider({ children }: { children: React.ReactNode }) {
-  const [state, setState] = React.useState<LeagueState>({
-    currentLeague: null,
-    leagues: [],
-    users: [],
-    selectedYear: new Date().getFullYear().toString(),
-    selectedWeek: 1,
-    loading: false,
-    error: null
+  debugLog('Initializing LeagueProvider');
+
+  // Initialize state with default values
+  const [leagues, setLeagues] = React.useState<SleeperLeague[]>([]);
+  const [rosters, setRosters] = React.useState<SleeperRoster[]>([]);
+  const [users, setUsers] = React.useState<SleeperUser[]>([]);
+  const [draftPicks, setDraftPicks] = React.useState<SleeperDraftPick[]>([]);
+  const [currentLeague, setCurrentLeagueState] = React.useState<SleeperLeague | null>(null);
+  const [selectedWeek, setSelectedWeekState] = React.useState<string>('1');
+  const [selectedYear, setSelectedYearState] = React.useState<string>(new Date().getFullYear().toString());
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+
+  const fetchRosters = React.useCallback(async (leagueId: string) => {
+    debugLog('Fetching rosters for league:', leagueId);
+    try {
+      // Check database first
+      const dbRosters = await getRosterData(leagueId, selectedYear);
+      if (dbRosters && dbRosters.length > 0) {
+        debugLog('Found rosters in database:', dbRosters);
+        setRosters(dbRosters);
+        return;
+      }
+
+      // If not in database, fetch from API
+      debugLog('Rosters not found in database, fetching from API');
+      const rosters = await RosterApi.getRosters(leagueId);
+      
+      debugLog('API response received:', rosters);
+      
+      // Save each roster to database
+      await Promise.all(rosters.map((roster: SleeperRoster) => saveRosterData(roster)));
+      
+      setRosters(rosters);
+      debugLog('Rosters saved and state updated');
+    } catch (err) {
+      debugLog('Error in fetchRosters:', err);
+      setError('Failed to fetch rosters');
+      setRosters([]);
+    }
+  }, [selectedYear]);
+
+  const fetchUsers = React.useCallback(async (leagueId: string) => {
+    debugLog('Fetching users for league:', leagueId);
+    try {
+      // Check database first
+      const dbUsers = await Promise.all(
+        (await getRosterData(leagueId, selectedYear))
+          .map(roster => getUserData(roster.owner_id))
+      );
+      
+      if (dbUsers.every(user => user !== null)) {
+        debugLog('Found users in database:', dbUsers);
+        setUsers(dbUsers.filter((user): user is SleeperUser => user !== null));
+        return;
+      }
+
+      // If not in database, fetch from API
+      debugLog('Users not found in database, fetching from API');
+      const users = await LeagueApi.getLeagueUsers(leagueId);
+      
+      debugLog('API response received:', users);
+      
+      // Save each user to database
+      await Promise.all(users.map((user: SleeperUser) => saveUserData(user)));
+      
+      setUsers(users);
+      debugLog('Users saved and state updated');
+    } catch (err) {
+      debugLog('Error in fetchUsers:', err);
+      setError('Failed to fetch users');
+      setUsers([]);
+    }
+  }, [selectedYear]);
+
+  const setCurrentLeague = React.useCallback(async (league: SleeperLeague | null) => {
+    debugLog('Setting current league:', league);
+    setCurrentLeagueState(league);
+    
+    if (league) {
+      setIsLoading(true);
+      try {
+        await Promise.all([
+          fetchRosters(league.league_id),
+          fetchUsers(league.league_id)
+        ]);
+        debugLog('League data loaded successfully');
+      } catch (err) {
+        debugLog('Error loading league data:', err);
+        setError('Failed to load league data');
+      } finally {
+        setIsLoading(false);
+      }
+    }
+  }, [fetchRosters, fetchUsers]);
+
+  const setSelectedWeek = React.useCallback((week: string) => {
+    debugLog('Setting selected week:', week);
+    setSelectedWeekState(week);
+  }, []);
+
+  const setSelectedYear = React.useCallback(async (year: string) => {
+    debugLog('Setting selected year:', year);
+    setSelectedYearState(year);
+    
+    if (currentLeague) {
+      setIsLoading(true);
+      try {
+        await Promise.all([
+          fetchRosters(currentLeague.league_id),
+          fetchUsers(currentLeague.league_id)
+        ]);
+        debugLog('League data reloaded for new year');
+      } catch (err) {
+        debugLog('Error reloading league data:', err);
+        setError('Failed to reload league data');
+      } finally {
+        setIsLoading(false);
+      }
+    }
+  }, [currentLeague, fetchRosters, fetchUsers]);
+
+  const refreshLeague = React.useCallback(async (leagueId: string) => {
+    debugLog('Refreshing league:', leagueId);
+    setIsLoading(true);
+    try {
+      const league = await LeagueApi.getLeague(leagueId);
+      await saveLeagueData(league);
+      setCurrentLeagueState(league);
+      await Promise.all([
+        fetchRosters(leagueId),
+        fetchUsers(leagueId)
+      ]);
+      debugLog('League refreshed successfully');
+    } catch (err) {
+      debugLog('Error refreshing league:', err);
+      setError('Failed to refresh league');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [fetchRosters, fetchUsers]);
+
+  const fetchLeagues = React.useCallback(async (userId: string) => {
+    debugLog('Fetching leagues for user:', userId);
+    setIsLoading(true);
+    try {
+      const leagues = await UserApi.getUserLeagues(userId, selectedYear);
+      setLeagues(leagues);
+      debugLog('Leagues fetched successfully');
+    } catch (err) {
+      debugLog('Error fetching leagues:', err);
+      setError('Failed to fetch leagues');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [selectedYear]);
+
+  const value = React.useMemo(() => ({
+    leagues,
+    rosters,
+    users,
+    draftPicks,
+    currentLeague,
+    selectedWeek,
+    selectedYear,
+    isLoading,
+    error,
+    setCurrentLeague,
+    setSelectedWeek,
+    setSelectedYear,
+    setRosters,
+    setUsers,
+    setDraftPicks,
+    setLeagues,
+    setIsLoading,
+    setError,
+    refreshLeague,
+    fetchLeagues
+  }), [
+    leagues,
+    rosters,
+    users,
+    draftPicks,
+    currentLeague,
+    selectedWeek,
+    selectedYear,
+    isLoading,
+    error,
+    setCurrentLeague,
+    setSelectedWeek,
+    setSelectedYear,
+    refreshLeague,
+    fetchLeagues
+  ]);
+
+  debugLog('LeagueContext state:', {
+    currentLeague: currentLeague?.league_id,
+    selectedWeek,
+    selectedYear,
+    isLoading,
+    error
   });
 
-  const setUsers = (users: SleeperUser[]) => {
-    setState((prev: LeagueState) => ({ ...prev, users }));
-  };
-
-  const setCurrentLeague = (league: SleeperLeague | null) => {
-    setState((prev: LeagueState) => ({ ...prev, currentLeague: league }));
-  };
-
-  const setSelectedYear = (year: string) => {
-    setState((prev: LeagueState) => ({ ...prev, selectedYear: year }));
-  };
-
-  const setSelectedWeek = (week: number) => {
-    setState((prev: LeagueState) => ({ ...prev, selectedWeek: week }));
-  };
-
-  const refreshLeague = async (leagueId: string) => {
-    try {
-      setState((prev: LeagueState) => ({ ...prev, loading: true, error: null }));
-      const response = await axios.get(`https://api.sleeper.app/v1/league/${leagueId}`);
-      const league: SleeperLeague = response.data;
-      setState((prev: LeagueState) => ({ ...prev, currentLeague: league, loading: false }));
-    } catch (error) {
-      setState((prev: LeagueState) => ({
-        ...prev,
-        loading: false,
-        error: error instanceof Error ? error : new Error('Failed to fetch league')
-      }));
-    }
-  };
-
-  const fetchLeagues = async (userId: string) => {
-    try {
-      setState((prev: LeagueState) => ({ ...prev, loading: true, error: null }));
-      const response = await axios.get(`https://api.sleeper.app/v1/user/${userId}/leagues/nfl/${state.selectedYear}`);
-      const leagues: SleeperLeague[] = response.data;
-      setState((prev: LeagueState) => ({ ...prev, leagues, loading: false }));
-    } catch (error) {
-      setState((prev: LeagueState) => ({
-        ...prev,
-        loading: false,
-        error: error instanceof Error ? error : new Error('Failed to fetch leagues')
-      }));
-    }
-  };
-
   return (
-    <LeagueContext.Provider value={{
-      ...state,
-      setUsers,
-      setCurrentLeague,
-      setSelectedYear,
-      setSelectedWeek,
-      refreshLeague,
-      fetchLeagues
-    }}>
+    <LeagueContext.Provider value={value}>
       {children}
     </LeagueContext.Provider>
   );
