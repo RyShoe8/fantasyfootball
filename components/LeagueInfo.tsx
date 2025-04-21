@@ -6,16 +6,9 @@ import { useRoster } from '../contexts/roster';
 import { usePlayer } from '../contexts/player';
 
 const LeagueInfo: React.FC = () => {
-  const { currentLeague, setCurrentLeague, selectedYear, setSelectedYear, leagues } = useLeague();
+  const { currentLeague, setCurrentLeague, selectedYear, setSelectedYear } = useLeague();
   const { rosters } = useRoster();
   const { players, playerStats } = usePlayer();
-
-  const handleLeagueChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const selectedLeague = leagues.find((league: SleeperLeague) => league.league_id === e.target.value);
-    if (selectedLeague) {
-      setCurrentLeague(selectedLeague);
-    }
-  };
 
   const handleYearChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedYear(e.target.value);
@@ -60,32 +53,6 @@ const LeagueInfo: React.FC = () => {
     return league.roster_positions.filter(pos => pos === 'IR').length;
   };
 
-  // Helper function to get taxi squad size
-  const getTaxiSquadSize = (league: SleeperLeague) => {
-    return league.settings?.taxi_slots || 0;
-  };
-
-  // Helper function to get playoff format
-  const getPlayoffFormat = (league: SleeperLeague) => {
-    const teams = league.settings?.playoff_teams || 0;
-    const weeks = league.settings?.playoff_week_start ? 
-      18 - league.settings.playoff_week_start + 1 : 0;
-    
-    return `${teams} teams, ${weeks} weeks`;
-  };
-
-  // Helper function to format position name
-  const formatPositionName = (pos: string) => {
-    switch (pos) {
-      case 'SUPER_FLEX':
-        return 'Super Flex';
-      case 'IDP_FLEX':
-        return 'IDP Flex';
-      default:
-        return pos;
-    }
-  };
-
   const rosterBreakdown = getRosterBreakdown(currentLeague);
 
   return (
@@ -96,17 +63,6 @@ const LeagueInfo: React.FC = () => {
           <p className="text-gray-600">Season {currentLeague.season}</p>
         </div>
         <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
-          <select
-            value={currentLeague.league_id}
-            onChange={handleLeagueChange}
-            className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            {leagues.map((league: SleeperLeague) => (
-              <option key={league.league_id} value={league.league_id}>
-                {league.name} ({league.season})
-              </option>
-            ))}
-          </select>
           <select
             value={selectedYear}
             onChange={handleYearChange}
@@ -141,9 +97,9 @@ const LeagueInfo: React.FC = () => {
           </p>
         </div>
         <div className="bg-gray-50 p-4 rounded-lg">
-          <h3 className="text-sm font-medium text-gray-500">Playoff Format</h3>
+          <h3 className="text-sm font-medium text-gray-500">League ID</h3>
           <p className="mt-1 text-lg font-semibold text-gray-900">
-            {getPlayoffFormat(currentLeague)}
+            {currentLeague.league_id}
           </p>
         </div>
       </div>
@@ -156,7 +112,7 @@ const LeagueInfo: React.FC = () => {
             <div className="mt-2 space-y-1">
               {Object.entries(rosterBreakdown).map(([pos, count]) => (
                 <p key={pos} className="text-sm text-gray-900">
-                  <span className="font-medium">{formatPositionName(pos)}:</span> {count}
+                  <span className="font-medium">{pos}:</span> {count}
                 </p>
               ))}
             </div>
@@ -169,9 +125,6 @@ const LeagueInfo: React.FC = () => {
               </p>
               <p className="text-sm text-gray-900">
                 <span className="font-medium">IR Slots:</span> {getIRSlots(currentLeague)}
-              </p>
-              <p className="text-sm text-gray-900">
-                <span className="font-medium">Taxi Squad:</span> {getTaxiSquadSize(currentLeague) > 0 ? `${getTaxiSquadSize(currentLeague)} spots` : 'None'}
               </p>
             </div>
           </div>
