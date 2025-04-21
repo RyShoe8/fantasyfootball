@@ -43,7 +43,7 @@ interface TradeSide {
 
 const TradeEvaluator: React.FC = () => {
   const { user } = useAuth();
-  const { league } = useLeague();
+  const { currentLeague } = useLeague();
   const { players } = usePlayer();
   const { rosters } = useRoster();
   const router = useRouter();
@@ -262,8 +262,8 @@ const TradeEvaluator: React.FC = () => {
             My Side {currentRoster && (
               <span className="text-gray-600">
                 - {currentRoster.metadata?.team_name || 
-                  league?.users?.find((user: SleeperUser) => user.user_id === currentRoster.owner_id)?.metadata?.team_name || 
-                  league?.users?.find((user: SleeperUser) => user.user_id === currentRoster.owner_id)?.display_name || 
+                  currentLeague?.users?.find((user: SleeperUser) => user.user_id === currentRoster.owner_id)?.metadata?.team_name || 
+                  currentLeague?.users?.find((user: SleeperUser) => user.user_id === currentRoster.owner_id)?.display_name || 
                   `Team ${currentRoster.roster_id}`}
               </span>
             )}
@@ -320,7 +320,7 @@ const TradeEvaluator: React.FC = () => {
             {rosters
               .filter((r: SleeperRoster) => r.owner_id !== user?.user_id)
               .map((team: SleeperRoster) => {
-                const teamUser = league?.users?.find((u: SleeperUser) => u.user_id === team.owner_id);
+                const teamUser = currentLeague?.users?.find((u: SleeperUser) => u.user_id === team.owner_id);
                 return (
                   <option key={team.roster_id} value={team.roster_id}>
                     {teamUser?.metadata?.team_name || teamUser?.display_name || teamUser?.username || `Team ${team.roster_id}`}
