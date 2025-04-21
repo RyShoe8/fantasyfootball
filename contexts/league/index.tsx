@@ -34,7 +34,7 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
   const [users, setUsers] = React.useState<SleeperUser[]>([]);
   const [draftPicks, setDraftPicks] = React.useState<SleeperDraftPick[]>([]);
   const [currentLeague, setCurrentLeagueState] = React.useState<SleeperLeague | null>(null);
-  const [selectedWeek, setSelectedWeekState] = React.useState<string>('1');
+  const [selectedWeek, setSelectedWeekState] = React.useState<number>(1);
   const [selectedYear, setSelectedYearState] = React.useState<string>(new Date().getFullYear().toString());
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -124,7 +124,7 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
 
   const setSelectedWeek = React.useCallback((week: number) => {
     debugLog('Setting selected week:', week);
-    setSelectedWeekState(week.toString());
+    setSelectedWeekState(week);
   }, []);
 
   const setSelectedYear = React.useCallback(async (year: string) => {
