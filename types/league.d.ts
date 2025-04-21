@@ -7,6 +7,7 @@ import { ApiError } from './api';
 
 export interface LeagueState {
   currentLeague: SleeperLeague | null;
+  leagues: SleeperLeague[];
   users: SleeperUser[];
   selectedYear: string;
   selectedWeek: number;
