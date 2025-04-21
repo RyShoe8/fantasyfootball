@@ -31,9 +31,13 @@ const Layout = ({ children }: LayoutProps) => {
   const [isLeagueLoading, setIsLeagueLoading] = React.useState(true);
 
   // Get league context at the top level
-  let leagueContext: LeagueContextType | undefined;
+  let leagueContext: Pick<LeagueContextType, 'currentLeague' | 'loading'> | undefined;
   try {
-    leagueContext = useLeague();
+    const context = useLeague();
+    leagueContext = {
+      currentLeague: context.currentLeague,
+      loading: context.loading
+    };
   } catch (error) {
     debugLog('League context not available:', error);
   }
