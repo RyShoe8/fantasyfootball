@@ -53,12 +53,16 @@ const TradeEvaluator: React.FC = () => {
 
   const [mySide, setMySide] = React.useState<TradeSide>({
     players: [],
-    draftPicks: []
+    draftPicks: [],
+    totalProjectedPoints: 0,
+    totalPoints: 0
   });
 
   const [theirSide, setTheirSide] = React.useState<TradeSide>({
     players: [],
-    draftPicks: []
+    draftPicks: [],
+    totalProjectedPoints: 0,
+    totalPoints: 0
   });
 
   const [isLoading, setIsLoading] = React.useState(true);
