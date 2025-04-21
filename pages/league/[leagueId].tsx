@@ -1,94 +1,75 @@
+/** @jsxImportSource react */
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
-import { useEffect, useState } from 'react';
-import { useSleeper } from '../../contexts/SleeperContext';
-import LeagueInfo from '../../components/LeagueInfo';
-import TeamOverview from '../../components/TeamOverview';
-import LeagueStandings from '../../components/LeagueStandings';
-import PlayerRankings from '../../components/PlayerRankings';
+import { useAuth } from '../../contexts/auth';
+import { useLeague } from '../../contexts/league';
+import { usePlayer } from '../../contexts/player';
+import { useRoster } from '../../contexts/roster';
+import LeagueInfo from '../../components/league/LeagueInfo';
+import LeagueStandings from '../../components/league/LeagueStandings';
+import TeamOverview from '../../components/league/TeamOverview';
+import PlayerRankings from '../../components/league/PlayerRankings';
 
 export default function LeaguePage() {
   const router = useRouter();
   const { leagueId } = router.query;
-  const { currentLeague, setCurrentLeague, leagues, isLoading } = useSleeper();
-  const [isLoadingPage, setIsLoadingPage] = useState(true);
+  const { user } = useAuth();
+  const { league, loading: leagueLoading, error: leagueError } = useLeague();
+  const { players, loading: playersLoading, error: playersError } = usePlayer();
+  const { rosters, loading: rostersLoading, error: rostersError } = useRoster();
+  const [activeTab, setActiveTab] = useState('overview');
 
   useEffect(() => {
-    if (leagueId && leagues) {
-      const league = leagues.find(l => l.league_id === leagueId);
-      if (league) {
-        setCurrentLeague(league);
-        setIsLoadingPage(false);
-      } else {
-        // If league not found, redirect to home
-        router.push('/');
-      }
+    if (!user) {
+      router.push('/login');
     }
-  }, [leagueId, leagues, setCurrentLeague, router]);
+  }, [user, router]);
 
-  if (isLoading || isLoadingPage) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading league data...</p>
-        </div>
-      </div>
-    );
+  if (leagueLoading || playersLoading || rostersLoading) {
+    return <div>Loading...</div>;
   }
 
-  if (!currentLeague) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100">
-        <div className="text-center">
-          <p className="text-gray-600">League not found</p>
-          <button
-            onClick={() => router.push('/')}
-            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          >
-            Return to Dashboard
-          </button>
-        </div>
-      </div>
-    );
+  if (leagueError || playersError || rostersError) {
+    return <div>Error loading league data</div>;
+  }
+
+  if (!league) {
+    return <div>League not found</div>;
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 space-y-6">
-      {/* Back Button */}
-      <button
-        onClick={() => router.push('/')}
-        className="mb-4 px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
-      >
-        ← Back to Dashboard
-      </button>
-
-      {/* League Info */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <LeagueInfo />
-      </div>
-
-      {/* Team Overview */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <TeamOverview />
-      </div>
-
-      {/* League Standings and Trade Evaluator */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white shadow rounded-lg p-6">
-          <div className="mb-4">
-            <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-gray-900">League Standings</h2>
-              <span className="text-gray-600">Season: {currentLeague.season}</span>
-            </div>
-          </div>
-          <LeagueStandings />
+    <div className="container mx-auto px-4 py-8">
+      <LeagueInfo league={league} />
+      <div className="mt-8">
+        <div className="flex space-x-4 mb-4">
+          <button
+            className={`px-4 py-2 rounded ${
+              activeTab === 'overview' ? 'bg-blue-500 text-white' : 'bg-gray-200'
+            }`}
+            onClick={() => setActiveTab('overview')}
+          >
+            Overview
+          </button>
+          <button
+            className={`px-4 py-2 rounded ${
+              activeTab === 'standings' ? 'bg-blue-500 text-white' : 'bg-gray-200'
+            }`}
+            onClick={() => setActiveTab('standings')}
+          >
+            Standings
+          </button>
+          <button
+            className={`px-4 py-2 rounded ${
+              activeTab === 'players' ? 'bg-blue-500 text-white' : 'bg-gray-200'
+            }`}
+            onClick={() => setActiveTab('players')}
+          >
+            Players
+          </button>
         </div>
-      </div>
-
-      {/* Player Rankings */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-xl font-semibold mb-4">Player Rankings</h2>
-        <PlayerRankings />
+        {activeTab === 'overview' && <TeamOverview rosters={rosters} />}
+        {activeTab === 'standings' && <LeagueStandings rosters={rosters} />}
+        {activeTab === 'players' && <PlayerRankings players={players} />}
       </div>
     </div>
   );

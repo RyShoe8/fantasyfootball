@@ -2,6 +2,9 @@ import React, { useState, useMemo, ChangeEvent, useEffect } from 'react';
 import { useSleeper } from '../contexts/SleeperContext';
 import type { SleeperRoster, SleeperUser, SleeperPlayer } from '../types/sleeper';
 import type { PlayerStats } from '../types/player';
+import { useAuth } from '../contexts/auth';
+import { useLeague } from '../contexts/league';
+import { usePlayer } from '../contexts/player';
 
 interface ExtendedPlayer extends Omit<SleeperPlayer, 'stats'> {
   stats?: Record<string, PlayerStats>;

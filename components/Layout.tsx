@@ -1,26 +1,38 @@
-import React, { useEffect, useState, type ReactNode } from 'react';
+import React from 'react';
 import { useRouter } from 'next/router';
-import { useSleeper } from '../contexts/SleeperContext';
-import Login from './Login';
+import { useAuth } from '../contexts';
+import { useLeague } from '../contexts';
+import Login from './auth/Login';
 import Spinner from './Spinner';
 import Link from 'next/link';
 
+// Debug flag - set to true to enable detailed logging
+const DEBUG = true;
+
+// Debug logging utility
+const debugLog = (...args: any[]) => {
+  if (DEBUG) {
+    console.log('[Layout]', ...args);
+  }
+};
+
 interface LayoutProps {
-  children: ReactNode;
+  children: React.ReactNode;
 }
 
-const Layout: React.FC<LayoutProps> = ({ children }) => {
-  const { user, isLoading, error, currentLeague, logout } = useSleeper();
+const Layout = ({ children }: LayoutProps) => {
+  const { user, isLoading: authLoading, error: authError, logout } = useAuth();
+  const { currentLeague } = useLeague();
   const router = useRouter();
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isHydrated, setIsHydrated] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
+  const [isHydrated, setIsHydrated] = React.useState(false);
+  const [isMobile, setIsMobile] = React.useState(false);
 
   // Check if current page requires authentication
   const requiresAuth = !['/login'].includes(router.pathname);
 
   // Handle hydration and mobile detection
-  useEffect(() => {
+  React.useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 640);
     };
@@ -35,10 +47,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   }, []);
 
   // Handle authentication
-  useEffect(() => {
-    console.log('Layout: Auth state changed', {
+  React.useEffect(() => {
+    debugLog('Auth state changed', {
       isHydrated,
-      isLoading,
+      authLoading,
       requiresAuth,
       hasUser: !!user,
       hasLeague: !!currentLeague,
@@ -47,198 +59,216 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     });
 
     // Only redirect if we're hydrated and not loading
-    if (isHydrated && !isLoading) {
-      // If we need auth but don't have a user, redirect to login
+    if (isHydrated && !authLoading) {
       if (requiresAuth && !user) {
-        console.log('Layout: Redirecting to login...');
+        debugLog('Redirecting to login - no user');
         router.push('/login');
-      }
-      // If we're on login page and have a user, redirect to home
-      else if (router.pathname === '/login' && user) {
-        console.log('Layout: User already logged in, redirecting to home...');
+      } else if (!requiresAuth && user) {
+        debugLog('Redirecting to home - user exists');
         router.push('/');
       }
     }
-  }, [router.pathname, user, isLoading, requiresAuth, isHydrated, currentLeague, isMobile]);
+  }, [isHydrated, authLoading, requiresAuth, user, currentLeague, router, isMobile]);
 
-  // Show loading spinner during initial load or hydration
-  if (!isHydrated || (isLoading && router.pathname !== '/login')) {
-    console.log('Layout: Showing loading state', { isHydrated, isLoading, isMobile });
+  // Show loading state
+  if (!isHydrated || authLoading) {
+    debugLog('Showing loading state');
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100">
-        <div className="text-center">
-          <Spinner />
-          <p className="mt-4 text-gray-600">Loading...</p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center">
+        <Spinner />
       </div>
     );
   }
 
-  // Show error state if there's an error
-  if (error) {
-    console.log('Layout: Showing error state', { error, isMobile });
+  // Show error state
+  if (authError) {
+    debugLog('Showing error state:', authError);
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-xl font-semibold text-red-600 mb-2">Error</h2>
-          <p className="text-gray-600">{error}</p>
+          <h1 className="text-2xl font-bold text-red-600 mb-4">Error</h1>
+          <p className="text-gray-600 mb-4">{authError.message}</p>
           <button
-            onClick={() => window.location.reload()}
-            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            onClick={() => router.push('/login')}
+            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
           >
-            Retry
+            Return to Login
           </button>
         </div>
       </div>
     );
   }
 
-  // Show login page if not authenticated
-  if (!user) {
-    console.log('Layout: Showing login page', { isMobile });
+  // Show login page without layout
+  if (!requiresAuth) {
+    debugLog('Rendering login page without layout');
     return <Login />;
   }
 
-  // Show loading state if we don't have league data yet
-  if (requiresAuth && !currentLeague) {
-    console.log('Layout: Waiting for league data', { isMobile });
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100">
-        <div className="text-center">
-          <Spinner />
-          <p className="mt-4 text-gray-600">Loading league data...</p>
-        </div>
-      </div>
-    );
-  }
-
-  console.log('Layout: Rendering main layout', {
-    hasUser: !!user,
-    hasLeague: !!currentLeague,
-    path: router.pathname,
-    isMobile
-  });
-
+  // Show main layout
+  debugLog('Rendering main layout');
   return (
     <div className="min-h-screen bg-gray-100">
-      <nav className="bg-white shadow-md">
+      {/* Navigation */}
+      <nav className="bg-white shadow-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
-            <div className="flex items-center">
-              <Link href="/" className="flex items-center">
-                <span className="text-2xl font-bold text-blue-600">🏈 Fantasy OS</span>
-              </Link>
+            <div className="flex">
+              <div className="flex-shrink-0 flex items-center">
+                <Link href="/" className="text-xl font-bold text-gray-800">
+                  Fantasy Football
+                </Link>
+              </div>
+              <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
+                <Link
+                  href="/"
+                  className={`${
+                    router.pathname === '/'
+                      ? 'border-blue-500 text-gray-900'
+                      : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                  } inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium`}
+                >
+                  Home
+                </Link>
+                <Link
+                  href="/rosters"
+                  className={`${
+                    router.pathname === '/rosters'
+                      ? 'border-blue-500 text-gray-900'
+                      : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                  } inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium`}
+                >
+                  Rosters
+                </Link>
+                <Link
+                  href="/players"
+                  className={`${
+                    router.pathname === '/players'
+                      ? 'border-blue-500 text-gray-900'
+                      : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                  } inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium`}
+                >
+                  Players
+                </Link>
+              </div>
             </div>
-            
-            {/* Mobile menu button */}
-            <div className="flex items-center sm:hidden">
+            <div className="hidden sm:ml-6 sm:flex sm:items-center">
+              <div className="ml-3 relative">
+                <div className="flex items-center space-x-4">
+                  <span className="text-sm text-gray-700">
+                    {user?.display_name || user?.username}
+                  </span>
+                  <button
+                    onClick={logout}
+                    className="text-sm text-red-600 hover:text-red-800"
+                  >
+                    Logout
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div className="-mr-2 flex items-center sm:hidden">
               <button
-                type="button"
-                className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"
-                aria-controls="mobile-menu"
-                aria-expanded={isMobileMenuOpen}
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"
               >
                 <span className="sr-only">Open main menu</span>
-                <svg className="block h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
+                {isMobileMenuOpen ? (
+                  <svg
+                    className="block h-6 w-6"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    aria-hidden="true"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                ) : (
+                  <svg
+                    className="block h-6 w-6"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    aria-hidden="true"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M4 6h16M4 12h16M4 18h16"
+                    />
+                  </svg>
+                )}
               </button>
-            </div>
-
-            {/* Desktop menu */}
-            <div className="hidden sm:flex sm:items-center sm:space-x-4">
-              <Link href="/" className={`px-3 py-2 rounded-md text-sm font-medium ${router.pathname === '/' ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'}`}>
-                Dashboard
-              </Link>
-              <Link href="/roster" className={`px-3 py-2 rounded-md text-sm font-medium ${router.pathname === '/roster' ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'}`}>
-                Roster
-              </Link>
-              <Link href="/trade-evaluator" className={`px-3 py-2 rounded-md text-sm font-medium ${router.pathname === '/trade-evaluator' ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'}`}>
-                Trade Evaluator
-              </Link>
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-2">
-                  <span className="text-sm text-gray-600">{user?.display_name}</span>
-                  {user?.avatar && (
-                    <div className="h-8 w-8 rounded-full overflow-hidden">
-                      <img
-                        src={`https://sleepercdn.com/avatars/${user.avatar}`}
-                        alt={user.display_name}
-                        className="h-8 w-8 rounded-full"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.style.display = 'none';
-                          const parent = target.parentElement;
-                          if (parent) {
-                            const fallback = document.createElement('div');
-                            fallback.className = 'h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-sm font-medium';
-                            fallback.textContent = user.display_name.charAt(0).toUpperCase();
-                            parent.appendChild(fallback);
-                          }
-                        }}
-                      />
-                    </div>
-                  )}
-                </div>
-                <button
-                  onClick={logout}
-                  className="px-3 py-2 rounded-md text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50"
-                >
-                  Logout
-                </button>
-              </div>
             </div>
           </div>
         </div>
 
         {/* Mobile menu */}
-        <div className={`sm:hidden ${isMobileMenuOpen ? 'block' : 'hidden'}`} id="mobile-menu">
-          <div className="px-2 pt-2 pb-3 space-y-1">
-            <Link href="/" className={`block px-3 py-2 rounded-md text-base font-medium ${router.pathname === '/' ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'}`}>
-              Dashboard
-            </Link>
-            <Link href="/roster" className={`block px-3 py-2 rounded-md text-base font-medium ${router.pathname === '/roster' ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'}`}>
-              Roster
-            </Link>
-            <Link href="/trade-evaluator" className={`block px-3 py-2 rounded-md text-base font-medium ${router.pathname === '/trade-evaluator' ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'}`}>
-              Trade Evaluator
-            </Link>
-            <div className="flex items-center justify-between px-3 py-2">
-              <div className="flex items-center space-x-2">
-                <span className="text-sm text-gray-600">{user?.display_name}</span>
-                {user?.avatar && (
-                  <div className="h-8 w-8 rounded-full overflow-hidden">
-                    <img
-                      src={`https://sleepercdn.com/avatars/${user.avatar}`}
-                      alt={user.display_name}
-                      className="h-8 w-8 rounded-full"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.style.display = 'none';
-                        const parent = target.parentElement;
-                        if (parent) {
-                          const fallback = document.createElement('div');
-                          fallback.className = 'h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-sm font-medium';
-                          fallback.textContent = user.display_name.charAt(0).toUpperCase();
-                          parent.appendChild(fallback);
-                        }
-                      }}
-                    />
-                  </div>
-                )}
-              </div>
-              <button
-                onClick={logout}
-                className="px-3 py-2 rounded-md text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50"
+        {isMobileMenuOpen && (
+          <div className="sm:hidden">
+            <div className="pt-2 pb-3 space-y-1">
+              <Link
+                href="/"
+                className={`${
+                  router.pathname === '/'
+                    ? 'bg-blue-50 border-blue-500 text-blue-700'
+                    : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'
+                } block pl-3 pr-4 py-2 border-l-4 text-base font-medium`}
               >
-                Logout
-              </button>
+                Home
+              </Link>
+              <Link
+                href="/rosters"
+                className={`${
+                  router.pathname === '/rosters'
+                    ? 'bg-blue-50 border-blue-500 text-blue-700'
+                    : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'
+                } block pl-3 pr-4 py-2 border-l-4 text-base font-medium`}
+              >
+                Rosters
+              </Link>
+              <Link
+                href="/players"
+                className={`${
+                  router.pathname === '/players'
+                    ? 'bg-blue-50 border-blue-500 text-blue-700'
+                    : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'
+                } block pl-3 pr-4 py-2 border-l-4 text-base font-medium`}
+              >
+                Players
+              </Link>
+            </div>
+            <div className="pt-4 pb-3 border-t border-gray-200">
+              <div className="flex items-center px-4">
+                <div className="flex-shrink-0">
+                  <span className="text-sm text-gray-700">
+                    {user?.display_name || user?.username}
+                  </span>
+                </div>
+                <div className="ml-3">
+                  <button
+                    onClick={logout}
+                    className="text-sm text-red-600 hover:text-red-800"
+                  >
+                    Logout
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </nav>
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+      {/* Main content */}
+      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         {children}
       </main>
     </div>

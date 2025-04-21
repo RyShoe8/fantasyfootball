@@ -15,10 +15,13 @@
 
 /** @jsxImportSource react */
 import React, { useState, useMemo, useEffect, ChangeEvent } from 'react';
-import { useSleeper } from '../contexts/SleeperContext';
 import { useRouter } from 'next/router';
 import type { SleeperRoster, SleeperUser } from '../types/sleeper';
 import type { PlayerStats } from '../types/player';
+import { useAuth } from '../contexts/auth';
+import { useLeague } from '../contexts/league';
+import { usePlayer } from '../contexts/player';
+import { useRoster } from '../contexts/roster';
 
 interface TradePlayer {
   player_id: string;

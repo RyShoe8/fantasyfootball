@@ -1,48 +1,74 @@
 import '../styles/globals.css';
 import type { AppProps } from 'next/app';
-import { SleeperProvider, useSleeper } from '../contexts/SleeperContext';
+import { ContextProvider } from '../contexts';
+import { useAuth } from '../contexts';
 import Layout from '../components/Layout';
 import { useEffect } from 'react';
 import { useRouter } from 'next/router';
 
+// Debug flag - set to true to enable detailed logging
+const DEBUG = true;
+
+// Debug logging utility
+const debugLog = (...args: any[]) => {
+  if (DEBUG) {
+    console.log('[App]', ...args);
+  }
+};
+
 // Custom wrapper component to handle initialization
 function AppContent({ Component, pageProps }: AppProps) {
   const router = useRouter();
-  const { user, isLoading, hasInitialized, error } = useSleeper();
+  const { user, isLoading, error, isAuthenticated } = useAuth();
   
   // Handle routing based on authentication state
   useEffect(() => {
-    if (!hasInitialized) return;
+    debugLog('Route change detected:', {
+      path: router.pathname,
+      isAuthenticated,
+      isLoading,
+      error
+    });
 
     const publicRoutes = ['/login'];
     const isPublicRoute = publicRoutes.includes(router.pathname);
 
     // If we're on a public route, don't redirect
-    if (isPublicRoute) return;
+    if (isPublicRoute) {
+      debugLog('On public route, no redirect needed');
+      return;
+    }
 
     // If we're still loading, don't redirect yet
-    if (isLoading) return;
+    if (isLoading) {
+      debugLog('Still loading, waiting before redirect');
+      return;
+    }
 
     // If there's no user or there's an error, redirect to login
-    if (!user || error) {
-      console.log('Redirecting to login:', !user ? 'No user found' : 'Error occurred');
+    if (!isAuthenticated || error) {
+      debugLog('Redirecting to login:', {
+        reason: !isAuthenticated ? 'Not authenticated' : 'Error occurred',
+        error
+      });
       router.replace('/login');
     }
-  }, [user, isLoading, hasInitialized, router.pathname, error]);
+  }, [isAuthenticated, isLoading, router.pathname, error]);
 
   // Log state changes for debugging
   useEffect(() => {
-    console.log('App state:', {
-      hasInitialized,
+    debugLog('App state updated:', {
+      isAuthenticated,
       isLoading,
       user: user ? 'Present' : 'Not present',
       currentPath: router.pathname,
       error
     });
-  }, [hasInitialized, isLoading, user, router.pathname, error]);
+  }, [isAuthenticated, isLoading, user, router.pathname, error]);
 
-  // Show loading state only while initializing and not on login page
-  if (!hasInitialized && router.pathname !== '/login') {
+  // Show loading state only while loading and not on login page
+  if (isLoading && router.pathname !== '/login') {
+    debugLog('Showing loading state');
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
@@ -55,6 +81,7 @@ function AppContent({ Component, pageProps }: AppProps) {
 
   // Show error state if there's an error
   if (error && router.pathname !== '/login') {
+    debugLog('Showing error state:', error);
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
@@ -72,12 +99,13 @@ function AppContent({ Component, pageProps }: AppProps) {
 
   // Don't wrap login page in Layout
   if (router.pathname === '/login') {
+    debugLog('Rendering login page without layout');
     return <Component {...pageProps} />;
   }
   
   // If there's no user and we're not on a public route, redirect to login
-  if (!user) {
-    console.log('No user found, redirecting to login');
+  if (!isAuthenticated) {
+    debugLog('Not authenticated, redirecting to login');
     router.replace('/login');
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -89,6 +117,7 @@ function AppContent({ Component, pageProps }: AppProps) {
     );
   }
   
+  debugLog('Rendering page with layout');
   return (
     <Layout>
       <Component {...pageProps} />
@@ -97,13 +126,15 @@ function AppContent({ Component, pageProps }: AppProps) {
 }
 
 function AppWrapper(props: AppProps) {
+  debugLog('Initializing AppWrapper');
   return (
-    <SleeperProvider>
+    <ContextProvider>
       <AppContent {...props} />
-    </SleeperProvider>
+    </ContextProvider>
   );
 }
 
 export default function App(props: AppProps) {
+  debugLog('Initializing App');
   return <AppWrapper {...props} />;
 } 

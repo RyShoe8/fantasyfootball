@@ -25,6 +25,9 @@ import DebugSection from '../components/DebugSection';
 import Link from 'next/link';
 import TeamOverview from '../components/TeamOverview';
 import PlayerRankings from '../components/PlayerRankings';
+import { useAuth } from '../contexts/auth';
+import { useLeague } from '../contexts/league';
+import { usePlayer } from '../contexts/player';
 
 const SLEEPER_API_BASE = 'https://api.sleeper.app/v1';
 

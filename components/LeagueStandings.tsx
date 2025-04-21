@@ -1,6 +1,9 @@
 import React, { useMemo } from 'react';
 import { useSleeper } from '../contexts/SleeperContext';
 import type { SleeperRoster, SleeperUser } from '../types/sleeper';
+import { useAuth } from '../contexts/auth';
+import { useLeague } from '../contexts/league';
+import { usePlayer } from '../contexts/player';
 
 interface TeamStanding {
   teamId: string;

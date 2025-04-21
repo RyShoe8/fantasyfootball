@@ -13,8 +13,11 @@
 
 /** @jsxImportSource react */
 import React, { useState, useMemo, SyntheticEvent } from 'react';
-import { useSleeper } from '../contexts/SleeperContext';
 import { SleeperRoster, SleeperPlayer, SleeperLeague } from '../types/sleeper';
+import { useAuth } from '../contexts/auth';
+import { useLeague } from '../contexts/league';
+import { usePlayer } from '../contexts/player';
+import { useRoster } from '../contexts/roster';
 
 interface PlayerStats {
   pts_ppr?: number;
@@ -92,7 +95,7 @@ const Roster: React.FC = () => {
     setCurrentLeague,
     selectedYear,
     setSelectedYear
-  } = useSleeper();
+  } = useRoster();
   const [selectedWeek, setSelectedWeek] = useState('0');
   const [sortField, setSortField] = useState<keyof PlayerStats>('pts_ppr');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');

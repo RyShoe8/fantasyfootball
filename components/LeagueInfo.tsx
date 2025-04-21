@@ -1,6 +1,8 @@
 import React from 'react';
 import { useSleeper } from '../contexts/SleeperContext';
 import { SleeperLeague } from '../types/sleeper';
+import { useAuth } from '../contexts/auth';
+import { useLeague } from '../contexts/league';
 
 const LeagueInfo: React.FC = () => {
   const { 

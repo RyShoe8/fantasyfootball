@@ -1,26 +1,43 @@
+/**
+ * Login Component
+ * 
+ * Handles user authentication through the Sleeper API.
+ * Provides a form for username input and manages login state.
+ */
+
 import React, { useState, useEffect } from 'react';
-import { useSleeper } from '../contexts/SleeperContext';
+import { useAuth } from '../../contexts';
 import { useRouter } from 'next/router';
+
+// Debug flag - set to true to enable detailed logging
+const DEBUG = true;
+
+// Debug logging utility
+const debugLog = (...args: any[]) => {
+  if (DEBUG) {
+    console.log('[Login]', ...args);
+  }
+};
 
 export default function Login() {
   const [username, setUsername] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
-  const { login, error: contextError, user } = useSleeper();
+  const { login, error: contextError, user, isAuthenticated } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
     // If user is already logged in, redirect to home
-    if (user) {
-      console.log('User already logged in, redirecting to home:', user);
+    if (isAuthenticated) {
+      debugLog('User already authenticated, redirecting to home:', user);
       router.push('/');
     }
-  }, [user, router]);
+  }, [isAuthenticated, user, router]);
 
   useEffect(() => {
     // Update local error state when context error changes
     if (contextError) {
-      console.log('Context error received:', contextError);
+      debugLog('Context error received:', contextError);
       setLocalError(contextError);
     }
   }, [contextError]);
@@ -30,47 +47,53 @@ export default function Login() {
     const trimmedUsername = username.trim();
     
     if (!trimmedUsername) {
-      console.log('Empty username submitted');
+      debugLog('Empty username submitted');
       setLocalError('Please enter a username');
       return;
     }
     
-    console.log('Attempting to login with username:', trimmedUsername);
+    debugLog('Attempting to login with username:', trimmedUsername);
     setIsLoading(true);
     setLocalError(null);
     
     try {
-      console.log('Calling login function...');
+      debugLog('Calling login function...');
       await login(trimmedUsername);
       
       // Check if there's an error in the context
       if (!contextError) {
-        console.log('Login successful, redirecting to home');
+        debugLog('Login successful, redirecting to home');
         router.push('/');
       } else {
-        console.log('Login failed with context error:', contextError);
+        debugLog('Login failed with context error:', contextError);
         setLocalError(contextError);
       }
     } catch (err) {
-      console.error('Login failed with error:', err);
+      debugLog('Login failed with error:', err);
       setLocalError(
         err instanceof Error ? err.message : 'An unexpected error occurred'
       );
     } finally {
-      console.log('Login attempt completed');
+      debugLog('Login attempt completed');
       setIsLoading(false);
     }
   };
 
   const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newUsername = e.target.value;
-    console.log('Username input changed:', newUsername);
+    debugLog('Username input changed:', newUsername);
     setUsername(newUsername);
     // Clear error when user starts typing
     if (localError) {
       setLocalError(null);
     }
   };
+
+  debugLog('Rendering login form:', {
+    isLoading,
+    hasError: !!localError,
+    isAuthenticated
+  });
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">

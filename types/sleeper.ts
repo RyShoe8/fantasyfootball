@@ -1,14 +1,18 @@
+/**
+ * Sleeper API Type Declarations
+ * 
+ * Type definitions for all Sleeper API responses and data structures.
+ */
+
+// User Types
 export interface SleeperUser {
   user_id: string;
   username: string;
   display_name: string;
   avatar: string;
-  metadata: {
-    team_name?: string;
-    [key: string]: any;
-  };
 }
 
+// League Types
 export interface SleeperLeague {
   league_id: string;
   name: string;
@@ -19,114 +23,174 @@ export interface SleeperLeague {
     waiver_day_of_week: number;
     waiver_clear_days: number;
     type: number;
-    trade_review_days: number;
+    trade_review_period: number;
     trade_deadline: number;
     taxi_years: number;
     taxi_slots: number;
     taxi_allow_vets: number;
+    taxi_deadline: number;
     start_week: number;
     reserve_slots: number;
     playoff_week_start: number;
     playoff_type: number;
     playoff_teams: number;
-    pick_trading: number;
-    offseason_adds: number;
+    pick_trade_deadline: number;
+    offseason_settings: {
+      waiver_type: number;
+      waiver_day_of_week: number;
+      waiver_clear_days: number;
+      type: number;
+      trade_review_period: number;
+      trade_deadline: number;
+      taxi_years: number;
+      taxi_slots: number;
+      taxi_allow_vets: number;
+      taxi_deadline: number;
+      start_week: number;
+      reserve_slots: number;
+      playoff_week_start: number;
+      playoff_type: number;
+      playoff_teams: number;
+      pick_trade_deadline: number;
+    };
     num_teams: number;
-    max_keepers: number;
     leg: number;
     draft_rounds: number;
     daily_waivers_hour: number;
     daily_waivers: number;
     bench_slots: number;
     best_ball: number;
-    auction_start_amount: number;
-  };
-  scoring_settings?: {
-    pts_per_reception?: number;
-    [key: string]: any;
+    auction_budget: number;
+    allow_adding_players: number;
   };
   roster_positions: string[];
+  previous_league_id: string;
+  bracket_id: string;
+  total_rosters: number;
   metadata: {
     [key: string]: string;
   };
 }
 
+// Roster Types
 export interface SleeperRoster {
-  starters: string[];
-  settings: {
-    wins?: number;
-    losses?: number;
-    ties?: number;
-    [key: string]: any;
-  };
-  roster_id: number;
-  players: string[];
+  roster_id: string;
   owner_id: string;
   league_id: string;
-  metadata: {
-    team_name?: string;
-    record?: string[]; // Array of 'W' or 'L' for each game
+  starters: string[];
+  reserves: string[];
+  taxi: string[];
+  settings: {
+    wins: number;
+    losses: number;
+    ties: number;
+    fpts: number;
+    fpts_decimal: number;
+    fpts_against: number;
+    fpts_against_decimal: number;
+    division: number;
+    ppts: number;
+    ppts_decimal: number;
+    ppts_against: number;
+    ppts_against_decimal: number;
   };
-  reserves?: string[];
-  taxi?: string[];
-  ir?: string[];
-  draft_picks?: {
-    season: string;
-    round: number;
-    pick: number;
-    roster_id?: string;
-    owner_id?: string;
-    previous_owner_id?: string;
-  }[];
+  players: string[];
+  metadata: {
+    [key: string]: string;
+  };
 }
 
+// Player Types
 export interface SleeperPlayer {
   player_id: string;
   first_name: string;
   last_name: string;
+  full_name: string;
   position: string;
   team: string;
+  age: number;
+  height: string;
+  weight: string;
+  college: string;
   status: string;
   injury_status?: string;
   injury_notes?: string;
-  fantasy_positions: string[];
   active: boolean;
-  search_full_name: string;
-  search_first_name: string;
-  search_last_name: string;
   search_rank: number;
-  hashtag: string;
-  depth_chart_position?: string;
-  number?: string;
-  age?: number;
-  height?: string;
-  weight?: string;
-  college?: string;
-  years_exp?: number;
+  fantasy_positions: string[];
   stats?: {
     [key: string]: number;
   };
 }
 
+// Player Stats Types
+export interface SleeperPlayerStats {
+  player_id: string;
+  season: string;
+  week: string;
+  stats: {
+    pts_ppr: number;
+    pts_standard: number;
+    pts_half_ppr: number;
+    pts_custom: number;
+    [key: string]: number;
+  };
+}
+
+// Draft Types
 export interface SleeperDraftPick {
+  draft_id: string;
+  league_id: string;
+  season: string;
+  round: number;
+  pick_no: number;
+  roster_id: string;
   player_id: string;
   picked_by: string;
-  roster_id: string;
-  round: number;
-  draft_slot: number;
-  pick_no: number;
+  status: string;
   metadata: {
-    team: string;
-    status: string;
-    sport: string;
-    position: string;
-    player_id: string;
-    number: string;
-    news_updated: string;
-    last_name: string;
-    injury_status: string;
-    first_name: string;
+    [key: string]: string;
   };
-  is_keeper: boolean | null;
-  draft_id: string;
+}
+
+// Matchup Types
+export interface SleeperMatchup {
+  matchup_id: string;
+  league_id: string;
+  season: string;
+  week: number;
+  roster_id: string;
+  opponent_roster_id: string;
+  points: number;
+  opponent_points: number;
+  starters: string[];
+  reserves: string[];
+  taxi: string[];
+  players: string[];
+  starters_points: number;
+  reserves_points: number;
+  taxi_points: number;
+  players_points: number;
+  metadata: {
+    [key: string]: string;
+  };
+}
+
+// Transaction Types
+export interface SleeperTransaction {
+  transaction_id: string;
+  type: string;
+  status: string;
+  roster_ids: string[];
+  adds: {
+    [key: string]: string;
+  };
+  drops: {
+    [key: string]: string;
+  };
+  draft_picks: string[];
+  created: number;
+  metadata: {
+    [key: string]: string;
+  };
 } 

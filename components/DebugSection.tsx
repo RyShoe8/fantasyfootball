@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { useSleeper } from '../contexts/SleeperContext';
 import axios from 'axios';
+import { useAuth } from '../contexts/auth';
+import { useLeague } from '../contexts/league';
+import { usePlayer } from '../contexts/player';
 
 export default function DebugSection() {
   const { currentLeague, setRosters, setUsers, setPlayers, setDraftPicks, selectedYear, selectedWeek, fetchPlayerStats } = useSleeper();
