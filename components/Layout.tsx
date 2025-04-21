@@ -22,11 +22,19 @@ interface LayoutProps {
 
 const Layout = ({ children }: LayoutProps) => {
   const { user, isLoading: authLoading, error: authError, logout } = useAuth();
-  const { currentLeague } = useLeague();
   const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
   const [isHydrated, setIsHydrated] = React.useState(false);
   const [isMobile, setIsMobile] = React.useState(false);
+
+  // Safely access league context
+  let currentLeague = null;
+  try {
+    const leagueContext = useLeague();
+    currentLeague = leagueContext.currentLeague;
+  } catch (error) {
+    debugLog('League context not available:', error);
+  }
 
   // Check if current page requires authentication
   const requiresAuth = !['/login'].includes(router.pathname);
