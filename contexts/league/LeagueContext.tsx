@@ -10,7 +10,7 @@
  * - Managing selected week/year
  */
 
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React from 'react';
 import { SleeperLeague, SleeperRoster, SleeperUser, SleeperDraftPick } from '../../types/sleeper';
 import { 
   getLeagueData, 
@@ -55,22 +55,30 @@ interface LeagueContextType {
   setError: (error: string | null) => void;
 }
 
-const LeagueContext = createContext<LeagueContextType | undefined>(undefined);
+const LeagueContext = React.createContext<LeagueContextType | undefined>(undefined);
 
 export function LeagueProvider({ children }: { children: React.ReactNode }) {
   debugLog('Initializing LeagueProvider');
 
-  const [leagues, setLeagues] = useState<SleeperLeague[]>([]);
-  const [rosters, setRosters] = useState<SleeperRoster[]>([]);
-  const [users, setUsers] = useState<SleeperUser[]>([]);
-  const [draftPicks, setDraftPicks] = useState<SleeperDraftPick[]>([]);
-  const [currentLeague, setCurrentLeagueState] = useState<SleeperLeague | null>(null);
-  const [selectedWeek, setSelectedWeekState] = useState<string>('1');
-  const [selectedYear, setSelectedYearState] = useState<string>(new Date().getFullYear().toString());
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [leagues, setLeagues] = React.useState<SleeperLeague[]>([]);
+  const [rosters, setRosters] = React.useState<SleeperRoster[]>([]);
+  const [users, setUsers] = React.useState<SleeperUser[]>([]);
+  const [draftPicks, setDraftPicks] = React.useState<SleeperDraftPick[]>([]);
+  const [currentLeague, setCurrentLeagueState] = React.useState<SleeperLeague | null>(null);
+  const [selectedWeek, setSelectedWeekState] = React.useState<string>('1');
+  const [selectedYear, setSelectedYearState] = React.useState<string>(new Date().getFullYear().toString());
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+  const [isClient, setIsClient] = React.useState(false);
 
-  const fetchRosters = useCallback(async (leagueId: string) => {
+  // Set isClient to true when component mounts
+  React.useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  const fetchRosters = React.useCallback(async (leagueId: string) => {
+    if (!isClient) return;
+    
     debugLog('Fetching rosters for league:', leagueId);
     try {
       // Check database first
@@ -97,9 +105,11 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
       setError('Failed to fetch rosters');
       setRosters([]);
     }
-  }, [selectedYear]);
+  }, [selectedYear, isClient]);
 
-  const fetchUsers = useCallback(async (leagueId: string) => {
+  const fetchUsers = React.useCallback(async (leagueId: string) => {
+    if (!isClient) return;
+    
     debugLog('Fetching users for league:', leagueId);
     try {
       // Check database first
@@ -130,9 +140,11 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
       setError('Failed to fetch users');
       setUsers([]);
     }
-  }, [selectedYear]);
+  }, [selectedYear, isClient]);
 
-  const setCurrentLeague = useCallback(async (league: SleeperLeague | null) => {
+  const setCurrentLeague = React.useCallback(async (league: SleeperLeague | null) => {
+    if (!isClient) return;
+    
     debugLog('Setting current league:', league);
     setCurrentLeagueState(league);
     
@@ -151,14 +163,18 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
         setIsLoading(false);
       }
     }
-  }, [fetchRosters, fetchUsers]);
+  }, [fetchRosters, fetchUsers, isClient]);
 
-  const setSelectedWeek = useCallback((week: string) => {
+  const setSelectedWeek = React.useCallback((week: string) => {
+    if (!isClient) return;
+    
     debugLog('Setting selected week:', week);
     setSelectedWeekState(week);
-  }, []);
+  }, [isClient]);
 
-  const setSelectedYear = useCallback(async (year: string) => {
+  const setSelectedYear = React.useCallback(async (year: string) => {
+    if (!isClient) return;
+    
     debugLog('Setting selected year:', year);
     setSelectedYearState(year);
     
@@ -177,7 +193,7 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
         setIsLoading(false);
       }
     }
-  }, [currentLeague, fetchRosters, fetchUsers]);
+  }, [currentLeague, fetchRosters, fetchUsers, isClient]);
 
   const value = {
     leagues,
@@ -216,7 +232,7 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
 }
 
 export function useLeague() {
-  const context = useContext(LeagueContext);
+  const context = React.useContext(LeagueContext);
   if (context === undefined) {
     throw new Error('useLeague must be used within a LeagueProvider');
   }
