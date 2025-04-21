@@ -108,13 +108,6 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(true);
       setError(null);
       
-      const userData = await getUserData(leagueId);
-      if (userData) {
-        debugLog('Found cached user data:', userData);
-        setUsers(userData);
-        return;
-      }
-
       const fetchedUsers = await LeagueApi.getLeagueUsers(leagueId);
       debugLog('Fetched users:', fetchedUsers);
       
