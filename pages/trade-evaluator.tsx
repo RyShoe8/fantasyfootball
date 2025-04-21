@@ -44,7 +44,7 @@ interface TradeSide {
 
 const TradeEvaluator: React.FC = () => {
   const { user } = useAuth();
-  const { currentLeague } = useLeague();
+  const { currentLeague, users } = useLeague();
   const { players } = usePlayer();
   const { rosters } = useRoster();
   const router = useRouter();
@@ -91,41 +91,42 @@ const TradeEvaluator: React.FC = () => {
   }, [user, rosters]);
 
   const availablePlayers = React.useMemo(() => {
-    if (!selectedTeam || !rosters || !players) return [];
     const currentRoster = rosters.find((r: SleeperRoster) => r.roster_id === selectedTeam);
     if (!currentRoster) return [];
     
-    return currentRoster.players
-      .map((playerId: string) => players[playerId])
-      .filter((p): p is SleeperPlayer => p !== undefined)
-      .filter((p: SleeperPlayer) => !mySide.players.some((u: TradePlayer) => u.player_id === p.player_id) &&
-        !theirSide.players.some((u: TradePlayer) => u.player_id === p.player_id))
-      .map((p: SleeperPlayer): TradePlayer => ({
-        ...p,
-        pts_ppr: p.stats?.pts_ppr || 0,
-        pts_std: p.stats?.pts_std || 0
-      }));
-  }, [rosters, mySide.players, theirSide.players, selectedTeam, players]);
+    const playersArray = Object.values(players) as SleeperPlayer[];
+    const filteredPlayers = playersArray.filter((p: SleeperPlayer) => 
+      currentRoster.players.includes(p.player_id) && 
+      !mySide.players.some((tp: TradePlayer) => tp.player_id === p.player_id) &&
+      !theirSide.players.some((tp: TradePlayer) => tp.player_id === p.player_id)
+    );
+    
+    return filteredPlayers.map((p: SleeperPlayer) => ({
+      ...p,
+      pts_ppr: p.pts_ppr || 0,
+      pts_std: (p.stats?.pts_standard || 0),
+      projected_pts: p.projected_pts || 0
+    }));
+  }, [rosters, selectedTeam, players, mySide.players, theirSide.players]);
 
   const selectedTeamPlayers = React.useMemo(() => {
-    if (!selectedTeam || !rosters || !players) return [];
     const currentRoster = rosters.find((r: SleeperRoster) => r.roster_id === selectedTeam);
     if (!currentRoster) return [];
     
-    return currentRoster.players
-      .map((playerId: string) => players[playerId])
-      .filter((p): p is SleeperPlayer => p !== undefined)
-      .filter((p: SleeperPlayer) => {
-        const side = selectedTeam === myTeam ? mySide : theirSide;
-        return side.players.some((u: TradePlayer) => u.player_id === p.player_id);
-      })
-      .map((p: SleeperPlayer): TradePlayer => ({
-        ...p,
-        pts_ppr: p.stats?.pts_ppr || 0,
-        pts_std: p.stats?.pts_std || 0,
-        projected_pts: p.projected_pts || 0
-      }));
-  }, [rosters, mySide.players, theirSide.players, selectedTeam, myTeam, players]);
+    const playersArray = Object.values(players) as SleeperPlayer[];
+    const filteredPlayers = playersArray.filter((p: SleeperPlayer) => 
+      currentRoster.players.includes(p.player_id) && 
+      !mySide.players.some((tp: TradePlayer) => tp.player_id === p.player_id) &&
+      !theirSide.players.some((tp: TradePlayer) => tp.player_id === p.player_id)
+    );
+    
+    return filteredPlayers.map((p: SleeperPlayer) => ({
+      ...p,
+      pts_ppr: p.pts_ppr || 0,
+      pts_std: (p.stats?.pts_standard || 0),
+      projected_pts: p.projected_pts || 0
+    }));
+  }, [rosters, selectedTeam, players, mySide.players, theirSide.players]);
 
   const handleAddPlayer = (player: SleeperPlayer, side: 'my' | 'their') => {
     const tradePlayer: TradePlayer = {
@@ -329,7 +330,7 @@ const TradeEvaluator: React.FC = () => {
             {rosters
               .filter((r: SleeperRoster) => r.owner_id !== user?.user_id)
               .map((team: SleeperRoster) => {
-                const teamUser = currentLeague?.users?.find((u: SleeperUser) => u.user_id === team.owner_id);
+                const teamUser = users.find((u: SleeperUser) => u.user_id === team.owner_id);
                 return (
                   <option key={team.roster_id} value={team.roster_id}>
                     {teamUser?.metadata?.team_name || teamUser?.display_name || teamUser?.username || `Team ${team.roster_id}`}
