@@ -44,9 +44,9 @@ interface TradeSide {
 
 const TradeEvaluator: React.FC = () => {
   const { user } = useAuth();
-  const { currentLeague, users } = useLeague();
+  const { currentLeague, users, draftPicks } = useLeague();
   const { players } = usePlayer();
-  const { rosters, draftPicks } = useRoster();
+  const { rosters } = useRoster();
   const router = useRouter();
   const [myTeam, setMyTeam] = React.useState<string>('');
   const [theirTeam, setTheirTeam] = React.useState<string>('');
