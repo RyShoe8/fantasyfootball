@@ -15,7 +15,7 @@ export default function LeaguePage() {
   const { leagueId } = router.query;
   const { user } = useAuth();
   const { currentLeague, isLoading: leagueLoading, error: leagueError } = useLeague();
-  const { players, loading: playersLoading, error: playersError } = usePlayer();
+  const { players, isLoading: playersLoading, error: playersError } = usePlayer();
   const { rosters, loading: rostersLoading, error: rostersError } = useRoster();
   const [activeTab, setActiveTab] = useState('overview');
 
