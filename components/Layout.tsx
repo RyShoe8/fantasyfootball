@@ -26,18 +26,8 @@ const Layout = ({ children }: LayoutProps) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
   const [isHydrated, setIsHydrated] = React.useState(false);
   const [isMobile, setIsMobile] = React.useState(false);
-
-  // Safely access league context
-  let currentLeague = null;
-  try {
-    const leagueContext = useLeague();
-    currentLeague = leagueContext.currentLeague;
-  } catch (error) {
-    debugLog('League context not available:', error);
-  }
-
-  // Check if current page requires authentication
-  const requiresAuth = !['/login'].includes(router.pathname);
+  const [currentLeague, setCurrentLeague] = React.useState(null);
+  const [isLeagueLoading, setIsLeagueLoading] = React.useState(true);
 
   // Handle hydration and mobile detection
   React.useEffect(() => {
@@ -54,6 +44,21 @@ const Layout = ({ children }: LayoutProps) => {
     };
   }, []);
 
+  // Safely access league context
+  React.useEffect(() => {
+    try {
+      const leagueContext = useLeague();
+      setCurrentLeague(leagueContext.currentLeague);
+    } catch (error) {
+      debugLog('League context not available:', error);
+    } finally {
+      setIsLeagueLoading(false);
+    }
+  }, []);
+
+  // Check if current page requires authentication
+  const requiresAuth = !['/login'].includes(router.pathname);
+
   // Handle authentication
   React.useEffect(() => {
     debugLog('Auth state changed', {
@@ -67,7 +72,7 @@ const Layout = ({ children }: LayoutProps) => {
     });
 
     // Only redirect if we're hydrated and not loading
-    if (isHydrated && !authLoading) {
+    if (isHydrated && !authLoading && !isLeagueLoading) {
       if (requiresAuth && !user) {
         debugLog('Redirecting to login - no user');
         router.push('/login');
@@ -76,10 +81,10 @@ const Layout = ({ children }: LayoutProps) => {
         router.push('/');
       }
     }
-  }, [isHydrated, authLoading, requiresAuth, user, currentLeague, router, isMobile]);
+  }, [isHydrated, authLoading, isLeagueLoading, requiresAuth, user, currentLeague, router, isMobile]);
 
   // Show loading state
-  if (!isHydrated || authLoading) {
+  if (!isHydrated || authLoading || isLeagueLoading) {
     debugLog('Showing loading state');
     return (
       <div className="min-h-screen flex items-center justify-center">
