@@ -10,7 +10,7 @@
 
 import React, { createContext, useContext, useState } from 'react';
 import type { RosterContextType, RosterState } from '../../types/roster';
-import { Roster } from '../../types/sleeper';
+import { SleeperRoster } from '../../types/sleeper';
 import axios from 'axios';
 
 const RosterContext = createContext<RosterContextType | undefined>(undefined);
@@ -22,7 +22,7 @@ export function RosterProvider({ children }: { children: React.ReactNode }) {
     error: null
   });
 
-  const setRosters = (rosters: Roster[]) => {
+  const setRosters = (rosters: SleeperRoster[]) => {
     setState(prev => ({ ...prev, rosters }));
   };
 
@@ -30,7 +30,7 @@ export function RosterProvider({ children }: { children: React.ReactNode }) {
     try {
       setState(prev => ({ ...prev, loading: true, error: null }));
       const response = await axios.get(`https://api.sleeper.app/v1/league/${leagueId}/rosters`);
-      const rosters: Roster[] = response.data;
+      const rosters: SleeperRoster[] = response.data;
       setState(prev => ({ ...prev, rosters, loading: false }));
     } catch (error) {
       setState(prev => ({

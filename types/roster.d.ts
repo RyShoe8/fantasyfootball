@@ -2,16 +2,16 @@
  * Roster Type Declarations
  */
 
-import { Roster } from './sleeper';
+import { SleeperRoster } from './sleeper';
 import { ApiError } from './api';
 
 export interface RosterState {
-  rosters: Roster[];
+  rosters: SleeperRoster[];
   loading: boolean;
   error: ApiError | null;
 }
 
 export interface RosterContextType extends RosterState {
-  setRosters: (rosters: Roster[]) => void;
+  setRosters: (rosters: SleeperRoster[]) => void;
   refreshRosters: (leagueId: string) => Promise<void>;
 } 
