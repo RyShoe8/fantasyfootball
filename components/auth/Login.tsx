@@ -5,7 +5,7 @@
  * Provides a form for username input and manages login state.
  */
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useAuth } from '../../contexts';
 import { useRouter } from 'next/router';
 
@@ -20,13 +20,13 @@ const debugLog = (...args: any[]) => {
 };
 
 export default function Login() {
-  const [username, setUsername] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [localError, setLocalError] = useState<string | null>(null);
+  const [username, setUsername] = React.useState('');
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [localError, setLocalError] = React.useState<string | null>(null);
   const { login, error: contextError, user, isAuthenticated } = useAuth();
   const router = useRouter();
 
-  useEffect(() => {
+  React.useEffect(() => {
     // If user is already logged in, redirect to home
     if (isAuthenticated) {
       debugLog('User already authenticated, redirecting to home:', user);
@@ -34,11 +34,11 @@ export default function Login() {
     }
   }, [isAuthenticated, user, router]);
 
-  useEffect(() => {
+  React.useEffect(() => {
     // Update local error state when context error changes
     if (contextError) {
       debugLog('Context error received:', contextError);
-      setLocalError(contextError);
+      setLocalError(contextError.message);
     }
   }, [contextError]);
 
@@ -66,7 +66,7 @@ export default function Login() {
         router.push('/');
       } else {
         debugLog('Login failed with context error:', contextError);
-        setLocalError(contextError);
+        setLocalError(contextError.message);
       }
     } catch (err) {
       debugLog('Login failed with error:', err);
