@@ -46,7 +46,7 @@ const TradeEvaluator: React.FC = () => {
   const { user } = useAuth();
   const { currentLeague, users } = useLeague();
   const { players } = usePlayer();
-  const { rosters } = useRoster();
+  const { rosters, draftPicks } = useRoster();
   const router = useRouter();
   const [myTeam, setMyTeam] = React.useState<string>('');
   const [theirTeam, setTheirTeam] = React.useState<string>('');
@@ -408,7 +408,7 @@ const TradeEvaluator: React.FC = () => {
               </div>
             ))}
           </div>
-          {currentRoster?.draft_picks && (
+          {draftPicks.filter((pick: SleeperDraftPick) => pick.roster_id === currentRoster?.roster_id).length > 0 && (
             <div className="mt-4 pt-4 border-t">
               <h3 className="font-medium mb-2">My Draft Picks</h3>
               <div className="space-y-2">
