@@ -64,16 +64,20 @@ export const useDashboardData = (leagueId: string | undefined) => {
           
           if (!player) return null;
           
-          return {
+          const playerData: PlayerStats = {
             playerId,
-            playerName: player.full_name,
             name: player.full_name,
             position: player.position,
+            team: player.team || '',
             points: stats?.pts_ppr || 0,
+            rank: 0, // We'll need to calculate this if needed
+            playerName: player.full_name,
             projectedPoints: stats?.projected_pts || 0,
             playerImage: `https://sleepercdn.com/content/nfl/players/${playerId}.jpg`
           };
-        }).filter(Boolean) || [];
+          
+          return playerData;
+        }).filter((player: PlayerStats | null): player is PlayerStats => player !== null) || [];
 
         // Create dashboard data from real data
         const dashboardData: DashboardData = {
