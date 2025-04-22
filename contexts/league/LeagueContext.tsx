@@ -193,8 +193,26 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(true);
       setError(null);
       
+      // Try to get cached users from localStorage first
+      const cachedUsersStr = localStorage.getItem(`sleeperUsers_${leagueId}`);
+      if (cachedUsersStr) {
+        try {
+          const cachedUsers = JSON.parse(cachedUsersStr);
+          if (Array.isArray(cachedUsers)) {
+            debugLog('Found cached users:', cachedUsers);
+            setUsers(cachedUsers);
+            return;
+          }
+        } catch (err) {
+          debugLog('Error parsing cached users:', err);
+        }
+      }
+      
       const fetchedUsers = await LeagueApi.getLeagueUsers(leagueId);
       debugLog('Fetched users:', fetchedUsers);
+      
+      // Save users to localStorage
+      localStorage.setItem(`sleeperUsers_${leagueId}`, JSON.stringify(fetchedUsers));
       
       // Save each user individually
       for (const user of fetchedUsers) {
@@ -362,6 +380,20 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
     // Convert to array and sort in descending order (newest first)
     return Array.from(seasons).sort((a, b) => b.localeCompare(a));
   }, [leagues]);
+
+  // Fetch users when current league changes
+  React.useEffect(() => {
+    if (currentLeague?.league_id) {
+      fetchUsers(currentLeague.league_id);
+    }
+  }, [currentLeague?.league_id, fetchUsers]);
+
+  // Fetch rosters when current league changes
+  React.useEffect(() => {
+    if (currentLeague?.league_id) {
+      fetchRosters(currentLeague.league_id);
+    }
+  }, [currentLeague?.league_id, fetchRosters]);
 
   const value = {
     leagues,
