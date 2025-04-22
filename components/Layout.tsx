@@ -38,7 +38,12 @@ const Layout = ({ children }: LayoutProps) => {
     debugLog('League context accessed successfully:', leagueContext);
   } catch (error) {
     debugLog('Error accessing league context:', error);
-    leagueContext = { currentLeague: null, isLoading: false, setCurrentLeague: () => {} };
+    leagueContext = { 
+      currentLeague: null, 
+      isLoading: false, 
+      setCurrentLeague: () => {},
+      setSelectedYear: () => {}
+    };
   }
 
   const { leagues, currentLeague, setCurrentLeague, selectedYear, setSelectedYear } = leagueContext || {};
@@ -66,7 +71,9 @@ const Layout = ({ children }: LayoutProps) => {
   // Handle year change
   const handleYearChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const year = e.target.value;
-    setSelectedYear(year);
+    if (setSelectedYear) {
+      setSelectedYear(year);
+    }
   };
 
   // Handle hydration and mobile detection
