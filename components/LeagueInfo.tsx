@@ -1,7 +1,7 @@
 import React from 'react';
 import { SleeperLeague } from '../types/sleeper';
 import { useAuth } from '../contexts/auth';
-import { useLeague } from '../contexts/league/LeagueContext';
+import { useLeague } from '../contexts';
 import { useRoster } from '../contexts/roster';
 import { usePlayer } from '../contexts/player/PlayerContext';
 
