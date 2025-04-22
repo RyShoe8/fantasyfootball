@@ -9,10 +9,12 @@
  * - Managing player rankings
  */
 
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import * as React from 'react';
 import { SleeperPlayer } from '../../types/sleeper';
+import { PlayerStats } from '../../types/player';
 import { getPlayerData, savePlayerData } from '../../lib/db';
 import { PlayerApi } from '../../services/api';
+import axios from 'axios';
 
 // Debug flag - set to true to enable detailed logging
 const DEBUG = true;
@@ -26,30 +28,33 @@ const debugLog = (...args: any[]) => {
 
 interface PlayerContextType {
   players: Record<string, SleeperPlayer>;
-  playerStats: Record<string, any>;
+  playerStats: Record<string, PlayerStats>;
   isLoading: boolean;
   error: string | null;
   setPlayers: (players: Record<string, SleeperPlayer>) => void;
-  setPlayerStats: (stats: Record<string, any>) => void;
+  setPlayerStats: (stats: Record<string, PlayerStats>) => void;
   setIsLoading: (isLoading: boolean) => void;
   setError: (error: string | null) => void;
   fetchPlayers: () => Promise<void>;
   fetchPlayerStats: (season: string, week: number) => Promise<void>;
 }
 
-const PlayerContext = createContext<PlayerContextType | undefined>(undefined);
+const PlayerContext = React.createContext<PlayerContextType | undefined>(undefined);
 
 export function PlayerProvider({ children }: { children: React.ReactNode }) {
   debugLog('Initializing PlayerProvider');
 
-  const [players, setPlayers] = useState<Record<string, SleeperPlayer>>({});
-  const [playerStats, setPlayerStats] = useState<Record<string, any>>({});
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [players, setPlayers] = React.useState<Record<string, SleeperPlayer>>({});
+  const [playerStats, setPlayerStats] = React.useState<Record<string, PlayerStats>>({});
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
 
-  const fetchPlayers = useCallback(async () => {
+  const fetchPlayers = React.useCallback(async () => {
     debugLog('Fetching players');
     try {
+      setIsLoading(true);
+      setError(null);
+      
       // Check if we have players in localStorage first
       const cachedPlayers = localStorage.getItem('sleeperPlayers');
       const cacheTimestamp = localStorage.getItem('sleeperPlayersTimestamp');
@@ -89,13 +94,16 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     } catch (err) {
       debugLog('Error in fetchPlayers:', err);
       setError('Failed to fetch players');
+    } finally {
+      setIsLoading(false);
     }
   }, []);
 
-  const fetchPlayerStats = useCallback(async (season: string, week: number) => {
+  const fetchPlayerStats = React.useCallback(async (season: string, week: number) => {
     debugLog('Fetching player stats for season:', season, 'week:', week);
     try {
       setIsLoading(true);
+      setError(null);
       
       // Validate season and week
       const currentYear = new Date().getFullYear();
@@ -118,10 +126,12 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
         }
       }
 
-      const stats = await PlayerApi.getPlayerStats(season, week.toString());
+      const response = await axios.get(`https://api.sleeper.app/v1/stats/nfl/regular/${season}/${week}`);
+      const stats: Record<string, PlayerStats> = response.data;
       setPlayerStats(stats);
     } catch (err) {
       debugLog('Error in fetchPlayerStats:', err);
+      setError('Failed to fetch player stats');
       setPlayerStats({});
     } finally {
       setIsLoading(false);
@@ -165,7 +175,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
 }
 
 export function usePlayer() {
-  const context = useContext(PlayerContext);
+  const context = React.useContext(PlayerContext);
   if (context === undefined) {
     throw new Error('usePlayer must be used within a PlayerProvider');
   }
