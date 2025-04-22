@@ -7,6 +7,9 @@ import { usePlayer } from '../contexts/player/PlayerContext';
 
 interface LeagueInfoProps {
   league: SleeperLeague;
+  selectedYear: string;
+  availableYears: string[];
+  onYearChange: (year: string) => void;
 }
 
 interface RosterBreakdown {
@@ -19,38 +22,25 @@ interface TradeDeadlineInfo {
   date: Date;
 }
 
-const LeagueInfo: React.FC<LeagueInfoProps> = ({ league }: LeagueInfoProps) => {
-  const { fetchLeaguesForYear, setSelectedYear, selectedYear } = useLeague();
+const LeagueInfo: React.FC<LeagueInfoProps> = ({ 
+  league, 
+  selectedYear, 
+  availableYears: propAvailableYears,
+  onYearChange 
+}: LeagueInfoProps) => {
+  const { fetchLeaguesForYear } = useLeague();
   const { rosters } = useRoster();
   const { positions } = usePlayer();
-  const [availableYears, setAvailableYears] = React.useState<string[]>([]);
+  const [availableYears, setAvailableYears] = React.useState<string[]>(propAvailableYears);
   const [selectedLeague, setSelectedLeague] = React.useState<SleeperLeague | null>(null);
   const [isLoading, setIsLoading] = React.useState(false);
 
   React.useEffect(() => {
-    const fetchAvailableYears = async () => {
-      setIsLoading(true);
-      try {
-        const leagues = await fetchLeaguesForYear(league.season);
-        const years = new Set<string>();
-        leagues.forEach((league: SleeperLeague) => {
-          if (league.season) {
-            years.add(league.season);
-          }
-        });
-        setAvailableYears(Array.from(years).sort((a, b) => b.localeCompare(a)));
-      } catch (error) {
-        console.error('Error fetching available years:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchAvailableYears();
-  }, [league, fetchLeaguesForYear, selectedYear]);
+    setAvailableYears(propAvailableYears);
+  }, [propAvailableYears]);
 
   const handleYearChange = async (year: string): Promise<void> => {
-    await setSelectedYear(year);
+    onYearChange(year);
   };
 
   const getScoringType = (league: SleeperLeague): string => {
