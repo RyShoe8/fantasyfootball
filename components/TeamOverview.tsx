@@ -27,6 +27,11 @@ const TeamOverview: React.FC<TeamOverviewProps> = ({ rosterId }: TeamOverviewPro
     return users.find((u: SleeperUser) => u.user_id === roster.owner_id);
   }, [users, roster]);
 
+  const teamName = React.useMemo(() => {
+    if (!roster || !owner) return 'Unknown Team';
+    return roster.metadata?.team_name || owner.display_name || owner.username || `Team ${roster.roster_id}`;
+  }, [roster, owner]);
+
   const rosterPlayers = React.useMemo(() => {
     if (!roster || !players) return [];
     return roster.players.map((playerId: string) => players[playerId]).filter(Boolean);
@@ -63,6 +68,7 @@ const TeamOverview: React.FC<TeamOverviewProps> = ({ rosterId }: TeamOverviewPro
           {owner && (
             <p className="text-gray-600">Owner: {owner.display_name}</p>
           )}
+          <p className="text-gray-600">Team: {teamName}</p>
         </div>
         <select
           value={selectedRosterId}

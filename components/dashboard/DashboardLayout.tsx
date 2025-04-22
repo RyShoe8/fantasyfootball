@@ -31,7 +31,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   league,
   selectedYear,
   availableYears,
-  onYearChange 
+  onYearChange
 }: DashboardLayoutProps) => {
   const { positions } = usePlayer();
   
@@ -94,25 +94,46 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     <div className="min-h-screen bg-gray-100">
       {/* League Info Area */}
       <section className="bg-white shadow rounded-lg p-6 mb-6">
-        <div className="flex items-center space-x-4 mb-6">
-          <div className="w-16 h-16 bg-gray-200 rounded-lg overflow-hidden">
-            {league.metadata?.avatar ? (
-              <img 
-                src={league.metadata.avatar} 
-                alt={`${league.name} logo`} 
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-gray-400">
-                <span className="text-2xl">🏈</span>
-              </div>
-            )}
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">{league.name}</h1>
-            <div className="flex items-center space-x-2 text-gray-600">
-              <span>{formatStatus(league.status)}</span>
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center space-x-4">
+            <div className="w-16 h-16 bg-gray-200 rounded-lg overflow-hidden">
+              {league.metadata?.avatar ? (
+                <img 
+                  src={league.metadata.avatar} 
+                  alt={`${league.name} logo`} 
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-gray-400">
+                  <span className="text-2xl">🏈</span>
+                </div>
+              )}
             </div>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">{league.name}</h1>
+              <div className="flex items-center space-x-2 text-gray-600">
+                <span>{formatStatus(league.status)}</span>
+              </div>
+            </div>
+          </div>
+          
+          {/* Year Selector */}
+          <div className="flex items-center space-x-2">
+            <label htmlFor="year-select" className="text-sm font-medium text-gray-700">
+              Season:
+            </label>
+            <select
+              id="year-select"
+              value={selectedYear}
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => onYearChange(e.target.value)}
+              className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+            >
+              {availableYears.map((year) => (
+                <option key={year} value={year}>
+                  {year}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 

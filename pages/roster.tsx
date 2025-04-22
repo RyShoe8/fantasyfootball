@@ -314,22 +314,6 @@ const Roster: React.FC = () => {
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-2xl font-bold text-gray-900">Roster</h2>
           <div className="flex gap-4">
-            {/* Year Selection */}
-            <select
-              className="mt-1 block w-32 pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-              value={selectedYear}
-              onChange={handleYearChange}
-            >
-              {Array.from({ length: 3 }, (_, i) => {
-                const year = (getCurrentSeason() - i).toString();
-                return (
-                  <option key={year} value={year}>
-                    {year}
-                  </option>
-                );
-              })}
-            </select>
-
             {/* Team Selection */}
             <select
               className="mt-1 block w-64 pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"

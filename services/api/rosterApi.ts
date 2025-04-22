@@ -26,13 +26,18 @@ export class RosterApi {
   /**
    * Fetch all rosters for a league
    * @param leagueId - The league ID
+   * @param season - The season year (optional)
    * @returns Promise<SleeperRoster[]> - Array of rosters
    */
-  static async getRosters(leagueId: string): Promise<SleeperRoster[]> {
-    debugLog('Fetching rosters for league:', leagueId);
+  static async getRosters(leagueId: string, season?: string): Promise<SleeperRoster[]> {
+    debugLog('Fetching rosters for league:', leagueId, 'season:', season);
     
     try {
-      const response = await axios.get(`${SLEEPER_API_BASE}/league/${leagueId}/rosters`);
+      const url = season 
+        ? `${SLEEPER_API_BASE}/league/${leagueId}/rosters?season=${season}`
+        : `${SLEEPER_API_BASE}/league/${leagueId}/rosters`;
+      
+      const response = await axios.get(url);
       debugLog('Rosters fetched successfully:', response.data);
       return response.data;
     } catch (error) {

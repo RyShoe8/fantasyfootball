@@ -45,6 +45,7 @@ export interface LeagueContextType {
   currentLeague: SleeperLeague | null;
   selectedWeek: number;
   selectedYear: string;
+  availableYears: string[];
   isLoading: boolean;
   error: ApiError | null;
   setCurrentLeague: (league: SleeperLeague | null) => Promise<void>;
@@ -72,6 +73,7 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
   const [currentLeague, setCurrentLeagueState] = React.useState<SleeperLeague | null>(null);
   const [selectedWeek, setSelectedWeekState] = React.useState<number>(1);
   const [selectedYear, setSelectedYearState] = React.useState<string>(new Date().getFullYear().toString());
+  const [availableYears, setAvailableYears] = React.useState<string[]>([]);
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState<ApiError | null>(null);
   const [isInitialized, setIsInitialized] = React.useState(false);
@@ -82,12 +84,12 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
   // Define fetch functions
   const fetchRosters = React.useCallback(async (leagueId: string) => {
     try {
-      debugLog('Fetching rosters for league:', leagueId);
+      debugLog('Fetching rosters for league:', leagueId, 'year:', selectedYear);
       setIsLoading(true);
       setError(null);
 
       // Try to get cached rosters from localStorage
-      const cachedRostersStr = localStorage.getItem(`sleeperRosters_${leagueId}`);
+      const cachedRostersStr = localStorage.getItem(`sleeperRosters_${leagueId}_${selectedYear}`);
       let cachedRosters: SleeperRoster[] = [];
       
       if (cachedRostersStr) {
@@ -104,11 +106,11 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
       }
 
       // If no cached data or invalid cache, fetch from API
-      const fetchedRosters = await RosterApi.getRosters(leagueId);
+      const fetchedRosters = await RosterApi.getRosters(leagueId, selectedYear);
       debugLog('Fetched rosters:', fetchedRosters);
       
-      // Save rosters to localStorage
-      localStorage.setItem(`sleeperRosters_${leagueId}`, JSON.stringify(fetchedRosters));
+      // Save rosters to localStorage with year
+      localStorage.setItem(`sleeperRosters_${leagueId}_${selectedYear}`, JSON.stringify(fetchedRosters));
       
       setRosters(fetchedRosters);
     } catch (err) {
@@ -117,7 +119,7 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [selectedYear]);
 
   const fetchUsers = React.useCallback(async (leagueId: string) => {
     try {
@@ -392,27 +394,54 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
     }
   }, [currentLeague, fetchLeaguesForYear, setCurrentLeague]);
 
-  // Generate year options based on available league seasons
-  const yearOptions = React.useMemo(() => {
-    if (!leagues || leagues.length === 0) return [];
+  // Function to fetch all available years for a league
+  const fetchAvailableYearsForLeague = React.useCallback(async (leagueName: string, currentYear: string) => {
+    debugLog('Fetching available years for league:', leagueName);
+    const years: string[] = [];
+    let currentLeagueId = currentLeague?.league_id;
+    let year = parseInt(currentYear);
     
-    // Get all unique seasons from available leagues
-    const seasons = new Set<string>();
-    leagues.forEach((league: SleeperLeague) => {
-      if (league.season) {
-        seasons.add(league.season);
+    while (currentLeagueId) {
+      years.push(year.toString());
+      // Fetch the league for the previous year
+      try {
+        const previousYearLeagues = await fetchLeaguesForYear((year - 1).toString());
+        const previousLeague = previousYearLeagues.find(
+          (league: SleeperLeague) => 
+            league.name === leagueName || 
+            league.league_id === currentLeagueId ||
+            league.previous_league_id === currentLeagueId
+        );
+        
+        if (previousLeague) {
+          currentLeagueId = previousLeague.league_id;
+          year--;
+        } else {
+          currentLeagueId = null;
+        }
+      } catch (err) {
+        debugLog('Error fetching previous year leagues:', err);
+        currentLeagueId = null;
       }
-    });
-    
-    // Add current year and previous 2 years if not already present
-    const currentYear = new Date().getFullYear();
-    for (let i = 0; i < 3; i++) {
-      seasons.add((currentYear - i).toString());
     }
     
-    // Convert to array and sort in descending order (newest first)
-    return Array.from(seasons).sort((a, b) => b.localeCompare(a));
-  }, [leagues]);
+    return years.sort((a, b) => b.localeCompare(a)); // Sort in descending order
+  }, [currentLeague, fetchLeaguesForYear]);
+
+  // Update available years when current league changes
+  React.useEffect(() => {
+    if (currentLeague && selectedYear) {
+      fetchAvailableYearsForLeague(currentLeague.name, selectedYear)
+        .then((years: string[]) => {
+          debugLog('Setting available years:', years);
+          setAvailableYears(years);
+        })
+        .catch((err: Error) => {
+          debugLog('Error fetching available years:', err);
+          setError(toApiError(err));
+        });
+    }
+  }, [currentLeague, selectedYear, fetchAvailableYearsForLeague]);
 
   const value = {
     leagues,
@@ -422,6 +451,7 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
     currentLeague,
     selectedWeek,
     selectedYear,
+    availableYears,
     isLoading,
     error,
     setCurrentLeague,

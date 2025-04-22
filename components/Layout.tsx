@@ -5,6 +5,7 @@ import Login from './auth/Login';
 import Spinner from './Spinner';
 import Link from 'next/link';
 import { SleeperLeague } from '../types/sleeper';
+import { XMarkIcon as XIcon, Bars3Icon as MenuIcon } from '@heroicons/react/24/outline';
 
 // Debug flag - set to true to enable detailed logging
 const DEBUG = true;
@@ -46,7 +47,7 @@ const Layout = ({ children }: LayoutProps) => {
     };
   }
 
-  const { leagues, currentLeague, setCurrentLeague, selectedYear, setSelectedYear } = leagueContext || {};
+  const { leagues, currentLeague, setCurrentLeague, selectedYear, setSelectedYear, availableYears } = leagueContext || {};
 
   // Sort leagues alphabetically
   const sortedLeagues = React.useMemo(() => {
@@ -54,31 +55,11 @@ const Layout = ({ children }: LayoutProps) => {
     return [...leagues].sort((a: SleeperLeague, b: SleeperLeague) => a.name.localeCompare(b.name));
   }, [leagues]);
 
-  // Generate year options based on available league seasons
-  const yearOptions = React.useMemo(() => {
-    if (!leagues || leagues.length === 0) return [];
-    
-    // Get all unique seasons from available leagues
-    const seasons = new Set<string>();
-    leagues.forEach((league: SleeperLeague) => {
-      if (league.season) {
-        seasons.add(league.season);
-      }
-    });
-    
-    // Convert to array and sort in descending order (newest first)
-    return Array.from(seasons).sort((a, b) => b.localeCompare(a));
-  }, [leagues]);
-
   // Handle league change
   const handleLeagueChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedLeague = leagues?.find((league: SleeperLeague) => league.league_id === event.target.value);
     if (selectedLeague && setCurrentLeague) {
       setCurrentLeague(selectedLeague);
-      // Set the selected year to the league's season when changing leagues
-      if (setSelectedYear && selectedLeague.season) {
-        setSelectedYear(selectedLeague.season);
-      }
     }
   };
 
@@ -189,110 +170,80 @@ const Layout = ({ children }: LayoutProps) => {
   return (
     <div className="min-h-screen bg-gray-100">
       {/* Navigation */}
-      <nav className="bg-white shadow-lg">
+      <nav className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex">
+              {/* Logo */}
               <div className="flex-shrink-0 flex items-center">
-                <Link href="/" className="text-xl font-bold text-gray-800">
-                  Fantasy OS
+                <Link href="/" className="text-xl font-bold text-gray-900">
+                  Fantasy Football
                 </Link>
               </div>
+
+              {/* Navigation Links */}
               <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
-                <Link
-                  href="/"
-                  className={`${
-                    router.pathname === '/'
-                      ? 'border-blue-500 text-gray-900'
-                      : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-                  } inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium`}
-                >
-                  Home
+                <Link href="/dashboard" className={`${router.pathname === '/dashboard' ? 'border-blue-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium`}>
+                  Dashboard
                 </Link>
-                <Link
-                  href="/rosters"
-                  className={`${
-                    router.pathname === '/rosters'
-                      ? 'border-blue-500 text-gray-900'
-                      : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-                  } inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium`}
-                >
-                  Rosters
+                <Link href="/roster" className={`${router.pathname === '/roster' ? 'border-blue-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium`}>
+                  Roster
                 </Link>
-                <Link
-                  href="/players"
-                  className={`${
-                    router.pathname === '/players'
-                      ? 'border-blue-500 text-gray-900'
-                      : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-                  } inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium`}
-                >
+                <Link href="/players" className={`${router.pathname === '/players' ? 'border-blue-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium`}>
                   Players
                 </Link>
-                <Link
-                  href="/trades"
-                  className={`${
-                    router.pathname === '/trades'
-                      ? 'border-blue-500 text-gray-900'
-                      : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-                  } inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium`}
-                >
-                  Trades
-                </Link>
-                <div className="flex items-center space-x-4 ml-4">
-                  <div className="flex items-center space-x-2">
-                    <label htmlFor="league-select" className="text-sm font-medium text-gray-700">
-                      League:
-                    </label>
-                    <select
-                      id="league-select"
-                      value={currentLeague?.league_id || ''}
-                      onChange={handleLeagueChange}
-                      className="block w-full pl-3 pr-10 py-1 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
-                    >
-                      <option value="">Select League</option>
-                      {sortedLeagues.map((league: SleeperLeague) => (
-                        <option key={league.league_id} value={league.league_id}>
-                          {league.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <label htmlFor="year-select" className="text-sm font-medium text-gray-700">
-                      Year:
-                    </label>
-                    <select
-                      id="year-select"
-                      value={selectedYear || ''}
-                      onChange={handleYearChange}
-                      className="block w-full pl-3 pr-10 py-1 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
-                    >
-                      {yearOptions.map((year: string) => (
-                        <option key={year} value={year}>
-                          {year}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
               </div>
             </div>
-            
-            {/* User section */}
-            <div className="hidden sm:flex sm:items-center">
-              <span className="text-sm text-gray-700 mr-2">
-                {user?.display_name || user?.username}
-              </span>
-              <button
-                onClick={logout}
-                className="text-sm text-red-600 hover:text-red-800"
-              >
-                Logout
-              </button>
+
+            {/* League and Year Selection */}
+            <div className="hidden sm:flex sm:items-center sm:ml-6 space-x-4">
+              <div className="flex items-center space-x-4">
+                {/* League Selection */}
+                <select
+                  id="league-select"
+                  value={currentLeague?.league_id || ''}
+                  onChange={handleLeagueChange}
+                  className="block w-64 pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+                  disabled={authLoading}
+                >
+                  <option value="">Select League</option>
+                  {sortedLeagues.map((league: SleeperLeague) => (
+                    <option key={league.league_id} value={league.league_id}>
+                      {league.name}
+                    </option>
+                  ))}
+                </select>
+
+                {/* Year Selection */}
+                <select
+                  id="year-select"
+                  value={selectedYear || ''}
+                  onChange={handleYearChange}
+                  className="block w-32 pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+                  disabled={!currentLeague || authLoading}
+                >
+                  {availableYears?.map((year: string) => (
+                    <option key={year} value={year}>
+                      {year}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* User section */}
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-gray-700">
+                  {user?.display_name || user?.username}
+                </span>
+                <button
+                  onClick={logout}
+                  className="text-sm text-red-600 hover:text-red-800"
+                >
+                  Logout
+                </button>
+              </div>
             </div>
-            
+
             {/* Mobile menu button */}
             <div className="flex items-center sm:hidden">
               <button
@@ -301,37 +252,9 @@ const Layout = ({ children }: LayoutProps) => {
               >
                 <span className="sr-only">Open main menu</span>
                 {isMobileMenuOpen ? (
-                  <svg
-                    className="block h-6 w-6"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    aria-hidden="true"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  </svg>
+                  <XIcon className="block h-6 w-6" />
                 ) : (
-                  <svg
-                    className="block h-6 w-6"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    aria-hidden="true"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M4 6h16M4 12h16M4 18h16"
-                    />
-                  </svg>
+                  <MenuIcon className="block h-6 w-6" />
                 )}
               </button>
             </div>
@@ -339,115 +262,85 @@ const Layout = ({ children }: LayoutProps) => {
         </div>
 
         {/* Mobile menu */}
-        {isMobileMenuOpen && (
-          <div className="sm:hidden">
-            <div className="pt-2 pb-3 space-y-1">
-              <Link
-                href="/"
-                className={`${
-                  router.pathname === '/'
-                    ? 'bg-blue-50 border-blue-500 text-blue-700'
-                    : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'
-                } block pl-3 pr-4 py-2 border-l-4 text-base font-medium`}
-              >
-                Home
-              </Link>
-              <Link
-                href="/rosters"
-                className={`${
-                  router.pathname === '/rosters'
-                    ? 'bg-blue-50 border-blue-500 text-blue-700'
-                    : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'
-                } block pl-3 pr-4 py-2 border-l-4 text-base font-medium`}
-              >
-                Rosters
-              </Link>
-              <Link
-                href="/players"
-                className={`${
-                  router.pathname === '/players'
-                    ? 'bg-blue-50 border-blue-500 text-blue-700'
-                    : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'
-                } block pl-3 pr-4 py-2 border-l-4 text-base font-medium`}
-              >
-                Players
-              </Link>
-              <Link
-                href="/trades"
-                className={`${
-                  router.pathname === '/trades'
-                    ? 'bg-blue-50 border-blue-500 text-blue-700'
-                    : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'
-                } block pl-3 pr-4 py-2 border-l-4 text-base font-medium`}
-              >
-                Trades
-              </Link>
-            </div>
-            
-            {/* Mobile League and Year Selectors */}
-            <div className="pt-4 pb-3 border-t border-gray-200">
-              <div className="px-4 space-y-3">
-                <div>
-                  <label htmlFor="mobile-league-select" className="block text-sm font-medium text-gray-700">
-                    League
-                  </label>
-                  <select
-                    id="mobile-league-select"
-                    value={currentLeague?.league_id || ''}
-                    onChange={handleLeagueChange}
-                    className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
-                  >
-                    <option value="">Select League</option>
-                    {sortedLeagues.map((league: SleeperLeague) => (
-                      <option key={league.league_id} value={league.league_id}>
-                        {league.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                
-                <div>
-                  <label htmlFor="mobile-year-select" className="block text-sm font-medium text-gray-700">
-                    Year
-                  </label>
-                  <select
-                    id="mobile-year-select"
-                    value={selectedYear || ''}
-                    onChange={handleYearChange}
-                    className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
-                  >
-                    {yearOptions.map((year: string) => (
-                      <option key={year} value={year}>
-                        {year}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+        <div className={`${isMobileMenuOpen ? 'block' : 'hidden'} sm:hidden`}>
+          <div className="pt-2 pb-3 space-y-1">
+            <Link href="/dashboard" className={`${router.pathname === '/dashboard' ? 'bg-blue-50 border-blue-500 text-blue-700' : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'} block pl-3 pr-4 py-2 border-l-4 text-base font-medium`}>
+              Dashboard
+            </Link>
+            <Link href="/roster" className={`${router.pathname === '/roster' ? 'bg-blue-50 border-blue-500 text-blue-700' : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'} block pl-3 pr-4 py-2 border-l-4 text-base font-medium`}>
+              Roster
+            </Link>
+            <Link href="/players" className={`${router.pathname === '/players' ? 'bg-blue-50 border-blue-500 text-blue-700' : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'} block pl-3 pr-4 py-2 border-l-4 text-base font-medium`}>
+              Players
+            </Link>
+          </div>
+
+          {/* Mobile League and Year Selectors */}
+          <div className="pt-4 pb-3 border-t border-gray-200">
+            <div className="px-4 space-y-3">
+              <div>
+                <label htmlFor="mobile-league-select" className="block text-sm font-medium text-gray-700">
+                  League
+                </label>
+                <select
+                  id="mobile-league-select"
+                  value={currentLeague?.league_id || ''}
+                  onChange={handleLeagueChange}
+                  className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+                  disabled={authLoading}
+                >
+                  <option value="">Select League</option>
+                  {sortedLeagues.map((league: SleeperLeague) => (
+                    <option key={league.league_id} value={league.league_id}>
+                      {league.name}
+                    </option>
+                  ))}
+                </select>
               </div>
-              
-              <div className="mt-3 px-4 flex items-center justify-between">
-                <div className="flex-shrink-0">
-                  <span className="text-sm text-gray-700">
-                    {user?.display_name || user?.username}
-                  </span>
+
+              <div>
+                <label htmlFor="mobile-year-select" className="block text-sm font-medium text-gray-700">
+                  Year
+                </label>
+                <select
+                  id="mobile-year-select"
+                  value={selectedYear || ''}
+                  onChange={handleYearChange}
+                  className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+                  disabled={!currentLeague || authLoading}
+                >
+                  {availableYears?.map((year: string) => (
+                    <option key={year} value={year}>
+                      {year}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Mobile user section */}
+            <div className="mt-3 px-4 pt-4 pb-3 border-t border-gray-200">
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-gray-700">
+                  {user?.display_name || user?.username}
                 </div>
-                <div className="ml-3">
-                  <button
-                    onClick={logout}
-                    className="text-sm text-red-600 hover:text-red-800"
-                  >
-                    Logout
-                  </button>
-                </div>
+                <button
+                  onClick={logout}
+                  className="text-sm text-red-600 hover:text-red-800"
+                >
+                  Logout
+                </button>
               </div>
             </div>
           </div>
-        )}
+        </div>
       </nav>
 
       {/* Main content */}
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        {children}
+      <main>
+        <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+          {children}
+        </div>
       </main>
     </div>
   );
