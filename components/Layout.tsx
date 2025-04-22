@@ -227,59 +227,58 @@ const Layout = ({ children }: LayoutProps) => {
                 >
                   Trades
                 </Link>
+                <div className="flex items-center space-x-4 ml-4">
+                  <div className="flex items-center space-x-2">
+                    <label htmlFor="league-select" className="text-sm font-medium text-gray-700">
+                      League:
+                    </label>
+                    <select
+                      id="league-select"
+                      value={currentLeague?.league_id || ''}
+                      onChange={handleLeagueChange}
+                      className="block w-full pl-3 pr-10 py-1 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+                    >
+                      <option value="">Select League</option>
+                      {sortedLeagues.map((league: SleeperLeague) => (
+                        <option key={league.league_id} value={league.league_id}>
+                          {league.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <label htmlFor="year-select" className="text-sm font-medium text-gray-700">
+                      Year:
+                    </label>
+                    <select
+                      id="year-select"
+                      value={selectedYear || ''}
+                      onChange={handleYearChange}
+                      className="block w-full pl-3 pr-10 py-1 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+                    >
+                      {yearOptions.map((year: string) => (
+                        <option key={year} value={year}>
+                          {year}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
               </div>
             </div>
             
-            {/* League and Year Selectors */}
-            <div className="hidden sm:flex sm:items-center sm:space-x-4">
-              <div className="flex items-center space-x-2">
-                <label htmlFor="league-select" className="text-sm font-medium text-gray-700">
-                  League:
-                </label>
-                <select
-                  id="league-select"
-                  value={currentLeague?.league_id || ''}
-                  onChange={handleLeagueChange}
-                  className="block w-full pl-3 pr-10 py-1 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
-                >
-                  <option value="">Select League</option>
-                  {sortedLeagues.map((league: SleeperLeague) => (
-                    <option key={league.league_id} value={league.league_id}>
-                      {league.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <label htmlFor="year-select" className="text-sm font-medium text-gray-700">
-                  Year:
-                </label>
-                <select
-                  id="year-select"
-                  value={selectedYear || ''}
-                  onChange={handleYearChange}
-                  className="block w-full pl-3 pr-10 py-1 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
-                >
-                  {yearOptions.map((year: string) => (
-                    <option key={year} value={year}>
-                      {year}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              
-              <div className="flex items-center">
-                <span className="text-sm text-gray-700 mr-2">
-                  {user?.display_name || user?.username}
-                </span>
-                <button
-                  onClick={logout}
-                  className="text-sm text-red-600 hover:text-red-800"
-                >
-                  Logout
-                </button>
-              </div>
+            {/* User section */}
+            <div className="hidden sm:flex sm:items-center">
+              <span className="text-sm text-gray-700 mr-2">
+                {user?.display_name || user?.username}
+              </span>
+              <button
+                onClick={logout}
+                className="text-sm text-red-600 hover:text-red-800"
+              >
+                Logout
+              </button>
             </div>
             
             {/* Mobile menu button */}
