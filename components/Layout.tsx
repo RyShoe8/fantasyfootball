@@ -142,8 +142,13 @@ const Layout = ({ children }: LayoutProps) => {
   if (!isHydrated || authLoading) {
     debugLog('Showing loading state');
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Spinner />
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="flex justify-center mb-4">
+            <span className="text-2xl sm:text-3xl md:text-4xl font-bold text-blue-600">🏈 Fantasy OS</span>
+          </div>
+          <Spinner />
+        </div>
       </div>
     );
   }
@@ -155,8 +160,11 @@ const Layout = ({ children }: LayoutProps) => {
       ? (authError as { message: string }).message 
       : 'An error occurred';
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
+          <div className="flex justify-center mb-4">
+            <span className="text-2xl sm:text-3xl md:text-4xl font-bold text-blue-600">🏈 Fantasy OS</span>
+          </div>
           <h1 className="text-2xl font-bold text-red-600 mb-4">Error</h1>
           <p className="text-gray-600 mb-4">{errorMessage}</p>
           <button

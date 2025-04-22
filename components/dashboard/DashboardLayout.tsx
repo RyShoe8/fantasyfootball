@@ -6,6 +6,20 @@ import { useRoster } from '../../contexts/roster';
 import { usePlayer } from '../../contexts/player/PlayerContext';
 import { useDashboardData } from '../../hooks/useDashboardData';
 
+// Helper function to format status
+const formatStatus = (status: string) => {
+  const statusMap: Record<string, string> = {
+    'pre_draft': 'Pre-Draft',
+    'drafting': 'Drafting',
+    'in_season': 'In Season',
+    'complete': 'Complete',
+    'off_season': 'Off Season',
+    'pre_season': 'Pre Season'
+  };
+  
+  return statusMap[status] || status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+};
+
 interface DashboardLayoutProps {
   league: SleeperLeague;
   selectedYear: string;
@@ -81,13 +95,23 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
       {/* League Info Area */}
       <section className="bg-white shadow rounded-lg p-6 mb-6">
         <div className="flex items-center space-x-4 mb-6">
-          <div className="w-16 h-16 bg-gray-200 rounded-lg">
-            {/* League Image will go here */}
+          <div className="w-16 h-16 bg-gray-200 rounded-lg overflow-hidden">
+            {league.metadata?.avatar ? (
+              <img 
+                src={league.metadata.avatar} 
+                alt={`${league.name} logo`} 
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-gray-400">
+                <span className="text-2xl">🏈</span>
+              </div>
+            )}
           </div>
           <div>
             <h1 className="text-2xl font-bold text-gray-900">{league.name}</h1>
             <div className="flex items-center space-x-2 text-gray-600">
-              <span className="capitalize">{league.status}</span>
+              <span>{formatStatus(league.status)}</span>
             </div>
           </div>
         </div>

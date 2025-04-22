@@ -304,28 +304,6 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
     setSelectedWeekState(week);
   }, []);
 
-  const setSelectedYear = React.useCallback(async (year: string) => {
-    debugLog('Setting selected year:', year);
-    setSelectedYearState(year);
-    
-    if (currentLeague) {
-      setIsLoading(true);
-      try {
-        await Promise.all([
-          fetchRosters(currentLeague.league_id),
-          fetchUsers(currentLeague.league_id),
-          fetchDraftPicks(currentLeague.league_id)
-        ]);
-        debugLog('League data reloaded for new year');
-      } catch (err) {
-        debugLog('Error reloading league data:', err);
-        setError(toApiError(err));
-      } finally {
-        setIsLoading(false);
-      }
-    }
-  }, [currentLeague, fetchRosters, fetchUsers, fetchDraftPicks]);
-
   const fetchLeaguesForYear = React.useCallback(async (year: string): Promise<SleeperLeague[]> => {
     if (!user) {
       return [];
@@ -379,6 +357,40 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(false);
     }
   }, [user]);
+
+  const setSelectedYear = React.useCallback(async (year: string) => {
+    debugLog('Setting selected year:', year);
+    setSelectedYearState(year);
+    
+    if (currentLeague) {
+      setIsLoading(true);
+      try {
+        // First fetch leagues for the new year
+        const newYearLeagues = await fetchLeaguesForYear(year);
+        debugLog('Fetched leagues for new year:', newYearLeagues);
+        
+        // Find the matching league in the new year
+        const matchingLeague = newYearLeagues.find(
+          (league: SleeperLeague) => league.name === currentLeague.name || 
+                    league.previous_league_id === currentLeague.league_id ||
+                    league.league_id === currentLeague.league_id
+        );
+        
+        if (matchingLeague) {
+          debugLog('Found matching league for new year:', matchingLeague);
+          await setCurrentLeague(matchingLeague);
+        } else {
+          debugLog('No matching league found for new year');
+          setError(new Error('No matching league found for selected year'));
+        }
+      } catch (err) {
+        debugLog('Error handling year change:', err);
+        setError(toApiError(err));
+      } finally {
+        setIsLoading(false);
+      }
+    }
+  }, [currentLeague, fetchLeaguesForYear, setCurrentLeague]);
 
   // Generate year options based on available league seasons
   const yearOptions = React.useMemo(() => {

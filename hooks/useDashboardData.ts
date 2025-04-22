@@ -54,16 +54,22 @@ export const useDashboardData = (leagueId: string | undefined) => {
 
         // Create dashboard data from real data
         const dashboardData: DashboardData = {
-          standings: rosters.map((roster: SleeperRoster, index: number) => ({
-            teamId: roster.roster_id,
-            teamName: users.find((u: SleeperUser) => u.user_id === roster.owner_id)?.display_name || `Team ${index + 1}`,
-            wins: roster.settings.wins,
-            losses: roster.settings.losses,
-            pointsFor: roster.settings.fpts,
-            pointsAgainst: roster.settings.fpts_against,
-            streak: calculateStreak(roster),
-            rank: index + 1
-          })),
+          standings: rosters.map((roster: SleeperRoster, index: number) => {
+            const owner = users.find((u: SleeperUser) => u.user_id === roster.owner_id);
+            const teamName = roster.metadata?.team_name || `Team ${index + 1}`;
+            const displayName = owner?.display_name || owner?.username || 'Unknown';
+            
+            return {
+              teamId: roster.roster_id,
+              teamName: `${teamName} (${displayName})`,
+              wins: roster.settings.wins,
+              losses: roster.settings.losses,
+              pointsFor: roster.settings.fpts,
+              pointsAgainst: roster.settings.fpts_against,
+              streak: calculateStreak(roster),
+              rank: index + 1
+            };
+          }),
           topPlayers: [], // Will be populated by player context
           recentTransactions: [], // Will be populated by transaction context
           leagueInfo: currentLeague,
@@ -82,7 +88,7 @@ export const useDashboardData = (leagueId: string | undefined) => {
           playoffInfo: {
             teams: currentLeague?.settings.playoff_teams || 0,
             startDate: new Date(), // Will be calculated based on week
-            format: currentLeague?.settings.playoff_type === 1 ? 'Single Elimination' : 'Double Elimination'
+            format: currentLeague?.settings.playoff_type === 0 ? 'Single Elimination' : 'Double Elimination'
           },
           starters: [] // Will be populated by roster context
         };
