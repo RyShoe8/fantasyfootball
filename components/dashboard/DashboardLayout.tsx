@@ -5,6 +5,9 @@ import { useLeague } from '../../contexts/league';
 import { useRoster } from '../../contexts/roster';
 import { usePlayer } from '../../contexts/player/PlayerContext';
 import { useDashboardData } from '../../hooks/useDashboardData';
+import Image from 'next/image';
+import { useAuth } from '../../contexts/auth/AuthContext';
+import { useLeague as useLeagueContext } from '../../contexts/league/LeagueContext';
 
 // Helper function to format status
 const formatStatus = (status: string) => {
@@ -98,14 +101,16 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
           <div className="flex items-center space-x-4">
             <div className="w-16 h-16 bg-gray-200 rounded-lg overflow-hidden">
               {league.avatar ? (
-                <img 
+                <Image
                   src={`https://sleepercdn.com/avatars/${league.avatar}`}
-                  alt={`${league.name} logo`} 
-                  className="w-full h-full object-cover"
+                  alt={league.name}
+                  width={48}
+                  height={48}
+                  className="rounded-full"
                 />
               ) : (
-                <div className="w-full h-full flex items-center justify-center text-gray-400">
-                  <span className="text-2xl">🏈</span>
+                <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
+                  <span className="text-gray-500 text-lg">{league.name.charAt(0)}</span>
                 </div>
               )}
             </div>
