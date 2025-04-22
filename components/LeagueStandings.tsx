@@ -40,7 +40,7 @@ const LeagueStandings: React.FC = () => {
       .map((roster: SleeperRoster) => {
         const owner = users.find((user: SleeperUser) => user.user_id === roster.owner_id);
         const teamName = formatTeamName(roster.metadata?.team_name, owner?.display_name);
-        const ownerName = formatOwnerName(owner?.display_name);
+        const ownerName = formatOwnerName(owner?.display_name || 'Unknown Owner');
         
         return {
           teamName,
