@@ -1,5 +1,5 @@
 /** @jsxImportSource react */
-import React, { useEffect, useState } from 'react';
+import * as React from 'react';
 import { useRouter } from 'next/router';
 import { useAuth } from '../../contexts/auth';
 import { useLeague } from '../../contexts/league';
@@ -17,9 +17,9 @@ export default function LeaguePage() {
   const { currentLeague, isLoading: leagueLoading, error: leagueError } = useLeague();
   const { players, isLoading: playersLoading, error: playersError } = usePlayer();
   const { rosters, loading: rostersLoading, error: rostersError } = useRoster();
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = React.useState('overview');
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (!user) {
       router.push('/login');
     }
@@ -39,7 +39,15 @@ export default function LeaguePage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <LeagueInfo league={currentLeague} />
+      <LeagueInfo 
+        league={currentLeague} 
+        selectedYear={currentLeague.season}
+        availableYears={[currentLeague.season]}
+        onYearChange={(year) => {
+          // Handle year change if needed
+          console.log('Year changed:', year);
+        }}
+      />
       <div className="mt-8">
         <div className="flex space-x-4 mb-4">
           <button
