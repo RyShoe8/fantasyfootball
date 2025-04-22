@@ -27,8 +27,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ league }: DashboardLa
   const { data: dashboardData, isLoading, error } = useDashboardData(league.league_id);
   
   // Helper functions to format data
-  const formatStreak = (streak: string) => {
-    return streak;
+  const formatStreak = (streak: string | undefined) => {
+    return streak || '-';
   };
 
   const formatDate = (date: Date) => {
@@ -55,7 +55,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ league }: DashboardLa
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
         <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md text-center">
           <h2 className="text-xl font-bold text-gray-900 mb-4">Error Loading Dashboard</h2>
-          <p className="text-gray-600 mb-4">{error?.message || 'Failed to load dashboard data'}</p>
+          <p className="text-gray-600 mb-4">{error || 'Failed to load dashboard data'}</p>
         </div>
       </div>
     );
