@@ -41,6 +41,34 @@ const Layout = ({ children }: LayoutProps) => {
     leagueContext = { currentLeague: null, isLoading: false };
   }
 
+  const { leagues, currentLeague, setCurrentLeague, selectedYear, setSelectedYear } = leagueContext || {};
+
+  // Sort leagues alphabetically
+  const sortedLeagues = React.useMemo(() => {
+    if (!leagues) return [];
+    return [...leagues].sort((a: SleeperLeague, b: SleeperLeague) => a.name.localeCompare(b.name));
+  }, [leagues]);
+
+  // Generate year options (current year and previous 5 years)
+  const yearOptions = React.useMemo(() => {
+    const currentYear = new Date().getFullYear();
+    return Array.from({ length: 6 }, (_, i: number) => (currentYear - i).toString());
+  }, []);
+
+  // Handle league change
+  const handleLeagueChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const selectedLeague = leagues?.find((league: SleeperLeague) => league.league_id === event.target.value);
+    if (selectedLeague) {
+      setCurrentLeague(selectedLeague);
+    }
+  };
+
+  // Handle year change
+  const handleYearChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const year = e.target.value;
+    setSelectedYear(year);
+  };
+
   // Handle hydration and mobile detection
   React.useEffect(() => {
     debugLog('Setting up hydration and mobile detection');
@@ -134,7 +162,7 @@ const Layout = ({ children }: LayoutProps) => {
             <div className="flex">
               <div className="flex-shrink-0 flex items-center">
                 <Link href="/" className="text-xl font-bold text-gray-800">
-                  Fantasy Football
+                  Fantasy OS
                 </Link>
               </div>
               <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
@@ -168,24 +196,73 @@ const Layout = ({ children }: LayoutProps) => {
                 >
                   Players
                 </Link>
+                <Link
+                  href="/trades"
+                  className={`${
+                    router.pathname === '/trades'
+                      ? 'border-blue-500 text-gray-900'
+                      : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                  } inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium`}
+                >
+                  Trades
+                </Link>
               </div>
             </div>
-            <div className="hidden sm:ml-6 sm:flex sm:items-center">
-              <div className="ml-3 relative">
-                <div className="flex items-center space-x-4">
-                  <span className="text-sm text-gray-700">
-                    {user?.display_name || user?.username}
-                  </span>
-                  <button
-                    onClick={logout}
-                    className="text-sm text-red-600 hover:text-red-800"
-                  >
-                    Logout
-                  </button>
-                </div>
+            
+            {/* League and Year Selectors */}
+            <div className="hidden sm:flex sm:items-center sm:space-x-4">
+              <div className="flex items-center space-x-2">
+                <label htmlFor="league-select" className="text-sm font-medium text-gray-700">
+                  League:
+                </label>
+                <select
+                  id="league-select"
+                  value={currentLeague?.league_id || ''}
+                  onChange={handleLeagueChange}
+                  className="block w-full pl-3 pr-10 py-1 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+                >
+                  <option value="">Select League</option>
+                  {sortedLeagues.map((league: SleeperLeague) => (
+                    <option key={league.league_id} value={league.league_id}>
+                      {league.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <label htmlFor="year-select" className="text-sm font-medium text-gray-700">
+                  Year:
+                </label>
+                <select
+                  id="year-select"
+                  value={selectedYear || ''}
+                  onChange={handleYearChange}
+                  className="block w-full pl-3 pr-10 py-1 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+                >
+                  {yearOptions.map((year: string) => (
+                    <option key={year} value={year}>
+                      {year}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              
+              <div className="flex items-center">
+                <span className="text-sm text-gray-700 mr-2">
+                  {user?.display_name || user?.username}
+                </span>
+                <button
+                  onClick={logout}
+                  className="text-sm text-red-600 hover:text-red-800"
+                >
+                  Logout
+                </button>
               </div>
             </div>
-            <div className="-mr-2 flex items-center sm:hidden">
+            
+            {/* Mobile menu button */}
+            <div className="flex items-center sm:hidden">
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                 className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"
@@ -263,9 +340,60 @@ const Layout = ({ children }: LayoutProps) => {
               >
                 Players
               </Link>
+              <Link
+                href="/trades"
+                className={`${
+                  router.pathname === '/trades'
+                    ? 'bg-blue-50 border-blue-500 text-blue-700'
+                    : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'
+                } block pl-3 pr-4 py-2 border-l-4 text-base font-medium`}
+              >
+                Trades
+              </Link>
             </div>
+            
+            {/* Mobile League and Year Selectors */}
             <div className="pt-4 pb-3 border-t border-gray-200">
-              <div className="flex items-center px-4">
+              <div className="px-4 space-y-3">
+                <div>
+                  <label htmlFor="mobile-league-select" className="block text-sm font-medium text-gray-700">
+                    League
+                  </label>
+                  <select
+                    id="mobile-league-select"
+                    value={currentLeague?.league_id || ''}
+                    onChange={handleLeagueChange}
+                    className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+                  >
+                    <option value="">Select League</option>
+                    {sortedLeagues.map((league: SleeperLeague) => (
+                      <option key={league.league_id} value={league.league_id}>
+                        {league.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div>
+                  <label htmlFor="mobile-year-select" className="block text-sm font-medium text-gray-700">
+                    Year
+                  </label>
+                  <select
+                    id="mobile-year-select"
+                    value={selectedYear || ''}
+                    onChange={handleYearChange}
+                    className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+                  >
+                    {yearOptions.map((year: string) => (
+                      <option key={year} value={year}>
+                        {year}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              
+              <div className="mt-3 px-4 flex items-center justify-between">
                 <div className="flex-shrink-0">
                   <span className="text-sm text-gray-700">
                     {user?.display_name || user?.username}
