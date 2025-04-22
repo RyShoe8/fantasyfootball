@@ -82,12 +82,19 @@ const formatApiResponse = (data: any, type: string) => {
 const Home: React.FC = () => {
   const router = useRouter();
   const { user, login, isLoading, error } = useAuth();
-  const { currentLeague } = useLeague();
+  const { currentLeague, leagues, setCurrentLeague } = useLeague();
   const [username, setUsername] = React.useState('');
   const [userLeagues, setUserLeagues] = React.useState<SleeperLeague[]>([]);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [selectedYear, setSelectedYear] = React.useState('2023');
   const [availableYears, setAvailableYears] = React.useState<string[]>(['2023']);
+
+  // Auto-select the first league if available and no league is currently selected
+  React.useEffect(() => {
+    if (leagues.length > 0 && !currentLeague) {
+      setCurrentLeague(leagues[0]);
+    }
+  }, [leagues, currentLeague, setCurrentLeague]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
