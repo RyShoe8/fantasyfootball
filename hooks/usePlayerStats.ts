@@ -2,7 +2,7 @@
  * Custom hook for managing player statistics
  */
 
-import { useState, useEffect, useMemo } from 'react';
+import * as React from 'react';
 import { usePlayer } from '../contexts/player';
 import { SleeperPlayer } from '../types/sleeper';
 import { PlayerStats } from '../types/player';
@@ -33,11 +33,11 @@ interface UsePlayerStatsReturn {
 }
 
 export function usePlayerStats(): UsePlayerStatsReturn {
-  const { players, playerStats, loading } = usePlayer();
-  const [error, setError] = useState<string | null>(null);
+  const { players, playerStats, isLoading } = usePlayer();
+  const [error, setError] = React.useState<string | null>(null);
 
   // Calculate stats for each position
-  const positionStats = useMemo(() => {
+  const positionStats = React.useMemo(() => {
     const stats: Record<string, PositionStats> = {};
 
     if (!players || !playerStats) return stats;
@@ -92,7 +92,7 @@ export function usePlayerStats(): UsePlayerStatsReturn {
   }, [players, playerStats]);
 
   // Get top performers across all positions
-  const topPerformers = useMemo(() => {
+  const topPerformers = React.useMemo(() => {
     return Object.values(positionStats)
       .filter((stats: PositionStats) => stats.topPerformer !== null)
       .map((stats: PositionStats) => ({
@@ -100,19 +100,20 @@ export function usePlayerStats(): UsePlayerStatsReturn {
         points: stats.topPerformer!.points,
         position: stats.position
       }))
-      .sort((a, b) => b.points - a.points);
+      .sort((a, b) => b.points - a.points)
+      .slice(0, 10);
   }, [positionStats]);
 
   // Helper function to get player projection
   const getPlayerProjection = (playerId: string): number => {
-    const stats = playerStats[playerId];
-    return stats?.projected_pts || 0;
+    const player = players[playerId];
+    return player?.projected_pts || 0;
   };
 
   // Helper function to get player points
   const getPlayerPoints = (playerId: string): number => {
-    const stats = playerStats[playerId];
-    return stats?.pts_ppr || 0;
+    const playerStat = playerStats[playerId];
+    return playerStat?.pts_ppr || 0;
   };
 
   return {
@@ -120,7 +121,7 @@ export function usePlayerStats(): UsePlayerStatsReturn {
     topPerformers,
     getPlayerProjection,
     getPlayerPoints,
-    isLoading: loading,
+    isLoading,
     error
   };
 } 
