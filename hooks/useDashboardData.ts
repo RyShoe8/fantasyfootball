@@ -25,21 +25,15 @@ export const useDashboardData = (leagueId: string | undefined) => {
         setIsLoading(true);
         setError(null);
 
-        // Fetch league data if not already loaded
-        if (!currentLeague || currentLeague.league_id !== leagueId) {
-          const leagueData = await LeagueApi.getLeague(leagueId);
-          await setCurrentLeague(leagueData);
-        }
+        // Always fetch league data to ensure we have the latest
+        const leagueData = await LeagueApi.getLeague(leagueId);
+        await setCurrentLeague(leagueData);
 
-        // Fetch rosters if not already loaded
-        if (!rosters.length) {
-          await RosterApi.getRosters(leagueId);
-        }
-
-        // Fetch users if not already loaded
-        if (!users.length) {
-          await LeagueApi.getLeagueUsers(leagueId);
-        }
+        // Always fetch rosters to ensure we have the latest
+        const fetchedRosters = await RosterApi.getRosters(leagueId);
+        
+        // Always fetch users to ensure we have the latest
+        const fetchedUsers = await LeagueApi.getLeagueUsers(leagueId);
 
         // Fetch draft picks if not already loaded
         if (!draftPicks.length) {
@@ -55,7 +49,7 @@ export const useDashboardData = (leagueId: string | undefined) => {
         leagueLoadedRef.current = true;
 
         // Get the user's roster
-        const userRoster = rosters[0]; // For now, just use the first roster
+        const userRoster = fetchedRosters[0]; // For now, just use the first roster
         
         // Get starters data
         const startersData = userRoster?.starters?.map((playerId: string) => {
@@ -81,8 +75,8 @@ export const useDashboardData = (leagueId: string | undefined) => {
 
         // Create dashboard data from real data
         const dashboardData: DashboardData = {
-          standings: rosters.map((roster: SleeperRoster, index: number) => {
-            const owner = users.find((u: SleeperUser) => u.user_id === roster.owner_id);
+          standings: fetchedRosters.map((roster: SleeperRoster, index: number) => {
+            const owner = fetchedUsers.find((u: SleeperUser) => u.user_id === roster.owner_id);
             const teamName = roster.metadata?.team_name || owner?.display_name || owner?.username || `Team ${index + 1}`;
             
             return {
@@ -99,23 +93,23 @@ export const useDashboardData = (leagueId: string | undefined) => {
           }),
           topPlayers: [], // Will be populated by player context
           recentTransactions: [], // Will be populated by transaction context
-          leagueInfo: currentLeague,
-          seasonNumber: parseInt(currentLeague?.season || '2023'),
+          leagueInfo: leagueData,
+          seasonNumber: parseInt(leagueData?.season || '2023'),
           rosterBreakdown: {
-            totalStarters: currentLeague?.roster_positions.filter((pos: string) => !pos.includes('BN')).length || 0,
-            positions: calculatePositionBreakdown(currentLeague?.roster_positions || []),
-            benchSpots: currentLeague?.roster_positions.filter((pos: string) => pos.includes('BN')).length || 0,
-            taxiSpots: currentLeague?.settings.taxi_slots || 0,
-            irSpots: currentLeague?.roster_positions.filter((pos: string) => pos.includes('IR')).length || 0
+            totalStarters: leagueData?.roster_positions.filter((pos: string) => !pos.includes('BN')).length || 0,
+            positions: calculatePositionBreakdown(leagueData?.roster_positions || []),
+            benchSpots: leagueData?.roster_positions.filter((pos: string) => pos.includes('BN')).length || 0,
+            taxiSpots: leagueData?.settings.taxi_slots || 0,
+            irSpots: leagueData?.roster_positions.filter((pos: string) => pos.includes('IR')).length || 0
           },
           tradeDeadline: {
-            week: currentLeague?.settings.trade_deadline || 0,
+            week: leagueData?.settings.trade_deadline || 0,
             date: new Date() // Will be calculated based on week
           },
           playoffInfo: {
-            teams: currentLeague?.settings.playoff_teams || 0,
+            teams: leagueData?.settings.playoff_teams || 0,
             startDate: new Date(), // Will be calculated based on week
-            format: currentLeague?.settings.playoff_type === 0 ? 'Single Elimination' : 'Double Elimination'
+            format: leagueData?.settings.playoff_type === 0 ? 'Single Elimination' : 'Double Elimination'
           },
           starters: startersData
         };
@@ -129,7 +123,7 @@ export const useDashboardData = (leagueId: string | undefined) => {
     };
 
     fetchDashboardData();
-  }, [leagueId, setCurrentLeague, currentLeague, rosters, users, draftPicks, players, playerStats]);
+  }, [leagueId, setCurrentLeague, draftPicks, players, playerStats]);
 
   return { data, isLoading, error };
 };

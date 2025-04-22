@@ -49,10 +49,18 @@ const Layout = ({ children }: LayoutProps) => {
 
   const { leagues, currentLeague, setCurrentLeague, selectedYear, setSelectedYear, availableYears } = leagueContext || {};
 
-  // Sort leagues alphabetically
+  // Sort leagues alphabetically and remove duplicates
   const sortedLeagues = React.useMemo(() => {
     if (!leagues) return [];
-    return [...leagues].sort((a: SleeperLeague, b: SleeperLeague) => a.name.localeCompare(b.name));
+    const uniqueLeagues = new Map();
+    leagues.forEach((league: SleeperLeague) => {
+      if (!uniqueLeagues.has(league.name)) {
+        uniqueLeagues.set(league.name, league);
+      }
+    });
+    return Array.from(uniqueLeagues.values()).sort((a: SleeperLeague, b: SleeperLeague) => 
+      a.name.localeCompare(b.name)
+    );
   }, [leagues]);
 
   // Handle league change

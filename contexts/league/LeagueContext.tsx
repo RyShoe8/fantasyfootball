@@ -454,18 +454,41 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
 
   // Update available years when current league changes
   React.useEffect(() => {
-    if (currentLeague && selectedYear) {
-      fetchAvailableYearsForLeague(currentLeague.name, selectedYear)
-        .then((years: string[]) => {
+    const updateAvailableYears = async () => {
+      if (currentLeague && selectedYear) {
+        try {
+          debugLog('Fetching available years for league:', currentLeague.name);
+          const years = await fetchAvailableYearsForLeague(currentLeague.name, selectedYear);
           debugLog('Setting available years:', years);
           setAvailableYears(years);
-        })
-        .catch((err: Error) => {
+        } catch (err) {
           debugLog('Error fetching available years:', err);
           setError(toApiError(err));
-        });
-    }
+        }
+      }
+    };
+
+    updateAvailableYears();
   }, [currentLeague, selectedYear, fetchAvailableYearsForLeague]);
+
+  // Also update available years when leagues change
+  React.useEffect(() => {
+    const updateAvailableYears = async () => {
+      if (currentLeague && selectedYear && leagues.length > 0) {
+        try {
+          debugLog('Fetching available years for league:', currentLeague.name);
+          const years = await fetchAvailableYearsForLeague(currentLeague.name, selectedYear);
+          debugLog('Setting available years:', years);
+          setAvailableYears(years);
+        } catch (err) {
+          debugLog('Error fetching available years:', err);
+          setError(toApiError(err));
+        }
+      }
+    };
+
+    updateAvailableYears();
+  }, [leagues, currentLeague, selectedYear, fetchAvailableYearsForLeague]);
 
   const value = {
     leagues,
