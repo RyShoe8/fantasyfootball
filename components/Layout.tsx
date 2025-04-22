@@ -54,17 +54,31 @@ const Layout = ({ children }: LayoutProps) => {
     return [...leagues].sort((a: SleeperLeague, b: SleeperLeague) => a.name.localeCompare(b.name));
   }, [leagues]);
 
-  // Generate year options (current year and previous 5 years)
+  // Generate year options based on available league seasons
   const yearOptions = React.useMemo(() => {
-    const currentYear = new Date().getFullYear();
-    return Array.from({ length: 6 }, (_, i: number) => (currentYear - i).toString());
-  }, []);
+    if (!leagues || leagues.length === 0) return [];
+    
+    // Get all unique seasons from available leagues
+    const seasons = new Set<string>();
+    leagues.forEach((league: SleeperLeague) => {
+      if (league.season) {
+        seasons.add(league.season);
+      }
+    });
+    
+    // Convert to array and sort in descending order (newest first)
+    return Array.from(seasons).sort((a, b) => b.localeCompare(a));
+  }, [leagues]);
 
   // Handle league change
   const handleLeagueChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedLeague = leagues?.find((league: SleeperLeague) => league.league_id === event.target.value);
     if (selectedLeague && setCurrentLeague) {
       setCurrentLeague(selectedLeague);
+      // Set the selected year to the league's season when changing leagues
+      if (setSelectedYear && selectedLeague.season) {
+        setSelectedYear(selectedLeague.season);
+      }
     }
   };
 
