@@ -14,7 +14,7 @@
  * - Placeholder cards for upcoming features
  */
 
-import React, { useState } from 'react';
+import React from 'react';
 import { useRouter } from 'next/router';
 import { useAuth } from '../contexts/auth';
 import { useLeague } from '../contexts/league';
@@ -89,9 +89,9 @@ const Home: React.FC = () => {
   const router = useRouter();
   const { user, login, isLoading, error } = useAuth();
   const { currentLeague } = useLeague();
-  const [username, setUsername] = useState('');
-  const [userLeagues, setUserLeagues] = useState<SleeperLeague[]>([]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [username, setUsername] = React.useState('');
+  const [userLeagues, setUserLeagues] = React.useState<SleeperLeague[]>([]);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -166,10 +166,30 @@ const Home: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-100 py-6 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
-        {currentLeague && <LeagueInfo league={currentLeague} />}
-        <TeamOverview />
-        <LeagueStandings />
-        <DebugSection />
+        {!currentLeague ? (
+          <div className="bg-white rounded-lg shadow-md p-6 text-center">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">Welcome to Fantasy Football Stats</h2>
+            <p className="text-gray-600 mb-4">Please select a league to view your stats.</p>
+            <div className="space-y-4">
+              {userLeagues.map((league: SleeperLeague) => (
+                <button
+                  key={league.league_id}
+                  onClick={() => router.push(`/league/${league.league_id}`)}
+                  className="w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                >
+                  {league.name}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <>
+            <LeagueInfo league={currentLeague} />
+            <TeamOverview />
+            <LeagueStandings />
+            <DebugSection />
+          </>
+        )}
       </div>
     </div>
   );
