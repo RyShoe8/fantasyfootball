@@ -23,16 +23,10 @@ const formatStatus = (status: string) => {
 
 interface DashboardLayoutProps {
   league: SleeperLeague;
-  selectedYear: string;
-  availableYears: string[];
-  onYearChange: (year: string) => void;
 }
 
 const DashboardLayout: React.FC<DashboardLayoutProps> = ({ 
-  league,
-  selectedYear,
-  availableYears,
-  onYearChange
+  league
 }: DashboardLayoutProps) => {
   const { positions } = usePlayer();
   
@@ -113,30 +107,11 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
               )}
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Fantasy OS</h1>
+              <h1 className="text-2xl font-bold text-gray-900">{league.name}</h1>
               <div className="flex items-center space-x-2 text-gray-600">
                 <span>{formatStatus(league.status)}</span>
               </div>
             </div>
-          </div>
-          
-          {/* Year Selector */}
-          <div className="flex items-center space-x-2">
-            <label htmlFor="year-select" className="text-sm font-medium text-gray-700">
-              Season:
-            </label>
-            <select
-              id="year-select"
-              value={selectedYear}
-              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => onYearChange(e.target.value)}
-              className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
-            >
-              {availableYears.map((year) => (
-                <option key={year} value={year}>
-                  {year}
-                </option>
-              ))}
-            </select>
           </div>
         </div>
 
