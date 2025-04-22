@@ -417,11 +417,11 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
           currentLeagueId = previousLeague.league_id;
           year--;
         } else {
-          currentLeagueId = null;
+          currentLeagueId = undefined;
         }
       } catch (err) {
         debugLog('Error fetching previous year leagues:', err);
-        currentLeagueId = null;
+        currentLeagueId = undefined;
       }
     }
     
