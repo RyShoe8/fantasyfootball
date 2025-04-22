@@ -94,7 +94,8 @@ export const useDashboardData = (leagueId: string | undefined) => {
               pointsFor: roster.settings.fpts,
               pointsAgainst: roster.settings.fpts_against,
               streak: calculateStreak(roster),
-              rank: index + 1
+              rank: index + 1,
+              teamImage: roster.metadata?.avatar || undefined
             };
           }),
           topPlayers: [], // Will be populated by player context

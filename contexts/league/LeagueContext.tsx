@@ -429,6 +429,31 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
       }
     }
     
+    // Look for future years
+    let nextYear = year + 1;
+    while (true) {
+      try {
+        const nextYearLeagues = await fetchLeaguesForYear(nextYear.toString());
+        const nextLeague = nextYearLeagues.find(
+          (league: SleeperLeague) => 
+            league.name === leagueName || 
+            league.league_id === currentLeagueId ||
+            league.previous_league_id === currentLeagueId
+        );
+        
+        if (nextLeague) {
+          years.push(nextYear.toString());
+          currentLeagueId = nextLeague.league_id;
+          nextYear++;
+        } else {
+          break;
+        }
+      } catch (err) {
+        debugLog('Error fetching next year leagues:', err);
+        break;
+      }
+    }
+    
     return years.sort((a, b) => b.localeCompare(a)); // Sort in descending order
   }, [currentLeague, fetchLeaguesForYear]);
 
