@@ -121,7 +121,8 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
         }
 
         // If no cached data or invalid cache, fetch from API
-        const fetchedLeagues = await LeagueApi.getUserLeagues(user.user_id);
+        const currentYear = new Date().getFullYear().toString();
+        const fetchedLeagues = await LeagueApi.getUserLeagues(user.user_id, currentYear);
         debugLog('Fetched leagues:', fetchedLeagues);
 
         // Save leagues to localStorage
@@ -136,7 +137,6 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
 
         // If we have leagues but no current league selected, select the lowest alphabetical one from current year
         if (fetchedLeagues.length > 0 && !currentLeague) {
-          const currentYear = new Date().getFullYear().toString();
           const currentYearLeagues = fetchedLeagues.filter(league => league.season === currentYear);
           if (currentYearLeagues.length > 0) {
             const lowestAlphabeticalLeague = currentYearLeagues.sort((a, b) => 

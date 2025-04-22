@@ -103,12 +103,13 @@ export class LeagueApi {
   /**
    * Fetch leagues for a user
    * @param userId - The user ID
+   * @param season - The season year (defaults to current year)
    * @returns Promise<SleeperLeague[]> - Array of leagues for the user
    */
-  static async getUserLeagues(userId: string): Promise<SleeperLeague[]> {
-    debugLog('getUserLeagues', { userId });
+  static async getUserLeagues(userId: string, season: string = new Date().getFullYear().toString()): Promise<SleeperLeague[]> {
+    debugLog('getUserLeagues', { userId, season });
     try {
-      const response = await axios.get(`${SLEEPER_API_BASE}/user/${userId}/leagues/nfl`);
+      const response = await axios.get(`${SLEEPER_API_BASE}/user/${userId}/leagues/nfl/${season}`);
       return response.data;
     } catch (err) {
       debugLog('getUserLeagues error', err);
