@@ -38,7 +38,7 @@ export function useRosterData(rosterId?: string): UseRosterDataReturn {
   const { user } = useAuth();
   const { currentLeague } = useLeague();
   const { rosters } = useRoster();
-  const { players, playerStats, loading: playersLoading } = usePlayer();
+  const { players, playerStats, isLoading: playersLoading } = usePlayer();
   const [error, setError] = React.useState<string | null>(null);
 
   // Find the roster we're interested in
