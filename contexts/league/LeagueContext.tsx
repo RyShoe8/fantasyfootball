@@ -401,11 +401,14 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
     let currentLeagueId = currentLeague?.league_id;
     let year = parseInt(currentYear);
     
-    while (currentLeagueId) {
-      years.push(year.toString());
-      // Fetch the league for the previous year
+    // Add current year
+    years.push(year.toString());
+    
+    // Look for previous years
+    let previousYear = year - 1;
+    while (previousYear >= 2023) {  // Start from 2023
       try {
-        const previousYearLeagues = await fetchLeaguesForYear((year - 1).toString());
+        const previousYearLeagues = await fetchLeaguesForYear(previousYear.toString());
         const previousLeague = previousYearLeagues.find(
           (league: SleeperLeague) => 
             league.name === leagueName || 
@@ -414,14 +417,40 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
         );
         
         if (previousLeague) {
+          years.push(previousYear.toString());
           currentLeagueId = previousLeague.league_id;
-          year--;
+          previousYear--;
         } else {
-          currentLeagueId = undefined;
+          break;
         }
       } catch (err) {
         debugLog('Error fetching previous year leagues:', err);
-        currentLeagueId = undefined;
+        break;
+      }
+    }
+    
+    // Look for future years
+    let futureYear = year + 1;
+    while (futureYear <= 2025) {  // Look ahead to 2025
+      try {
+        const futureYearLeagues = await fetchLeaguesForYear(futureYear.toString());
+        const futureLeague = futureYearLeagues.find(
+          (league: SleeperLeague) => 
+            league.name === leagueName || 
+            league.league_id === currentLeagueId ||
+            league.previous_league_id === currentLeagueId
+        );
+        
+        if (futureLeague) {
+          years.push(futureYear.toString());
+          currentLeagueId = futureLeague.league_id;
+          futureYear++;
+        } else {
+          break;
+        }
+      } catch (err) {
+        debugLog('Error fetching future year leagues:', err);
+        break;
       }
     }
     

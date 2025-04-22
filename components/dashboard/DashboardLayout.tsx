@@ -224,9 +224,17 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                     <div className="flex items-center">
                       <div className="flex-shrink-0 h-10 w-10">
                         {team.teamImage ? (
-                          <img className="h-10 w-10 rounded-full" src={team.teamImage} alt={team.teamName} />
+                          <Image
+                            src={`https://sleepercdn.com/avatars/${team.teamImage}`}
+                            alt={team.teamName}
+                            width={40}
+                            height={40}
+                            className="rounded-full"
+                          />
                         ) : (
-                          <div className="h-10 w-10 rounded-full bg-gray-200"></div>
+                          <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
+                            <span className="text-gray-500 text-sm">{team.teamName.charAt(0)}</span>
+                          </div>
                         )}
                       </div>
                       <div className="ml-4">
