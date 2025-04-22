@@ -143,18 +143,11 @@ export interface SleeperPlayerStats {
 
 // Draft Types
 export interface SleeperDraftPick {
-  draft_id: string;
-  league_id: string;
   season: string;
   round: number;
-  pick_no: number;
-  roster_id: string;
-  player_id: string;
-  picked_by: string;
-  status: string;
-  metadata: {
-    [key: string]: string;
-  };
+  roster_id: number;
+  previous_owner_id: number;
+  owner_id: number;
 }
 
 // Matchup Types

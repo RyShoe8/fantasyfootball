@@ -6,7 +6,7 @@
  */
 
 import axios from 'axios';
-import { SleeperDraftPick } from '../../types/sleeper';
+import { SleeperDraftPick, SleeperDraft } from '../../types/sleeper';
 import { ApiError, toApiError } from '../../types/api';
 import { ERROR_MESSAGES } from '../../utils/constants';
 
@@ -45,21 +45,25 @@ export class DraftApi {
         throw new Error(ERROR_MESSAGES.LEAGUE_NOT_FOUND);
       }
 
-      // Then try to get the draft picks
-      const response = await axios.get(`${SLEEPER_API_BASE}/league/${leagueId}/draft_picks`);
-      
-      if (!response.data) {
-        debugLog('getDraftPicks:info', 'No draft picks found for league');
+      // Get the draft ID for the league
+      const draftsResponse = await axios.get(`${SLEEPER_API_BASE}/league/${leagueId}/drafts`);
+      if (!draftsResponse.data || !Array.isArray(draftsResponse.data) || draftsResponse.data.length === 0) {
+        debugLog('getDraftPicks:info', 'No drafts found for league');
         return [];
       }
 
-      if (!Array.isArray(response.data)) {
-        debugLog('getDraftPicks:error', 'Invalid response data:', response.data);
-        throw new Error(ERROR_MESSAGES.INVALID_RESPONSE);
+      const draftId = draftsResponse.data[0].draft_id;
+      debugLog('getDraftPicks:info', 'Found draft ID:', draftId);
+
+      // Get the traded picks for the draft
+      const tradedPicksResponse = await axios.get(`${SLEEPER_API_BASE}/draft/${draftId}/traded_picks`);
+      if (!tradedPicksResponse.data || !Array.isArray(tradedPicksResponse.data)) {
+        debugLog('getDraftPicks:info', 'No traded picks found for draft');
+        return [];
       }
 
-      debugLog('getDraftPicks:success', 'pick count:', response.data.length);
-      return response.data;
+      debugLog('getDraftPicks:success', 'traded picks count:', tradedPicksResponse.data.length);
+      return tradedPicksResponse.data;
     } catch (error) {
       debugLog('getDraftPicks:error', 'error:', error);
       

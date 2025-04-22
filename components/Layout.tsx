@@ -177,7 +177,7 @@ const Layout = ({ children }: LayoutProps) => {
               {/* Logo */}
               <div className="flex-shrink-0 flex items-center">
                 <Link href="/" className="text-xl font-bold text-gray-900">
-                  Fantasy Football
+                  Fantasy OS
                 </Link>
               </div>
 
