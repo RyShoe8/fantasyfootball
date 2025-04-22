@@ -169,18 +169,8 @@ const Home: React.FC = () => {
         {!currentLeague ? (
           <div className="bg-white rounded-lg shadow-md p-6 text-center">
             <h2 className="text-xl font-bold text-gray-900 mb-4">Welcome to Fantasy Football Stats</h2>
-            <p className="text-gray-600 mb-4">Please select a league to view your stats.</p>
-            <div className="space-y-4">
-              {userLeagues.map((league: SleeperLeague) => (
-                <button
-                  key={league.league_id}
-                  onClick={() => router.push(`/league/${league.league_id}`)}
-                  className="w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-                >
-                  {league.name}
-                </button>
-              ))}
-            </div>
+            <p className="text-gray-600 mb-4">Loading your leagues...</p>
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
           </div>
         ) : (
           <>

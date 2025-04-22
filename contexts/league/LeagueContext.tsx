@@ -286,6 +286,28 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
     }
   }, [currentLeague, fetchRosters, fetchUsers, fetchDraftPicks]);
 
+  // Generate year options based on available league seasons
+  const yearOptions = React.useMemo(() => {
+    if (!leagues || leagues.length === 0) return [];
+    
+    // Get all unique seasons from available leagues
+    const seasons = new Set<string>();
+    leagues.forEach((league: SleeperLeague) => {
+      if (league.season) {
+        seasons.add(league.season);
+      }
+    });
+    
+    // Add current year and previous 2 years if not already present
+    const currentYear = new Date().getFullYear();
+    for (let i = 0; i < 3; i++) {
+      seasons.add((currentYear - i).toString());
+    }
+    
+    // Convert to array and sort in descending order (newest first)
+    return Array.from(seasons).sort((a, b) => b.localeCompare(a));
+  }, [leagues]);
+
   const value = {
     leagues,
     rosters,
