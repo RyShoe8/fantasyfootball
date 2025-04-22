@@ -92,7 +92,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* League Info */}
           <div>
             <h2 className="text-lg font-semibold mb-4">League Info</h2>
@@ -118,6 +118,40 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
             </div>
           </div>
 
+          {/* Trade and Playoff Info */}
+          <div>
+            <h2 className="text-lg font-semibold mb-4">Trade & Playoff Info</h2>
+            <div className="bg-gray-50 rounded-lg p-4">
+              <div className="mb-4">
+                <h3 className="text-sm font-medium text-gray-500 mb-2">Trade Deadline</h3>
+                <div className="flex justify-between mb-2">
+                  <span className="text-sm text-gray-600">Week</span>
+                  <span className="text-sm text-gray-900">{dashboardData.tradeDeadline?.week || 'N/A'}</span>
+                </div>
+                <div className="flex justify-between mb-4">
+                  <span className="text-sm text-gray-600">Date</span>
+                  <span className="text-sm text-gray-900">{dashboardData.tradeDeadline?.date ? formatDate(dashboardData.tradeDeadline.date) : 'N/A'}</span>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-sm font-medium text-gray-500 mb-2">Playoff Info</h3>
+                <div className="flex justify-between mb-2">
+                  <span className="text-sm text-gray-600">Teams</span>
+                  <span className="text-sm text-gray-900">{dashboardData.playoffInfo?.teams || 'N/A'}</span>
+                </div>
+                <div className="flex justify-between mb-2">
+                  <span className="text-sm text-gray-600">Start Date</span>
+                  <span className="text-sm text-gray-900">{dashboardData.playoffInfo?.startDate ? formatDate(dashboardData.playoffInfo.startDate) : 'N/A'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-gray-600">Format</span>
+                  <span className="text-sm text-gray-900">{dashboardData.playoffInfo?.format || 'N/A'}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Roster Settings */}
           <div>
             <h2 className="text-lg font-semibold mb-4">Roster Settings</h2>
@@ -127,7 +161,6 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                 <span className="ml-2 text-sm text-gray-900">{dashboardData.rosterBreakdown?.totalStarters || 0}</span>
               </div>
               <div className="space-y-2">
-                {/* Position slots will be mapped here */}
                 {dashboardData.rosterBreakdown?.positions && Object.entries(dashboardData.rosterBreakdown.positions).map(([pos, count]) => (
                   <div key={pos} className="flex justify-between">
                     <span className="text-sm text-gray-600">{getPositionName(pos)}</span>
@@ -147,39 +180,6 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-600">IR Spots</span>
                   <span className="text-sm text-gray-900">{dashboardData.rosterBreakdown?.irSpots || 0}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Trade and Playoff Info */}
-          <div>
-            <h2 className="text-lg font-semibold mb-4">Trade & Playoff Info</h2>
-            <div className="bg-gray-50 rounded-lg p-4 space-y-4">
-              <div>
-                <h3 className="text-sm font-medium text-gray-500 mb-2">Trade Deadline</h3>
-                <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">Week</span>
-                  <span className="text-sm text-gray-900">{dashboardData.tradeDeadline?.week || 'N/A'}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">Date</span>
-                  <span className="text-sm text-gray-900">{dashboardData.tradeDeadline?.date ? formatDate(dashboardData.tradeDeadline.date) : 'N/A'}</span>
-                </div>
-              </div>
-              <div>
-                <h3 className="text-sm font-medium text-gray-500 mb-2">Playoff Info</h3>
-                <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">Teams</span>
-                  <span className="text-sm text-gray-900">{dashboardData.playoffInfo?.teams || 'N/A'}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">Start Date</span>
-                  <span className="text-sm text-gray-900">{dashboardData.playoffInfo?.startDate ? formatDate(dashboardData.playoffInfo.startDate) : 'N/A'}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">Format</span>
-                  <span className="text-sm text-gray-900">{dashboardData.playoffInfo?.format || 'N/A'}</span>
                 </div>
               </div>
             </div>
