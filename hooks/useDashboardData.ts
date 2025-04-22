@@ -41,7 +41,12 @@ export const useDashboardData = (leagueId: string | undefined) => {
 
         // Fetch draft picks if not already loaded
         if (!draftPicks.length) {
-          await DraftApi.getDraftPicks(leagueId);
+          try {
+            await DraftApi.getDraftPicks(leagueId);
+          } catch (err) {
+            console.error('Error fetching draft picks:', err);
+            // Don't throw error for draft picks - they're optional
+          }
         }
 
         // Set a flag to indicate the league has been loaded

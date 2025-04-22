@@ -190,17 +190,13 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
       const fetchedDraftPicks = await DraftApi.getDraftPicks(leagueId);
       debugLog('Fetched draft picks:', fetchedDraftPicks);
       
-      if (Array.isArray(fetchedDraftPicks)) {
-        // Save draft picks to localStorage
-        localStorage.setItem(`sleeperDraftPicks_${leagueId}`, JSON.stringify(fetchedDraftPicks));
-        setDraftPicks(fetchedDraftPicks);
-      } else {
-        debugLog('Invalid draft picks data received:', fetchedDraftPicks);
-        setError(new Error('Invalid draft picks data received'));
-      }
+      // Save draft picks to localStorage (even if empty array)
+      localStorage.setItem(`sleeperDraftPicks_${leagueId}`, JSON.stringify(fetchedDraftPicks));
+      setDraftPicks(fetchedDraftPicks);
     } catch (err) {
       debugLog('Error fetching draft picks:', err);
-      setError(toApiError(err));
+      // Don't set error state for draft picks - they're optional
+      setDraftPicks([]);
     } finally {
       setIsLoading(false);
     }
