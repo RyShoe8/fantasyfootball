@@ -37,7 +37,7 @@ const debugLog = (...args: any[]) => {
   }
 };
 
-interface LeagueContextType {
+export interface LeagueContextType {
   leagues: SleeperLeague[];
   rosters: SleeperRoster[];
   users: SleeperUser[];
@@ -56,6 +56,7 @@ interface LeagueContextType {
   setLeagues: (leagues: SleeperLeague[]) => void;
   setIsLoading: (isLoading: boolean) => void;
   setError: (error: ApiError | null) => void;
+  fetchLeaguesForYear: (year: string) => Promise<SleeperLeague[]>;
 }
 
 const LeagueContext = React.createContext<LeagueContextType | undefined>(undefined);
@@ -286,6 +287,60 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
     }
   }, [currentLeague, fetchRosters, fetchUsers, fetchDraftPicks]);
 
+  const fetchLeaguesForYear = React.useCallback(async (year: string): Promise<SleeperLeague[]> => {
+    if (!user) {
+      return [];
+    }
+
+    try {
+      debugLog('Fetching leagues for year:', year);
+      setIsLoading(true);
+      setError(null);
+
+      const fetchedLeagues = await LeagueApi.getUserLeagues(user.user_id, year);
+      debugLog('Fetched leagues for year:', year, fetchedLeagues);
+
+      // Save leagues to localStorage
+      const existingLeaguesStr = localStorage.getItem('sleeperLeagues');
+      let existingLeagues: SleeperLeague[] = [];
+      if (existingLeaguesStr) {
+        try {
+          existingLeagues = JSON.parse(existingLeaguesStr);
+          if (!Array.isArray(existingLeagues)) {
+            existingLeagues = [];
+          }
+        } catch (err) {
+          debugLog('Error parsing existing leagues:', err);
+          existingLeagues = [];
+        }
+      }
+
+      // Merge with existing leagues, avoiding duplicates
+      const mergedLeagues = [...existingLeagues];
+      for (const league of fetchedLeagues) {
+        const existingIndex = mergedLeagues.findIndex(l => l.league_id === league.league_id);
+        if (existingIndex === -1) {
+          mergedLeagues.push(league);
+        }
+      }
+
+      localStorage.setItem('sleeperLeagues', JSON.stringify(mergedLeagues));
+      
+      // Save each league individually to the database
+      for (const league of fetchedLeagues) {
+        await saveLeagueData(league);
+      }
+
+      return fetchedLeagues;
+    } catch (err) {
+      debugLog('Error fetching leagues for year:', year, err);
+      setError(err instanceof Error ? err : new Error('Failed to fetch leagues'));
+      return [];
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user]);
+
   // Generate year options based on available league seasons
   const yearOptions = React.useMemo(() => {
     if (!leagues || leagues.length === 0) return [];
@@ -326,7 +381,8 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
     setDraftPicks,
     setLeagues,
     setIsLoading,
-    setError
+    setError,
+    fetchLeaguesForYear,
   };
 
   debugLog('LeagueContext state:', {
