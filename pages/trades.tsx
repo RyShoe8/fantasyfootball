@@ -287,7 +287,7 @@ const TradesPage: React.FC = () => {
                 <option value="">Select a team</option>
                 {rosters?.map((roster: SleeperRoster) => (
                   <option key={roster.roster_id} value={roster.roster_id}>
-                    {users?.[roster.owner_id]?.display_name || 'Unknown Team'}
+                    {users?.find((user: SleeperUser) => user.user_id === roster.owner_id)?.display_name || 'Unknown Team'}
                   </option>
                 ))}
               </select>
@@ -357,7 +357,7 @@ const TradesPage: React.FC = () => {
                 <option value="">Select a team</option>
                 {rosters?.map((roster: SleeperRoster) => (
                   <option key={roster.roster_id} value={roster.roster_id}>
-                    {users?.[roster.owner_id]?.display_name || 'Unknown Team'}
+                    {users?.find((user: SleeperUser) => user.user_id === roster.owner_id)?.display_name || 'Unknown Team'}
                   </option>
                 ))}
               </select>
