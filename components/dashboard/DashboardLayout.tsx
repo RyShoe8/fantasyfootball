@@ -23,10 +23,16 @@ const formatStatus = (status: string) => {
 
 interface DashboardLayoutProps {
   league: SleeperLeague;
+  selectedYear: string;
+  availableYears: string[];
+  onYearChange: (year: string) => void;
 }
 
 const DashboardLayout: React.FC<DashboardLayoutProps> = ({ 
-  league
+  league,
+  selectedYear,
+  availableYears,
+  onYearChange
 }: DashboardLayoutProps) => {
   const { positions } = usePlayer();
   
