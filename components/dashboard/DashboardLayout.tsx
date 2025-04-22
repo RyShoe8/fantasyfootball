@@ -5,7 +5,6 @@ import { useLeague } from '../../contexts/league';
 import { useRoster } from '../../contexts/roster';
 import { usePlayer } from '../../contexts/player/PlayerContext';
 import { useDashboardData } from '../../hooks/useDashboardData';
-import Image from 'next/image';
 
 // Helper function to format status
 const formatStatus = (status: string) => {
@@ -99,15 +98,13 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
           <div className="flex items-center space-x-4">
             <div className="w-16 h-16 bg-gray-200 rounded-lg overflow-hidden">
               {league.avatar ? (
-                <Image
+                <img
                   src={`https://sleepercdn.com/avatars/${league.avatar}`}
                   alt={league.name}
-                  width={48}
-                  height={48}
-                  className="rounded-full"
+                  className="w-full h-full object-cover"
                 />
               ) : (
-                <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
+                <div className="w-full h-full bg-gray-200 flex items-center justify-center">
                   <span className="text-gray-500 text-lg">{league.name.charAt(0)}</span>
                 </div>
               )}
@@ -230,7 +227,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                     <div className="flex items-center">
                       <div className="flex-shrink-0 h-10 w-10">
                         {team.teamImage ? (
-                          <Image
+                          <img
                             src={`https://sleepercdn.com/avatars/${team.teamImage}`}
                             alt={team.teamName}
                             width={40}

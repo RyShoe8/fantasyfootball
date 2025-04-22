@@ -334,10 +334,12 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
         }
       }
 
-      // Merge with existing leagues, avoiding duplicates
+      // Merge with existing leagues, avoiding duplicates by league name and year
       const mergedLeagues = [...existingLeagues];
       for (const league of fetchedLeagues) {
-        const existingIndex = mergedLeagues.findIndex(l => l.league_id === league.league_id);
+        const existingIndex = mergedLeagues.findIndex(l => 
+          l.name === league.name && l.season === league.season
+        );
         if (existingIndex === -1) {
           mergedLeagues.push(league);
         }
@@ -352,7 +354,7 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
 
       return fetchedLeagues;
     } catch (err) {
-      debugLog('Error fetching leagues for year:', year, err);
+      debugLog('Error fetching leagues for year:', err);
       setError(err instanceof Error ? err : new Error('Failed to fetch leagues'));
       return [];
     } finally {
@@ -398,7 +400,6 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
   const fetchAvailableYearsForLeague = React.useCallback(async (leagueName: string, currentYear: string) => {
     debugLog('Fetching available years for league:', leagueName);
     const years: string[] = [];
-    let currentLeagueId = currentLeague?.league_id;
     let year = parseInt(currentYear);
     
     // Add current year
@@ -406,19 +407,15 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
     
     // Look for previous years
     let previousYear = year - 1;
-    while (true) {
+    while (previousYear >= 2023) {  // Start from 2023
       try {
         const previousYearLeagues = await fetchLeaguesForYear(previousYear.toString());
         const previousLeague = previousYearLeagues.find(
-          (league: SleeperLeague) => 
-            league.name === leagueName || 
-            league.league_id === currentLeagueId ||
-            league.previous_league_id === currentLeagueId
+          (league: SleeperLeague) => league.name === leagueName
         );
         
         if (previousLeague) {
           years.push(previousYear.toString());
-          currentLeagueId = previousLeague.league_id;
           previousYear--;
         } else {
           break;
@@ -431,19 +428,15 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
     
     // Look for future years
     let nextYear = year + 1;
-    while (true) {
+    while (nextYear <= 2025) {  // Look ahead to 2025
       try {
         const nextYearLeagues = await fetchLeaguesForYear(nextYear.toString());
         const nextLeague = nextYearLeagues.find(
-          (league: SleeperLeague) => 
-            league.name === leagueName || 
-            league.league_id === currentLeagueId ||
-            league.previous_league_id === currentLeagueId
+          (league: SleeperLeague) => league.name === leagueName
         );
         
         if (nextLeague) {
           years.push(nextYear.toString());
-          currentLeagueId = nextLeague.league_id;
           nextYear++;
         } else {
           break;
@@ -455,7 +448,7 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
     }
     
     return years.sort((a, b) => b.localeCompare(a)); // Sort in descending order
-  }, [currentLeague, fetchLeaguesForYear]);
+  }, [fetchLeaguesForYear]);
 
   // Update available years when current league changes
   React.useEffect(() => {
