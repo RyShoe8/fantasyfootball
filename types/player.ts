@@ -11,7 +11,7 @@ export interface PlayerStats {
 export interface PlayerState {
   players: Record<string, SleeperPlayer>;
   playerStats: Record<string, PlayerStats>;
-  loading: boolean;
+  isLoading: boolean;
   error: Error | null;
 }
 
