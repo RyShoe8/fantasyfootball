@@ -175,7 +175,11 @@ const Home: React.FC = () => {
             <LeagueInfo 
               league={currentLeague} 
               selectedYear={currentLeague.season}
-              availableYears={[currentLeague.season]}
+              availableYears={[
+                currentLeague.season,
+                (parseInt(currentLeague.season) - 1).toString(),
+                (parseInt(currentLeague.season) - 2).toString()
+              ]}
               onYearChange={(year) => {
                 // Handle year change if needed
                 console.log('Year changed:', year);

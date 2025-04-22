@@ -62,8 +62,8 @@ export default function LeagueInfo({
 
   // Helper function to get taxi slots
   const getTaxiSlots = (league: SleeperLeague) => {
-    if (!league.roster_positions) return 0;
-    return league.roster_positions.filter((pos: string) => pos === 'TAXI').length;
+    if (!league.settings) return 0;
+    return league.settings.taxi_slots || 0;
   };
 
   // Helper function to get trade deadline info
@@ -77,15 +77,41 @@ export default function LeagueInfo({
     return { week: tradeDeadlineWeek, date: deadlineDate };
   };
 
+  // Helper function to format position name
+  const formatPositionName = (pos: string) => {
+    switch (pos) {
+      case 'SUPER_FLEX':
+        return 'Super Flex';
+      case 'IDP_FLEX':
+        return 'IDP Flex';
+      case 'FLEX':
+        return 'Flex';
+      case 'WR':
+        return 'WR';
+      case 'RB':
+        return 'RB';
+      case 'TE':
+        return 'TE';
+      case 'QB':
+        return 'QB';
+      default:
+        return pos;
+    }
+  };
+
   const { breakdown: rosterBreakdown, totalStarters } = getRosterBreakdown(league);
   const tradeDeadline = getTradeDeadlineInfo(league);
+  const totalTeams = league.total_rosters || league.settings?.num_teams || 0;
 
   if (!league) return null;
 
   return (
     <div className="bg-white shadow rounded-lg p-6">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-bold text-gray-900">{league.name}</h2>
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">{league.name}</h2>
+          <p className="text-sm text-gray-500">{totalTeams} Teams</p>
+        </div>
         <div className="flex gap-4">
           <select
             className="mt-1 block w-32 pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
@@ -107,7 +133,7 @@ export default function LeagueInfo({
             <div className="mt-2 space-y-1">
               {Object.entries(rosterBreakdown || {}).map(([pos, count]) => (
                 <p key={pos} className="text-sm text-gray-900">
-                  <span className="font-medium">{pos === 'SUPER_FLEX' ? 'Super Flex' : pos}:</span> {count}
+                  <span className="font-medium">{formatPositionName(pos)}:</span> {count}
                 </p>
               ))}
             </div>
