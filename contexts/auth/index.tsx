@@ -107,8 +107,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     error,
     login,
     logout,
-    isAuthenticated: !!user
-  }), [user, isLoading, error, login, logout]);
+    isAuthenticated: !!user,
+    isHydrated
+  }), [user, isLoading, error, login, logout, isHydrated]);
 
   debugLog('AuthContext state:', {
     isAuthenticated: !!user,
