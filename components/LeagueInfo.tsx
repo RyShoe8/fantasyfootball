@@ -31,8 +31,14 @@ const LeagueInfo: React.FC<LeagueInfoProps> = ({ league }: LeagueInfoProps) => {
     const fetchAvailableYears = async () => {
       setIsLoading(true);
       try {
-        const years = await fetchLeaguesForYear(league.season);
-        setAvailableYears(years);
+        const leagues = await fetchLeaguesForYear(league.season);
+        const years = new Set<string>();
+        leagues.forEach((league: SleeperLeague) => {
+          if (league.season) {
+            years.add(league.season);
+          }
+        });
+        setAvailableYears(Array.from(years).sort((a, b) => b.localeCompare(a)));
       } catch (error) {
         console.error('Error fetching available years:', error);
       } finally {
