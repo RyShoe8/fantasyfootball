@@ -2,7 +2,7 @@ import React from 'react';
 import { useLeague } from '../contexts/league';
 import { DashboardData, TeamStanding, PlayerStats } from '../types/dashboard';
 
-export const useDashboardData = (leagueId: string) => {
+export const useDashboardData = (leagueId: string | undefined) => {
   const [data, setData] = React.useState<DashboardData | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
@@ -10,6 +10,12 @@ export const useDashboardData = (leagueId: string) => {
 
   React.useEffect(() => {
     const fetchDashboardData = async () => {
+      if (!leagueId) {
+        setError('No league ID provided');
+        setIsLoading(false);
+        return;
+      }
+
       try {
         setIsLoading(true);
         setError(null);
@@ -40,9 +46,7 @@ export const useDashboardData = (leagueId: string) => {
       }
     };
 
-    if (leagueId) {
-      fetchDashboardData();
-    }
+    fetchDashboardData();
   }, [leagueId, fetchLeagueData]);
 
   return { data, isLoading, error };

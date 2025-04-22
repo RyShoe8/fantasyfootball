@@ -12,7 +12,19 @@ interface DashboardLayoutProps {
 
 const DashboardLayout: React.FC<DashboardLayoutProps> = ({ league }: DashboardLayoutProps) => {
   const { positions } = usePlayer();
-  const { dashboardData, isLoading, error } = useDashboardData(league);
+  
+  if (!league.league_id) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+        <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md text-center">
+          <h2 className="text-xl font-bold text-gray-900 mb-4">Invalid League</h2>
+          <p className="text-gray-600">No league ID found. Please select a valid league.</p>
+        </div>
+      </div>
+    );
+  }
+
+  const { data: dashboardData, isLoading, error } = useDashboardData(league.league_id);
   
   // Helper functions to format data
   const formatStreak = (streak: string) => {

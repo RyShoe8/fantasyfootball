@@ -11,10 +11,8 @@
     "strict": true,
     "forceConsistentCasingInFileNames": true,
     "noEmit": true,
-    "incremental": true,
-    "module": "esnext",
     "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
+    "module": "esnext",
     "moduleResolution": "node",
     "resolveJsonModule": true,
     "isolatedModules": true,
@@ -22,12 +20,7 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./*"]
-    },
-    "typeRoots": [
-      "./node_modules/@types",
-      "./types"
-    ],
-    "jsxImportSource": "react"
+    }
   },
   "include": [
     "next-env.d.ts",
