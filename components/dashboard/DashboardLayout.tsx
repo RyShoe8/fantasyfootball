@@ -47,6 +47,13 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     return positions[pos] || pos;
   };
 
+  // Safely get league settings with fallbacks
+  const getLeagueSetting = (key: string, fallback: any = 'N/A') => {
+    if (!league?.settings) return fallback;
+    const settings = league.settings as Record<string, any>;
+    return settings?.[key] ?? fallback;
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
@@ -100,7 +107,9 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
               </div>
               <div className="mb-4">
                 <span className="text-sm font-medium text-gray-500">Total Teams:</span>
-                <span className="ml-2 text-sm text-gray-900">{league.total_rosters || league.settings.num_teams || 'N/A'}</span>
+                <span className="ml-2 text-sm text-gray-900">
+                  {getLeagueSetting('num_teams', league.total_rosters || 'N/A')}
+                </span>
               </div>
               <div className="mb-4">
                 <span className="text-sm font-medium text-gray-500">Scoring System:</span>
