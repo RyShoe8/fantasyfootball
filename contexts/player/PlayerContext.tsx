@@ -29,10 +29,12 @@ const debugLog = (...args: any[]) => {
 interface PlayerContextType {
   players: Record<string, SleeperPlayer>;
   playerStats: Record<string, PlayerStats>;
+  positions: Record<string, string>;
   isLoading: boolean;
   error: string | null;
   setPlayers: (players: Record<string, SleeperPlayer>) => void;
   setPlayerStats: (stats: Record<string, PlayerStats>) => void;
+  setPositions: (positions: Record<string, string>) => void;
   setIsLoading: (isLoading: boolean) => void;
   setError: (error: string | null) => void;
   fetchPlayers: () => Promise<void>;
@@ -46,6 +48,15 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
 
   const [players, setPlayers] = React.useState<Record<string, SleeperPlayer>>({});
   const [playerStats, setPlayerStats] = React.useState<Record<string, PlayerStats>>({});
+  const [positions, setPositions] = React.useState<Record<string, string>>({
+    QB: 'Quarterback',
+    RB: 'Running Back',
+    WR: 'Wide Receiver',
+    TE: 'Tight End',
+    SUPER_FLEX: 'Super Flex',
+    FLEX: 'Flex',
+    IDP_FLEX: 'IDP Flex'
+  });
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -150,10 +161,12 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const value = {
     players,
     playerStats,
+    positions,
     isLoading,
     error,
     setPlayers,
     setPlayerStats,
+    setPositions,
     setIsLoading,
     setError,
     fetchPlayers,
