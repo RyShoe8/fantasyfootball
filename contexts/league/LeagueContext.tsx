@@ -65,11 +65,28 @@ const LeagueContext = React.createContext<LeagueContextType | undefined>(undefin
 export function LeagueProvider({ children }: { children: React.ReactNode }) {
   debugLog('Initializing LeagueProvider');
 
+  // Memoize state setters to prevent unnecessary re-renders
+  const setLeagues = React.useCallback((leagues: SleeperLeague[]) => {
+    setLeaguesState(leagues);
+  }, []);
+
+  const setRosters = React.useCallback((rosters: SleeperRoster[]) => {
+    setRostersState(rosters);
+  }, []);
+
+  const setUsers = React.useCallback((users: SleeperUser[]) => {
+    setUsersState(users);
+  }, []);
+
+  const setDraftPicks = React.useCallback((draftPicks: SleeperDraftPick[]) => {
+    setDraftPicksState(draftPicks);
+  }, []);
+
   // Initialize state with default values
-  const [leagues, setLeagues] = React.useState<SleeperLeague[]>([]);
-  const [rosters, setRosters] = React.useState<SleeperRoster[]>([]);
-  const [users, setUsers] = React.useState<SleeperUser[]>([]);
-  const [draftPicks, setDraftPicks] = React.useState<SleeperDraftPick[]>([]);
+  const [leagues, setLeaguesState] = React.useState<SleeperLeague[]>([]);
+  const [rosters, setRostersState] = React.useState<SleeperRoster[]>([]);
+  const [users, setUsersState] = React.useState<SleeperUser[]>([]);
+  const [draftPicks, setDraftPicksState] = React.useState<SleeperDraftPick[]>([]);
   const [currentLeague, setCurrentLeagueState] = React.useState<SleeperLeague | null>(null);
   const [selectedWeek, setSelectedWeekState] = React.useState<number>(1);
   const [selectedYear, setSelectedYearState] = React.useState<string>(new Date().getFullYear().toString());
@@ -490,7 +507,8 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
     updateAvailableYears();
   }, [leagues, currentLeague, selectedYear, fetchAvailableYearsForLeague]);
 
-  const value = {
+  // Memoize the context value to prevent unnecessary re-renders
+  const value = React.useMemo(() => ({
     leagues,
     rosters,
     users,
@@ -511,7 +529,26 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
     setIsLoading,
     setError,
     fetchLeaguesForYear,
-  };
+  }), [
+    leagues,
+    rosters,
+    users,
+    draftPicks,
+    currentLeague,
+    selectedWeek,
+    selectedYear,
+    availableYears,
+    isLoading,
+    error,
+    setCurrentLeague,
+    setSelectedWeek,
+    setSelectedYear,
+    setRosters,
+    setUsers,
+    setDraftPicks,
+    setLeagues,
+    fetchLeaguesForYear
+  ]);
 
   debugLog('LeagueContext state:', {
     currentLeague: currentLeague?.league_id,

@@ -5,7 +5,11 @@ import Login from './auth/Login';
 import Spinner from './Spinner';
 import Link from 'next/link';
 import { SleeperLeague } from '../types/sleeper';
-import { XMarkIcon as XIcon, Bars3Icon as MenuIcon } from '@heroicons/react/24/outline';
+import type { XMarkIcon as XIconType, Bars3Icon as MenuIconType } from '@heroicons/react/24/outline';
+import dynamic from 'next/dynamic';
+
+const XIcon = dynamic<typeof XIconType>(() => import('@heroicons/react/24/outline').then(mod => mod.XMarkIcon));
+const MenuIcon = dynamic<typeof MenuIconType>(() => import('@heroicons/react/24/outline').then(mod => mod.Bars3Icon));
 
 // Debug flag - set to true to enable detailed logging
 const DEBUG = true;
@@ -22,7 +26,7 @@ interface LayoutProps {
   children: React.ReactNode;
 }
 
-const Layout = ({ children }: LayoutProps) => {
+const Layout = React.memo(({ children }: LayoutProps) => {
   debugLog('Layout component rendering');
   
   const { user, isLoading: authLoading, error: authError, logout } = useAuth();
@@ -49,7 +53,7 @@ const Layout = ({ children }: LayoutProps) => {
 
   const { leagues, currentLeague, setCurrentLeague, selectedYear, setSelectedYear, availableYears } = leagueContext || {};
 
-  // Sort leagues alphabetically and remove duplicates
+  // Memoize sorted leagues to prevent unnecessary recalculations
   const sortedLeagues = React.useMemo(() => {
     if (!leagues) return [];
     const uniqueLeagues = new Map();
@@ -63,38 +67,46 @@ const Layout = ({ children }: LayoutProps) => {
     );
   }, [leagues]);
 
-  // Handle league change
-  const handleLeagueChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+  // Memoize event handlers
+  const handleLeagueChange = React.useCallback((event: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedLeague = leagues?.find((league: SleeperLeague) => league.league_id === event.target.value);
     if (selectedLeague && setCurrentLeague) {
       setCurrentLeague(selectedLeague);
     }
-  };
+  }, [leagues, setCurrentLeague]);
 
-  // Handle year change
-  const handleYearChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleYearChange = React.useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
     const year = e.target.value;
     if (setSelectedYear) {
       setSelectedYear(year);
     }
-  };
+  }, [setSelectedYear]);
+
+  const handleMobileMenuToggle = React.useCallback(() => {
+    setIsMobileMenuOpen((prev: boolean) => !prev);
+  }, []);
 
   // Handle hydration
   React.useEffect(() => {
-    debugLog('Setting hydration state');
     setIsHydrated(true);
   }, []);
 
-  // Handle mobile detection
+  // Handle mobile detection with debounce
   React.useEffect(() => {
+    let timeoutId: ReturnType<typeof setTimeout>;
+    
     const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        setIsMobile(window.innerWidth < 768);
+      }, 100);
     };
     
     checkMobile();
     window.addEventListener('resize', checkMobile);
     
     return () => {
+      clearTimeout(timeoutId);
       window.removeEventListener('resize', checkMobile);
     };
   }, []);
@@ -258,7 +270,7 @@ const Layout = ({ children }: LayoutProps) => {
             {/* Mobile menu button */}
             <div className="flex items-center sm:hidden">
               <button
-                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                onClick={handleMobileMenuToggle}
                 className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"
               >
                 <span className="sr-only">Open main menu</span>
@@ -358,6 +370,8 @@ const Layout = ({ children }: LayoutProps) => {
       </main>
     </div>
   );
-};
+});
+
+Layout.displayName = 'Layout';
 
 export default Layout; 
