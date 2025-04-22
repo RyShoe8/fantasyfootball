@@ -6,7 +6,7 @@ export const useDashboardData = (leagueId: string | undefined) => {
   const [data, setData] = React.useState<DashboardData | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
-  const { refreshLeague } = useLeague();
+  const { setCurrentLeague } = useLeague();
 
   React.useEffect(() => {
     const fetchDashboardData = async () => {
@@ -21,7 +21,7 @@ export const useDashboardData = (leagueId: string | undefined) => {
         setError(null);
 
         // Fetch league data
-        await refreshLeague(leagueId);
+        await setCurrentLeague({ league_id: leagueId } as any);
 
         // TODO: Implement actual API calls to fetch:
         // - Standings
@@ -44,7 +44,7 @@ export const useDashboardData = (leagueId: string | undefined) => {
     };
 
     fetchDashboardData();
-  }, [leagueId, refreshLeague]);
+  }, [leagueId, setCurrentLeague]);
 
   return { data, isLoading, error };
 }; 
