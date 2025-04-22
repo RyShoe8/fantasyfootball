@@ -126,15 +126,15 @@ export const getDraftPicks = async (leagueId: string, season: string): Promise<S
 
 export const saveDraftPick = async (draftPick: SleeperDraftPick): Promise<void> => {
   debugLog('Saving draft pick:', draftPick);
-  const leagueId = draftPick.league_id;
   const season = draftPick.season;
-  const key = `sleeperDraftPicks_${leagueId}_${season}`;
+  const rosterId = draftPick.roster_id;
+  const key = `sleeperDraftPicks_${rosterId}_${season}`;
   
   const draftPicks = getFromStorage<SleeperDraftPick[]>(key) || [];
   const existingIndex = draftPicks.findIndex(d => 
-    d.draft_id === draftPick.draft_id && 
     d.round === draftPick.round && 
-    d.pick_no === draftPick.pick_no
+    d.roster_id === draftPick.roster_id &&
+    d.season === draftPick.season
   );
   
   if (existingIndex >= 0) {
