@@ -38,11 +38,22 @@ const LeagueStandings: React.FC = () => {
   const standings = React.useMemo(() => {
     if (!currentLeague || !rosters || !users) return [];
 
+    console.log('LeagueStandings - Users:', users);
+    console.log('LeagueStandings - Rosters:', rosters);
+
     return rosters
       .map((roster: SleeperRoster) => {
         const owner = users.find((user: SleeperUser) => user.user_id === roster.owner_id);
+        console.log('LeagueStandings - Owner for roster:', roster.roster_id, owner);
+        console.log('LeagueStandings - Owner metadata:', owner?.metadata);
+        console.log('LeagueStandings - Roster metadata:', roster.metadata);
+        
         const teamName = owner?.metadata?.team_name || formatTeamName(roster.metadata?.team_name, owner?.display_name);
         const ownerName = formatOwnerName(owner?.display_name || 'Unknown Owner');
+        
+        console.log('LeagueStandings - Final team name:', teamName);
+        console.log('LeagueStandings - Final owner name:', ownerName);
+        console.log('LeagueStandings - Avatar:', owner?.avatar);
         
         return {
           teamId: roster.roster_id,

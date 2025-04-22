@@ -53,6 +53,8 @@ export class LeagueApi {
     try {
       const response = await axios.get(`${SLEEPER_API_BASE}/league/${leagueId}/users`);
       debugLog('getLeagueUsers:success', 'user count:', response.data.length);
+      debugLog('getLeagueUsers:data', 'First user:', response.data[0]);
+      debugLog('getLeagueUsers:data', 'All users:', response.data);
       return response.data;
     } catch (error) {
       const apiError = toApiError(error);
