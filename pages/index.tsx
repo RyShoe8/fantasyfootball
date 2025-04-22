@@ -82,7 +82,7 @@ const formatApiResponse = (data: any, type: string) => {
 const Home: React.FC = () => {
   const router = useRouter();
   const { user, login, isLoading, error, isHydrated } = useAuth();
-  const { currentLeague, leagues, setCurrentLeague } = useLeague();
+  const { currentLeague, leagues, setCurrentLeague, selectedYear, availableYears, setSelectedYear } = useLeague();
   const [username, setUsername] = React.useState('');
   const [userLeagues, setUserLeagues] = React.useState<SleeperLeague[]>([]);
 
@@ -176,7 +176,10 @@ const Home: React.FC = () => {
           </div>
         ) : (
           <DashboardLayout 
-            league={currentLeague} 
+            league={currentLeague}
+            selectedYear={selectedYear}
+            availableYears={availableYears}
+            onYearChange={setSelectedYear}
           />
         )}
       </div>
