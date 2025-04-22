@@ -15,4 +15,5 @@ export interface AuthContextType extends AuthState {
   login: (username: string) => Promise<void>;
   logout: () => void;
   isAuthenticated: boolean;
+  isHydrated: boolean;
 } 
