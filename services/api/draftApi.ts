@@ -29,15 +29,25 @@ export class DraftApi {
    * @returns Promise<SleeperDraftPick[]> - Array of draft picks
    */
   static async getDraftPicks(leagueId: string): Promise<SleeperDraftPick[]> {
+    if (!leagueId) {
+      debugLog('getDraftPicks:error', 'No league ID provided');
+      throw new Error(ERROR_MESSAGES.INVALID_LEAGUE_ID);
+    }
+
     debugLog('getDraftPicks:start', 'leagueId:', leagueId);
     
     try {
       const response = await axios.get(`${SLEEPER_API_BASE}/league/${leagueId}/draft_picks`);
+      
+      if (!response.data || !Array.isArray(response.data)) {
+        debugLog('getDraftPicks:error', 'Invalid response data:', response.data);
+        throw new Error(ERROR_MESSAGES.INVALID_RESPONSE);
+      }
+
       debugLog('getDraftPicks:success', 'pick count:', response.data.length);
       return response.data;
     } catch (error) {
-      const apiError = toApiError(error);
-      debugLog('getDraftPicks:error', 'error:', apiError);
+      debugLog('getDraftPicks:error', 'error:', error);
       throw new Error(ERROR_MESSAGES.NETWORK_ERROR);
     }
   }

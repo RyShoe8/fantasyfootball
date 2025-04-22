@@ -22,35 +22,45 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUserState] = React.useState<SleeperUser | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<Error | null>(null);
+  const [isHydrated, setIsHydrated] = React.useState(false);
 
   // Load user from localStorage on mount
   React.useEffect(() => {
+    debugLog('Loading user from localStorage');
     const storedUser = localStorage.getItem('sleeperUser');
     if (storedUser) {
       try {
-        setUserState(JSON.parse(storedUser));
+        const parsedUser = JSON.parse(storedUser);
+        debugLog('Found stored user:', parsedUser);
+        setUserState(parsedUser);
       } catch (err) {
         console.error('Error parsing stored user:', err);
         localStorage.removeItem('sleeperUser');
       }
     }
     setIsLoading(false);
+    setIsHydrated(true);
   }, []);
 
   // Save user to localStorage when it changes
   React.useEffect(() => {
-    if (user) {
-      localStorage.setItem('sleeperUser', JSON.stringify(user));
-    } else {
-      localStorage.removeItem('sleeperUser');
+    if (isHydrated) {
+      debugLog('Saving user to localStorage:', user);
+      if (user) {
+        localStorage.setItem('sleeperUser', JSON.stringify(user));
+      } else {
+        localStorage.removeItem('sleeperUser');
+      }
     }
-  }, [user]);
+  }, [user, isHydrated]);
 
   const setUser = (newUser: SleeperUser | null) => {
+    debugLog('Setting user:', newUser);
     setUserState(newUser);
   };
 
   const logout = () => {
+    debugLog('Logging out user');
     setUserState(null);
     localStorage.removeItem('sleeperUser');
   };
@@ -68,9 +78,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (dbUser) {
         debugLog('User found in database:', dbUser);
         setUser(dbUser);
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('sleeperUser', JSON.stringify(dbUser));
-        }
         return;
       }
 
@@ -81,11 +88,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Save to database
       await saveUserData(userData);
       
-      // Update state and localStorage
+      // Update state
       setUser(userData);
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('sleeperUser', JSON.stringify(userData));
-      }
       
       debugLog('Login successful');
     } catch (err) {
@@ -109,7 +113,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   debugLog('AuthContext state:', {
     isAuthenticated: !!user,
     isLoading,
-    hasError: !!error
+    hasError: !!error,
+    isHydrated
   });
 
   return (

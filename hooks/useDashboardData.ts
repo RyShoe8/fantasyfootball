@@ -1,12 +1,14 @@
 import React from 'react';
 import { useLeague } from '../contexts/league';
 import { DashboardData, TeamStanding, PlayerStats } from '../types/dashboard';
+import { LeagueApi, RosterApi, DraftApi } from '../services/api';
+import { SleeperRoster, SleeperUser } from '../types/sleeper';
 
 export const useDashboardData = (leagueId: string | undefined) => {
   const [data, setData] = React.useState<DashboardData | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
-  const { setCurrentLeague, currentLeague } = useLeague();
+  const { setCurrentLeague, currentLeague, rosters, users, draftPicks } = useLeague();
   const leagueLoadedRef = React.useRef(false);
 
   React.useEffect(() => {
@@ -21,118 +23,66 @@ export const useDashboardData = (leagueId: string | undefined) => {
         setIsLoading(true);
         setError(null);
 
-        // Fetch league data
-        await setCurrentLeague({ league_id: leagueId } as any);
-        
+        // Fetch league data if not already loaded
+        if (!currentLeague || currentLeague.league_id !== leagueId) {
+          const leagueData = await LeagueApi.getLeague(leagueId);
+          await setCurrentLeague(leagueData);
+        }
+
+        // Fetch rosters if not already loaded
+        if (!rosters.length) {
+          await RosterApi.getRosters(leagueId);
+        }
+
+        // Fetch users if not already loaded
+        if (!users.length) {
+          await LeagueApi.getLeagueUsers(leagueId);
+        }
+
+        // Fetch draft picks if not already loaded
+        if (!draftPicks.length) {
+          await DraftApi.getDraftPicks(leagueId);
+        }
+
         // Set a flag to indicate the league has been loaded
         leagueLoadedRef.current = true;
 
-        // Mock data for testing
-        const mockData: DashboardData = {
-          standings: [
-            {
-              teamId: '1',
-              teamName: 'Team 1',
-              wins: 8,
-              losses: 5,
-              pointsFor: 1500,
-              pointsAgainst: 1450,
-              streak: 'W3',
-              rank: 1
-            },
-            {
-              teamId: '2',
-              teamName: 'Team 2',
-              wins: 7,
-              losses: 6,
-              pointsFor: 1480,
-              pointsAgainst: 1470,
-              streak: 'L1',
-              rank: 2
-            }
-          ],
-          topPlayers: [
-            {
-              playerId: '1',
-              playerName: 'Player 1',
-              position: 'QB',
-              points: 300,
-              projectedPoints: 25,
-              name: 'Player 1',
-              team: 'Team 1',
-              rank: 1
-            },
-            {
-              playerId: '2',
-              playerName: 'Player 2',
-              position: 'RB',
-              points: 280,
-              projectedPoints: 22,
-              name: 'Player 2',
-              team: 'Team 2',
-              rank: 2
-            }
-          ],
-          recentTransactions: [
-            {
-              type: 'ADD',
-              playerName: 'New Player',
-              teamName: 'Team 1',
-              timestamp: new Date()
-            }
-          ],
-          leagueInfo: currentLeague || { league_id: leagueId } as any,
-          seasonNumber: 2023,
+        // Create dashboard data from real data
+        const dashboardData: DashboardData = {
+          standings: rosters.map((roster: SleeperRoster, index: number) => ({
+            teamId: roster.roster_id,
+            teamName: users.find((u: SleeperUser) => u.user_id === roster.owner_id)?.display_name || `Team ${index + 1}`,
+            wins: roster.settings.wins,
+            losses: roster.settings.losses,
+            pointsFor: roster.settings.fpts,
+            pointsAgainst: roster.settings.fpts_against,
+            streak: calculateStreak(roster),
+            rank: index + 1
+          })),
+          topPlayers: [], // Will be populated by player context
+          recentTransactions: [], // Will be populated by transaction context
+          leagueInfo: currentLeague,
+          seasonNumber: parseInt(currentLeague?.season || '2023'),
           rosterBreakdown: {
-            totalStarters: 9,
-            positions: {
-              QB: 1,
-              RB: 2,
-              WR: 3,
-              TE: 1,
-              FLEX: 1,
-              DEF: 1
-            },
-            benchSpots: 7,
-            taxiSpots: 3,
-            irSpots: 2
+            totalStarters: currentLeague?.roster_positions.filter((pos: string) => !pos.includes('BN')).length || 0,
+            positions: calculatePositionBreakdown(currentLeague?.roster_positions || []),
+            benchSpots: currentLeague?.roster_positions.filter((pos: string) => pos.includes('BN')).length || 0,
+            taxiSpots: currentLeague?.settings.taxi_slots || 0,
+            irSpots: currentLeague?.roster_positions.filter((pos: string) => pos.includes('IR')).length || 0
           },
           tradeDeadline: {
-            week: 13,
-            date: new Date('2023-12-01')
+            week: currentLeague?.settings.trade_deadline || 0,
+            date: new Date() // Will be calculated based on week
           },
           playoffInfo: {
-            teams: 6,
-            startDate: new Date('2023-12-12'),
-            format: 'Single Elimination'
+            teams: currentLeague?.settings.playoff_teams || 0,
+            startDate: new Date(), // Will be calculated based on week
+            format: currentLeague?.settings.playoff_type === 1 ? 'Single Elimination' : 'Double Elimination'
           },
-          starters: [
-            {
-              playerId: '1',
-              playerName: 'QB Starter',
-              position: 'QB',
-              points: 25,
-              projectedPoints: 22,
-              playerImage: undefined,
-              name: 'QB Starter',
-              team: 'Team 1',
-              rank: 1
-            },
-            {
-              playerId: '2',
-              playerName: 'RB Starter',
-              position: 'RB',
-              points: 18,
-              projectedPoints: 15,
-              playerImage: undefined,
-              name: 'RB Starter',
-              team: 'Team 2',
-              rank: 2
-            }
-          ]
+          starters: [] // Will be populated by roster context
         };
 
-        setData(mockData);
+        setData(dashboardData);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to fetch dashboard data');
       } finally {
@@ -141,7 +91,24 @@ export const useDashboardData = (leagueId: string | undefined) => {
     };
 
     fetchDashboardData();
-  }, [leagueId, setCurrentLeague]);
+  }, [leagueId, setCurrentLeague, currentLeague, rosters, users, draftPicks]);
 
   return { data, isLoading, error };
+};
+
+// Helper function to calculate streak
+const calculateStreak = (roster: SleeperRoster): string => {
+  // Implementation will depend on your data structure
+  return 'W1';
+};
+
+// Helper function to calculate position breakdown
+const calculatePositionBreakdown = (positions: string[]): Record<string, number> => {
+  const breakdown: Record<string, number> = {};
+  positions.forEach((pos: string) => {
+    if (!pos.includes('BN') && !pos.includes('IR')) {
+      breakdown[pos] = (breakdown[pos] || 0) + 1;
+    }
+  });
+  return breakdown;
 }; 

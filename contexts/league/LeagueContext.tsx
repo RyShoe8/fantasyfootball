@@ -159,6 +159,11 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const fetchDraftPicks = React.useCallback(async (leagueId: string) => {
+    if (!leagueId) {
+      debugLog('No league ID provided for draft picks fetch');
+      return;
+    }
+
     try {
       debugLog('Fetching draft picks for league:', leagueId);
       setIsLoading(true);
@@ -185,10 +190,14 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
       const fetchedDraftPicks = await DraftApi.getDraftPicks(leagueId);
       debugLog('Fetched draft picks:', fetchedDraftPicks);
       
-      // Save draft picks to localStorage
-      localStorage.setItem(`sleeperDraftPicks_${leagueId}`, JSON.stringify(fetchedDraftPicks));
-      
-      setDraftPicks(fetchedDraftPicks);
+      if (Array.isArray(fetchedDraftPicks)) {
+        // Save draft picks to localStorage
+        localStorage.setItem(`sleeperDraftPicks_${leagueId}`, JSON.stringify(fetchedDraftPicks));
+        setDraftPicks(fetchedDraftPicks);
+      } else {
+        debugLog('Invalid draft picks data received:', fetchedDraftPicks);
+        setError(new Error('Invalid draft picks data received'));
+      }
     } catch (err) {
       debugLog('Error fetching draft picks:', err);
       setError(toApiError(err));
@@ -266,6 +275,7 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
   // Fetch draft picks when current league changes
   React.useEffect(() => {
     if (!currentLeague?.league_id) {
+      debugLog('No current league selected, skipping draft picks fetch');
       return;
     }
     fetchDraftPicks(currentLeague.league_id);

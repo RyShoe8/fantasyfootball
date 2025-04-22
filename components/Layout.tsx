@@ -90,17 +90,21 @@ const Layout = ({ children }: LayoutProps) => {
     }
   };
 
-  // Handle hydration and mobile detection
+  // Handle hydration
   React.useEffect(() => {
-    debugLog('Setting up hydration and mobile detection');
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 640);
-    };
-
+    debugLog('Setting hydration state');
     setIsHydrated(true);
+  }, []);
+
+  // Handle mobile detection
+  React.useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
     checkMobile();
     window.addEventListener('resize', checkMobile);
-
+    
     return () => {
       window.removeEventListener('resize', checkMobile);
     };

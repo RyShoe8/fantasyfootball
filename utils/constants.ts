@@ -79,10 +79,12 @@ export const DEFAULT_FILTERS = {
 
 // Error Messages
 export const ERROR_MESSAGES = {
-  USER_NOT_FOUND: 'User not found. Please check your username and try again.',
-  NETWORK_ERROR: 'Network error. Please check your internet connection and try again.',
-  LEAGUE_NOT_FOUND: 'League not found. Please check the league ID and try again.',
-  ROSTER_NOT_FOUND: 'Roster not found. Please check the roster ID and try again.',
-  INVALID_WEEK: 'Invalid week number. Please select a week between 1 and 18.',
-  INVALID_SEASON: 'Invalid season. Please select a valid season year.'
+  USER_NOT_FOUND: 'User not found',
+  NETWORK_ERROR: 'Network error occurred',
+  LEAGUE_NOT_FOUND: 'League not found',
+  ROSTER_NOT_FOUND: 'Roster not found',
+  INVALID_WEEK: 'Invalid week number',
+  INVALID_SEASON: 'Invalid season',
+  INVALID_LEAGUE_ID: 'Invalid league ID',
+  INVALID_RESPONSE: 'Invalid response from server'
 }; 
