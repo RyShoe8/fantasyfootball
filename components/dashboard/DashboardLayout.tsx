@@ -80,16 +80,35 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
           <div>
             <h1 className="text-2xl font-bold text-gray-900">{league.name}</h1>
             <div className="flex items-center space-x-2 text-gray-600">
-              <span>Season {league.season}</span>
-              <span>•</span>
-              <span>{dashboardData.seasonNumber || ''}th Season</span>
-              <span>•</span>
               <span className="capitalize">{league.status}</span>
             </div>
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* League Info */}
+          <div>
+            <h2 className="text-lg font-semibold mb-4">League Info</h2>
+            <div className="bg-gray-50 rounded-lg p-4">
+              <div className="mb-4">
+                <span className="text-sm font-medium text-gray-500">Season:</span>
+                <span className="ml-2 text-sm text-gray-900">{league.season}</span>
+              </div>
+              <div className="mb-4">
+                <span className="text-sm font-medium text-gray-500">Seasons:</span>
+                <span className="ml-2 text-sm text-gray-900">{dashboardData.seasonNumber || '1'}th Season</span>
+              </div>
+              <div className="mb-4">
+                <span className="text-sm font-medium text-gray-500">Total Teams:</span>
+                <span className="ml-2 text-sm text-gray-900">{league.total_rosters || league.settings.num_teams || 'N/A'}</span>
+              </div>
+              <div className="mb-4">
+                <span className="text-sm font-medium text-gray-500">Scoring System:</span>
+                <span className="ml-2 text-sm text-gray-900">PPR</span>
+              </div>
+            </div>
+          </div>
+
           {/* Roster Settings */}
           <div>
             <h2 className="text-lg font-semibold mb-4">Roster Settings</h2>
