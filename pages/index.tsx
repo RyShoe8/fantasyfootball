@@ -18,10 +18,7 @@ import React from 'react';
 import { useRouter } from 'next/router';
 import { useAuth } from '../contexts/auth';
 import { useLeague } from '../contexts/league';
-import LeagueInfo from '../components/LeagueInfo';
-import TeamOverview from '../components/TeamOverview';
-import LeagueStandings from '../components/LeagueStandings';
-import DebugSection from '../components/DebugSection';
+import DashboardLayout from '../components/dashboard/DashboardLayout';
 import { SleeperLeague } from '../types/sleeper';
 import Link from 'next/link';
 import { useRoster } from '../contexts/roster';
@@ -89,6 +86,8 @@ const Home: React.FC = () => {
   const [username, setUsername] = React.useState('');
   const [userLeagues, setUserLeagues] = React.useState<SleeperLeague[]>([]);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [selectedYear, setSelectedYear] = React.useState('2023');
+  const [availableYears, setAvailableYears] = React.useState<string[]>(['2023']);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -106,6 +105,10 @@ const Home: React.FC = () => {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleYearChange = (year: string) => {
+    setSelectedYear(year);
   };
 
   if (isLoading) {
@@ -171,24 +174,12 @@ const Home: React.FC = () => {
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
           </div>
         ) : (
-          <>
-            <LeagueInfo 
-              league={currentLeague} 
-              selectedYear={currentLeague.season}
-              availableYears={[
-                currentLeague.season,
-                (parseInt(currentLeague.season) - 1).toString(),
-                (parseInt(currentLeague.season) - 2).toString()
-              ]}
-              onYearChange={(year) => {
-                // Handle year change if needed
-                console.log('Year changed:', year);
-              }}
-            />
-            <TeamOverview />
-            <LeagueStandings />
-            <DebugSection />
-          </>
+          <DashboardLayout 
+            league={currentLeague} 
+            selectedYear={selectedYear}
+            availableYears={availableYears}
+            onYearChange={handleYearChange}
+          />
         )}
       </div>
     </div>
