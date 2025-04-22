@@ -74,7 +74,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ league }: DashboardLa
             <div className="flex items-center space-x-2 text-gray-600">
               <span>Season {league.season}</span>
               <span>•</span>
-              <span>{dashboardData.seasonNumber}th Season</span>
+              <span>{dashboardData.seasonNumber || ''}th Season</span>
               <span>•</span>
               <span className="capitalize">{league.status}</span>
             </div>
@@ -88,11 +88,11 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ league }: DashboardLa
             <div className="bg-gray-50 rounded-lg p-4">
               <div className="mb-4">
                 <span className="text-sm font-medium text-gray-500">Total Starters:</span>
-                <span className="ml-2 text-sm text-gray-900">{dashboardData.rosterBreakdown.totalStarters}</span>
+                <span className="ml-2 text-sm text-gray-900">{dashboardData.rosterBreakdown?.totalStarters || 0}</span>
               </div>
               <div className="space-y-2">
                 {/* Position slots will be mapped here */}
-                {Object.entries(dashboardData.rosterBreakdown.positions).map(([pos, count]) => (
+                {dashboardData.rosterBreakdown?.positions && Object.entries(dashboardData.rosterBreakdown.positions).map(([pos, count]) => (
                   <div key={pos} className="flex justify-between">
                     <span className="text-sm text-gray-600">{getPositionName(pos)}</span>
                     <span className="text-sm text-gray-900">{count}</span>
@@ -102,15 +102,15 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ league }: DashboardLa
               <div className="mt-4 space-y-2">
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-600">Bench Spots</span>
-                  <span className="text-sm text-gray-900">{dashboardData.rosterBreakdown.benchSpots}</span>
+                  <span className="text-sm text-gray-900">{dashboardData.rosterBreakdown?.benchSpots || 0}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-600">Taxi Spots</span>
-                  <span className="text-sm text-gray-900">{dashboardData.rosterBreakdown.taxiSpots}</span>
+                  <span className="text-sm text-gray-900">{dashboardData.rosterBreakdown?.taxiSpots || 0}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-600">IR Spots</span>
-                  <span className="text-sm text-gray-900">{dashboardData.rosterBreakdown.irSpots}</span>
+                  <span className="text-sm text-gray-900">{dashboardData.rosterBreakdown?.irSpots || 0}</span>
                 </div>
               </div>
             </div>
@@ -124,26 +124,26 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ league }: DashboardLa
                 <h3 className="text-sm font-medium text-gray-500 mb-2">Trade Deadline</h3>
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-600">Week</span>
-                  <span className="text-sm text-gray-900">{dashboardData.tradeDeadline.week}</span>
+                  <span className="text-sm text-gray-900">{dashboardData.tradeDeadline?.week || 'N/A'}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-600">Date</span>
-                  <span className="text-sm text-gray-900">{formatDate(dashboardData.tradeDeadline.date)}</span>
+                  <span className="text-sm text-gray-900">{dashboardData.tradeDeadline?.date ? formatDate(dashboardData.tradeDeadline.date) : 'N/A'}</span>
                 </div>
               </div>
               <div>
                 <h3 className="text-sm font-medium text-gray-500 mb-2">Playoff Info</h3>
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-600">Teams</span>
-                  <span className="text-sm text-gray-900">{dashboardData.playoffInfo.teams}</span>
+                  <span className="text-sm text-gray-900">{dashboardData.playoffInfo?.teams || 'N/A'}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-600">Start Date</span>
-                  <span className="text-sm text-gray-900">{formatDate(dashboardData.playoffInfo.startDate)}</span>
+                  <span className="text-sm text-gray-900">{dashboardData.playoffInfo?.startDate ? formatDate(dashboardData.playoffInfo.startDate) : 'N/A'}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-600">Format</span>
-                  <span className="text-sm text-gray-900">{dashboardData.playoffInfo.format}</span>
+                  <span className="text-sm text-gray-900">{dashboardData.playoffInfo?.format || 'N/A'}</span>
                 </div>
               </div>
             </div>
@@ -167,7 +167,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ league }: DashboardLa
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {dashboardData.standings.map((team: TeamStanding) => (
+              {dashboardData.standings?.map((team: TeamStanding) => (
                 <tr key={team.teamId}>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
@@ -212,20 +212,20 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ league }: DashboardLa
           <div>
             <h3 className="text-md font-medium text-gray-700 mb-3">Starters</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {dashboardData.starters.map((player: PlayerStats) => (
+              {dashboardData.starters?.map((player: PlayerStats) => (
                 <div key={player.playerId} className="bg-gray-50 rounded-lg p-4">
                   <div className="flex items-center space-x-3">
                     <div className="w-12 h-12 bg-gray-200 rounded-full">
                       {player.playerImage && (
                         <img 
                           src={player.playerImage} 
-                          alt={player.playerName} 
+                          alt={player.playerName || player.name} 
                           className="w-12 h-12 rounded-full object-cover"
                         />
                       )}
                     </div>
                     <div>
-                      <div className="text-sm font-medium text-gray-900">{player.playerName}</div>
+                      <div className="text-sm font-medium text-gray-900">{player.playerName || player.name}</div>
                       <div className="text-xs text-gray-500">{player.position}</div>
                     </div>
                   </div>
@@ -236,7 +236,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ league }: DashboardLa
                     </div>
                     <div>
                       <div className="text-xs text-gray-500">Projected</div>
-                      <div className="text-sm font-medium text-gray-900">{player.projectedPoints}</div>
+                      <div className="text-sm font-medium text-gray-900">{player.projectedPoints || 'N/A'}</div>
                     </div>
                   </div>
                 </div>
