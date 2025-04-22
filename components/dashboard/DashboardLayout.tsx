@@ -97,9 +97,9 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-4">
             <div className="w-16 h-16 bg-gray-200 rounded-lg overflow-hidden">
-              {league.metadata?.avatar ? (
+              {league.avatar ? (
                 <img 
-                  src={league.metadata.avatar} 
+                  src={`https://sleepercdn.com/avatars/${league.avatar}`}
                   alt={`${league.name} logo`} 
                   className="w-full h-full object-cover"
                 />

@@ -7,14 +7,15 @@ import { useRoster } from '../contexts/roster';
 import { formatTeamName, formatOwnerName } from '../utils/formatters';
 
 interface TeamStanding {
+  teamId: string;
   teamName: string;
-  ownerName: string;
   wins: number;
   losses: number;
   pointsFor: number;
   pointsAgainst: number;
-  streak: string;
-  rosterId: string;
+  rank: number;
+  teamImage?: string;
+  streak?: string;
 }
 
 // Helper function to format status
@@ -43,14 +44,15 @@ const LeagueStandings: React.FC = () => {
         const ownerName = formatOwnerName(owner?.display_name || 'Unknown Owner');
         
         return {
+          teamId: roster.roster_id,
           teamName,
-          ownerName,
           wins: roster.settings.wins,
           losses: roster.settings.losses,
           pointsFor: roster.settings.fpts,
           pointsAgainst: roster.settings.fpts_against,
-          streak: calculateStreak(roster),
-          rosterId: roster.roster_id
+          rank: 0, // Assuming rank is not available in the SleeperRoster
+          teamImage: roster.metadata?.team_image,
+          streak: calculateStreak(roster)
         };
       })
       .sort((a: TeamStanding, b: TeamStanding) => {
@@ -87,25 +89,25 @@ const LeagueStandings: React.FC = () => {
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Team</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Owner</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">W</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">L</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">PF</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">PA</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Streak</th>
+              <th>Rank</th>
+              <th>Team</th>
+              <th>W</th>
+              <th>L</th>
+              <th>PF</th>
+              <th>PA</th>
+              <th>Streak</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {standings.map((team: TeamStanding) => (
-              <tr key={team.rosterId}>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{team.teamName}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{team.ownerName}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{team.wins}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{team.losses}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{team.pointsFor.toFixed(2)}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{team.pointsAgainst.toFixed(2)}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{team.streak}</td>
+              <tr key={team.teamId}>
+                <td>{team.rank}</td>
+                <td>{team.teamName}</td>
+                <td>{team.wins}</td>
+                <td>{team.losses}</td>
+                <td>{team.pointsFor.toFixed(2)}</td>
+                <td>{team.pointsAgainst.toFixed(2)}</td>
+                <td>{team.streak || '-'}</td>
               </tr>
             ))}
           </tbody>

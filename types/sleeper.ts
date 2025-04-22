@@ -18,6 +18,7 @@ export interface SleeperLeague {
   name: string;
   season: string;
   status: string;
+  avatar?: string;
   settings: {
     waiver_type: number;
     waiver_day_of_week: number;

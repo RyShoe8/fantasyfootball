@@ -1,5 +1,5 @@
 /**
- * Trade Evaluator Page
+ * Trades Page
  * 
  * This page allows users to evaluate potential trades between their team and other teams in the league.
  * It calculates the total points from the previous season and projected points for the upcoming season
@@ -42,7 +42,7 @@ interface TradeSide {
   totalPoints: number;
 }
 
-const TradeEvaluator: React.FC = () => {
+const TradesPage: React.FC = () => {
   const { user } = useAuth();
   const { currentLeague, users, draftPicks } = useLeague();
   const { players } = usePlayer();
@@ -73,7 +73,7 @@ const TradeEvaluator: React.FC = () => {
   React.useEffect(() => {
     // If we don't have rosters or players data, show loading state
     if ((!rosters || rosters.length === 0) || !players || Object.keys(players).length === 0) {
-      console.log('Trade Evaluator page: Waiting for data...', {
+      console.log('Trades page: Waiting for data...', {
         hasRosters: !!rosters && rosters.length > 0,
         hasPlayers: !!players && Object.keys(players).length > 0
       });
@@ -248,20 +248,18 @@ const TradeEvaluator: React.FC = () => {
     }, 0);
 
     const pickValue = side.draftPicks.reduce((total, pick) => {
-      // Higher round picks are worth more
-      const roundValue = (12 - pick.round) * 100;
-      return total + roundValue;
+      // Simple draft pick valuation - can be enhanced
+      return total + 100; // Base value for any draft pick
     }, 0);
 
     return playerValue + pickValue;
   };
 
-  // Show loading state if data is not available
-  if (isLoading || !currentRoster) {
+  if (isLoading) {
     return (
-      <div className="p-6 flex justify-center items-center h-64">
+      <div className="min-h-screen flex items-center justify-center bg-gray-100">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading trade evaluator...</p>
         </div>
       </div>
@@ -269,33 +267,41 @@ const TradeEvaluator: React.FC = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-6">Trade Evaluator</h1>
-      
-      {/* Trade Overview */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        {/* My Side */}
-        <div className="bg-white rounded-lg shadow p-4">
-          <h2 className="text-xl font-semibold mb-4">
-            My Side {currentRoster && (
-              <span className="text-gray-600">
-                - {currentRoster.metadata?.team_name || 
-                  users.find((user: SleeperUser) => user.user_id === currentRoster.owner_id)?.display_name || 
-                  users.find((user: SleeperUser) => user.user_id === currentRoster.owner_id)?.username || 
-                  `Team ${currentRoster.roster_id}`}
-              </span>
-            )}
-          </h2>
-          <div className="space-y-4">
-            <div>
-              <h3 className="font-medium mb-2">Players</h3>
+    <div className="min-h-screen bg-gray-100 p-6">
+      <div className="max-w-7xl mx-auto">
+        <h1 className="text-3xl font-bold text-gray-900 mb-8">Trade Evaluator</h1>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {/* My Team Side */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-xl font-semibold mb-4">My Team</h2>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Select Your Team
+              </label>
+              <select
+                value={myTeam}
+                onChange={handleMyTeamChange}
+                className="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">Select a team</option>
+                {rosters?.map((roster: SleeperRoster) => (
+                  <option key={roster.roster_id} value={roster.roster_id}>
+                    {users?.[roster.owner_id]?.display_name || 'Unknown Team'}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="mb-4">
+              <h3 className="text-lg font-medium mb-2">Selected Players</h3>
               <div className="space-y-2">
                 {mySide.players.map((player: TradePlayer) => (
-                  <div key={player.player_id} className="flex justify-between items-center">
-                    <span>{player.full_name} ({player.position})</span>
+                  <div key={player.player_id} className="flex items-center justify-between bg-gray-50 p-2 rounded">
+                    <span>{player.full_name}</span>
                     <button
                       onClick={() => handleRemovePlayer(player.player_id, 'my')}
-                      className="text-red-500"
+                      className="text-red-500 hover:text-red-700"
                     >
                       Remove
                     </button>
@@ -303,199 +309,155 @@ const TradeEvaluator: React.FC = () => {
                 ))}
               </div>
             </div>
-            <div>
-              <h3 className="font-medium mb-2">Draft Picks</h3>
+
+            <div className="mb-4">
+              <h3 className="text-lg font-medium mb-2">Available Players</h3>
               <div className="space-y-2">
-                {mySide.draftPicks.map((pick: SimpleDraftPick, index: number) => (
-                  <div key={index} className="flex justify-between items-center">
-                    <span>{pick.season} Round {pick.round} Pick {pick.pick_no}</span>
+                {availablePlayers.map((player: TradePlayer) => (
+                  <div key={player.player_id} className="flex items-center justify-between bg-gray-50 p-2 rounded">
+                    <span>{player.full_name}</span>
                     <button
-                      onClick={() => handleRemoveDraftPick(pick)}
-                      className="text-red-500"
-                    >
-                      Remove
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className="pt-4 border-t">
-              <p>Total Projected Points: {mySideStats.totalProjectedPoints.toFixed(2)}</p>
-              <p>Total Points: {mySideStats.totalPoints.toFixed(2)}</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Their Side */}
-        <div className="bg-white rounded-lg shadow p-4">
-          <h2 className="text-xl font-semibold mb-4">Select Team to Trade With</h2>
-          <select
-            className="w-full p-2 border rounded"
-            value={selectedTeam}
-            onChange={handleTheirTeamChange}
-          >
-            <option value="">Select a team</option>
-            {rosters
-              .filter((r: SleeperRoster) => r.owner_id !== user?.user_id)
-              .map((team: SleeperRoster) => {
-                const teamUser = users.find((u: SleeperUser) => u.user_id === team.owner_id);
-                return (
-                  <option key={team.roster_id} value={team.roster_id}>
-                    {teamUser?.display_name || teamUser?.username || `Team ${team.roster_id}`}
-                  </option>
-                );
-              })}
-          </select>
-
-          {selectedTeamRoster && (
-            <div className="mt-4 space-y-4">
-              <div>
-                <h3 className="font-medium mb-2">Players</h3>
-                <div className="space-y-2">
-                  {theirSide.players.map((player: TradePlayer) => (
-                    <div key={player.player_id} className="flex justify-between items-center">
-                      <span>{player.full_name} ({player.position})</span>
-                      <button
-                        onClick={() => handleRemovePlayer(player.player_id, 'their')}
-                        className="text-red-500"
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <h3 className="font-medium mb-2">Draft Picks</h3>
-                <div className="space-y-2">
-                  {theirSide.draftPicks.map((pick: SimpleDraftPick, index: number) => (
-                    <div key={index} className="flex justify-between items-center">
-                      <span>{pick.season} Round {pick.round} Pick {pick.pick_no}</span>
-                      <button
-                        onClick={() => handleRemoveDraftPick(pick)}
-                        className="text-red-500"
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div className="pt-4 border-t">
-                <p>Total Projected Points: {theirSideStats.totalProjectedPoints.toFixed(2)}</p>
-                <p>Total Points: {theirSideStats.totalPoints.toFixed(2)}</p>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Player Selection */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* My Players */}
-        <div className="bg-white rounded-lg shadow p-4">
-          <h2 className="text-xl font-semibold mb-4">My Players</h2>
-          <div className="space-y-2">
-            {availablePlayers.map((player: TradePlayer) => (
-              <div key={player.player_id} className="flex justify-between items-center">
-                <span>{player.full_name} ({player.position})</span>
-                <button
-                  onClick={() => handleAddPlayer(player, 'my')}
-                  className="text-blue-500"
-                >
-                  Add
-                </button>
-              </div>
-            ))}
-          </div>
-          {draftPicks.filter((pick: SleeperDraftPick) => pick.roster_id === currentRoster?.roster_id).length > 0 && (
-            <div className="mt-4 pt-4 border-t">
-              <h3 className="font-medium mb-2">My Draft Picks</h3>
-              <div className="space-y-2">
-                {draftPicks
-                  .filter((pick: SleeperDraftPick) => pick.roster_id === currentRoster?.roster_id)
-                  .filter((pick: SleeperDraftPick) => {
-                    const isInMySide = mySide.draftPicks.some((p: SimpleDraftPick) => 
-                      p.season === pick.season && p.round === pick.round && p.pick_no === pick.pick_no
-                    );
-                    const isInTheirSide = theirSide.draftPicks.some((p: SimpleDraftPick) => 
-                      p.season === pick.season && p.round === pick.round && p.pick_no === pick.pick_no
-                    );
-                    return !isInMySide && !isInTheirSide;
-                  })
-                  .map((pick: SleeperDraftPick, index: number) => (
-                    <div key={index} className="flex justify-between items-center">
-                      <span>{pick.season} Round {pick.round} Pick {pick.pick_no}</span>
-                      <button
-                        onClick={() => handleAddDraftPick(pick, 'my')}
-                        className="text-blue-500"
-                      >
-                        Add
-                      </button>
-                    </div>
-                  ))}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Their Players */}
-        <div className="bg-white rounded-lg shadow p-4">
-          <h2 className="text-xl font-semibold mb-4">Their Players</h2>
-          {selectedTeamRoster ? (
-            <>
-              <div className="space-y-2">
-                {selectedTeamPlayers.map((player: TradePlayer) => (
-                  <div key={player.player_id} className="flex justify-between items-center">
-                    <span>{player.full_name} ({player.position})</span>
-                    <button
-                      onClick={() => handleAddPlayer(player, 'their')}
-                      className="text-blue-500"
+                      onClick={() => handleAddPlayer(player, 'my')}
+                      className="text-blue-500 hover:text-blue-700"
                     >
                       Add
                     </button>
                   </div>
                 ))}
               </div>
-              {draftPicks.filter((pick: SleeperDraftPick) => pick.roster_id === selectedTeamRoster?.roster_id).length > 0 && (
-                <div className="mt-4 pt-4 border-t">
-                  <h3 className="font-medium mb-2">Their Draft Picks</h3>
-                  <div className="space-y-2">
-                    {draftPicks
-                      .filter((pick: SleeperDraftPick) => pick.roster_id === selectedTeamRoster?.roster_id)
-                      .filter((pick: SleeperDraftPick) => {
-                        const isInMySide = mySide.draftPicks.some((p: SimpleDraftPick) => 
-                          p.season === pick.season && p.round === pick.round && p.pick_no === pick.pick_no
-                        );
-                        const isInTheirSide = theirSide.draftPicks.some((p: SimpleDraftPick) => 
-                          p.season === pick.season && p.round === pick.round && p.pick_no === pick.pick_no
-                        );
-                        return !isInMySide && !isInTheirSide;
-                      })
-                      .map((pick: SleeperDraftPick, index: number) => (
-                        <div key={index} className="flex justify-between items-center">
-                          <span>{pick.season} Round {pick.round} Pick {pick.pick_no}</span>
-                          <button
-                            onClick={() => handleAddDraftPick(pick, 'their')}
-                            className="text-blue-500"
-                          >
-                            Add
-                          </button>
-                        </div>
-                      ))}
-                  </div>
-                </div>
-              )}
-            </>
-          ) : (
-            <div className="text-center py-8 text-gray-500">
-              <p>Please select a team to trade with from the dropdown above</p>
             </div>
-          )}
+
+            <div className="mt-4 p-4 bg-gray-50 rounded">
+              <h3 className="text-lg font-medium mb-2">Trade Summary</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-gray-600">Total Points (Last Season)</p>
+                  <p className="text-lg font-semibold">{mySideStats.totalPoints.toFixed(2)}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Projected Points</p>
+                  <p className="text-lg font-semibold">{mySideStats.totalProjectedPoints.toFixed(2)}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Their Team Side */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-xl font-semibold mb-4">Their Team</h2>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Select Their Team
+              </label>
+              <select
+                value={theirTeam}
+                onChange={handleTheirTeamChange}
+                className="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">Select a team</option>
+                {rosters?.map((roster: SleeperRoster) => (
+                  <option key={roster.roster_id} value={roster.roster_id}>
+                    {users?.[roster.owner_id]?.display_name || 'Unknown Team'}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="mb-4">
+              <h3 className="text-lg font-medium mb-2">Selected Players</h3>
+              <div className="space-y-2">
+                {theirSide.players.map((player: TradePlayer) => (
+                  <div key={player.player_id} className="flex items-center justify-between bg-gray-50 p-2 rounded">
+                    <span>{player.full_name}</span>
+                    <button
+                      onClick={() => handleRemovePlayer(player.player_id, 'their')}
+                      className="text-red-500 hover:text-red-700"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="mb-4">
+              <h3 className="text-lg font-medium mb-2">Available Players</h3>
+              <div className="space-y-2">
+                {selectedTeamPlayers.map((player: TradePlayer) => (
+                  <div key={player.player_id} className="flex items-center justify-between bg-gray-50 p-2 rounded">
+                    <span>{player.full_name}</span>
+                    <button
+                      onClick={() => handleAddPlayer(player, 'their')}
+                      className="text-blue-500 hover:text-blue-700"
+                    >
+                      Add
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-4 p-4 bg-gray-50 rounded">
+              <h3 className="text-lg font-medium mb-2">Trade Summary</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-gray-600">Total Points (Last Season)</p>
+                  <p className="text-lg font-semibold">{theirSideStats.totalPoints.toFixed(2)}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Projected Points</p>
+                  <p className="text-lg font-semibold">{theirSideStats.totalProjectedPoints.toFixed(2)}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Trade Analysis */}
+        <div className="mt-8 bg-white rounded-lg shadow p-6">
+          <h2 className="text-xl font-semibold mb-4">Trade Analysis</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div>
+              <h3 className="text-lg font-medium mb-2">Points Comparison</h3>
+              <div className="space-y-4">
+                <div>
+                  <p className="text-sm text-gray-600">Last Season Points Difference</p>
+                  <p className={`text-lg font-semibold ${mySideStats.totalPoints - theirSideStats.totalPoints > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {(mySideStats.totalPoints - theirSideStats.totalPoints).toFixed(2)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Projected Points Difference</p>
+                  <p className={`text-lg font-semibold ${mySideStats.totalProjectedPoints - theirSideStats.totalProjectedPoints > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {(mySideStats.totalProjectedPoints - theirSideStats.totalProjectedPoints).toFixed(2)}
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div>
+              <h3 className="text-lg font-medium mb-2">Trade Value</h3>
+              <div className="space-y-4">
+                <div>
+                  <p className="text-sm text-gray-600">My Side Value</p>
+                  <p className="text-lg font-semibold">{getTradeValue(mySide).toFixed(2)}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Their Side Value</p>
+                  <p className="text-lg font-semibold">{getTradeValue(theirSide).toFixed(2)}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Value Difference</p>
+                  <p className={`text-lg font-semibold ${getTradeValue(mySide) - getTradeValue(theirSide) > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {(getTradeValue(mySide) - getTradeValue(theirSide)).toFixed(2)}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   );
 };
 
-export default TradeEvaluator; 
+export default TradesPage; 
