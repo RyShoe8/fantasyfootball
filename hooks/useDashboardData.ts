@@ -83,12 +83,11 @@ export const useDashboardData = (leagueId: string | undefined) => {
         const dashboardData: DashboardData = {
           standings: rosters.map((roster: SleeperRoster, index: number) => {
             const owner = users.find((u: SleeperUser) => u.user_id === roster.owner_id);
-            const teamName = roster.metadata?.team_name || `Team ${index + 1}`;
-            const displayName = owner?.display_name || owner?.username || 'Unknown';
+            const teamName = roster.metadata?.team_name || owner?.display_name || owner?.username || `Team ${index + 1}`;
             
             return {
               teamId: roster.roster_id,
-              teamName: `${teamName} (${displayName})`,
+              teamName: teamName,
               wins: roster.settings.wins,
               losses: roster.settings.losses,
               pointsFor: roster.settings.fpts,

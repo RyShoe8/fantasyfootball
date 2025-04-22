@@ -407,7 +407,8 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
     
     // Look for previous years
     let previousYear = year - 1;
-    while (previousYear >= 2023) {  // Start from 2023
+    let foundLeague = true;
+    while (foundLeague) {
       try {
         const previousYearLeagues = await fetchLeaguesForYear(previousYear.toString());
         const previousLeague = previousYearLeagues.find(
@@ -418,17 +419,18 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
           years.push(previousYear.toString());
           previousYear--;
         } else {
-          break;
+          foundLeague = false;
         }
       } catch (err) {
         debugLog('Error fetching previous year leagues:', err);
-        break;
+        foundLeague = false;
       }
     }
     
     // Look for future years
     let nextYear = year + 1;
-    while (nextYear <= 2025) {  // Look ahead to 2025
+    foundLeague = true;
+    while (foundLeague) {
       try {
         const nextYearLeagues = await fetchLeaguesForYear(nextYear.toString());
         const nextLeague = nextYearLeagues.find(
@@ -439,11 +441,11 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
           years.push(nextYear.toString());
           nextYear++;
         } else {
-          break;
+          foundLeague = false;
         }
       } catch (err) {
         debugLog('Error fetching next year leagues:', err);
-        break;
+        foundLeague = false;
       }
     }
     
