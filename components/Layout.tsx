@@ -38,7 +38,7 @@ const Layout = ({ children }: LayoutProps) => {
     debugLog('League context accessed successfully:', leagueContext);
   } catch (error) {
     debugLog('Error accessing league context:', error);
-    leagueContext = { currentLeague: null, isLoading: false };
+    leagueContext = { currentLeague: null, isLoading: false, setCurrentLeague: () => {} };
   }
 
   const { leagues, currentLeague, setCurrentLeague, selectedYear, setSelectedYear } = leagueContext || {};
@@ -58,7 +58,7 @@ const Layout = ({ children }: LayoutProps) => {
   // Handle league change
   const handleLeagueChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedLeague = leagues?.find((league: SleeperLeague) => league.league_id === event.target.value);
-    if (selectedLeague) {
+    if (selectedLeague && setCurrentLeague) {
       setCurrentLeague(selectedLeague);
     }
   };
