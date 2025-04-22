@@ -1,0 +1,49 @@
+import React from 'react';
+import { useLeague } from '../contexts/league';
+import { DashboardData, TeamStanding, PlayerStats } from '../types/dashboard';
+
+export const useDashboardData = (leagueId: string) => {
+  const [data, setData] = React.useState<DashboardData | null>(null);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
+  const { fetchLeagueData } = useLeague();
+
+  React.useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+
+        // Fetch league data
+        const leagueData = await fetchLeagueData(leagueId);
+        if (!leagueData) {
+          throw new Error('League not found');
+        }
+
+        // TODO: Implement actual API calls to fetch:
+        // - Standings
+        // - Top players
+        // - Recent transactions
+        // For now, using mock data
+        const mockData: DashboardData = {
+          standings: [],
+          topPlayers: [],
+          recentTransactions: [],
+          leagueInfo: leagueData
+        };
+
+        setData(mockData);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to fetch dashboard data');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (leagueId) {
+      fetchDashboardData();
+    }
+  }, [leagueId, fetchLeagueData]);
+
+  return { data, isLoading, error };
+}; 
