@@ -85,9 +85,6 @@ const Home: React.FC = () => {
   const { currentLeague, leagues, setCurrentLeague } = useLeague();
   const [username, setUsername] = React.useState('');
   const [userLeagues, setUserLeagues] = React.useState<SleeperLeague[]>([]);
-  const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const [selectedYear, setSelectedYear] = React.useState('2023');
-  const [availableYears, setAvailableYears] = React.useState<string[]>(['2023']);
 
   // Auto-select the first league if available and no league is currently selected
   React.useEffect(() => {
@@ -96,26 +93,22 @@ const Home: React.FC = () => {
     }
   }, [leagues, currentLeague, setCurrentLeague]);
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!username) return;
+    if (!username.trim()) return;
 
-    setIsSubmitting(true);
     try {
-      const response = await fetch(`${SLEEPER_API_BASE}/user/${username}/leagues/nfl/2023`);
-      const data = await response.json();
-      const leagues: SleeperLeague[] = data;
-      setUserLeagues(leagues);
       await login(username);
-    } catch (error) {
-      console.error('Error fetching leagues:', error);
-    } finally {
-      setIsSubmitting(false);
+      // After successful login, fetch user's leagues
+      const response = await fetch(`${SLEEPER_API_BASE}/user/${username}/leagues/nfl/2023`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch leagues');
+      }
+      const leagues = await response.json();
+      setUserLeagues(leagues);
+    } catch (err) {
+      console.error('Error during login:', err);
     }
-  };
-
-  const handleYearChange = (year: string) => {
-    setSelectedYear(year);
   };
 
   // Show loading state while auth is initializing
@@ -147,24 +140,24 @@ const Home: React.FC = () => {
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setUsername(e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter your Sleeper username"
-                disabled={isSubmitting}
+                disabled={isLoading}
               />
             </div>
             {error && (
               <div className="text-red-500 text-sm mt-2">
-                {error.message}
+                {error}
               </div>
             )}
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isLoading}
               className={`w-full py-2 px-4 rounded-md text-white font-medium ${
-                isSubmitting
+                isLoading
                   ? 'bg-blue-400 cursor-not-allowed'
                   : 'bg-blue-500 hover:bg-blue-600'
               }`}
             >
-              {isSubmitting ? 'Loading...' : 'View Stats'}
+              {isLoading ? 'Loading...' : 'View Stats'}
             </button>
           </form>
         </div>
@@ -184,9 +177,6 @@ const Home: React.FC = () => {
         ) : (
           <DashboardLayout 
             league={currentLeague} 
-            selectedYear={selectedYear}
-            availableYears={availableYears}
-            onYearChange={handleYearChange}
           />
         )}
       </div>
