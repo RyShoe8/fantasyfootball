@@ -8,9 +8,17 @@ import { useDashboardData } from '../../hooks/useDashboardData';
 
 interface DashboardLayoutProps {
   league: SleeperLeague;
+  selectedYear: string;
+  availableYears: string[];
+  onYearChange: (year: string) => void;
 }
 
-const DashboardLayout: React.FC<DashboardLayoutProps> = ({ league }: DashboardLayoutProps) => {
+const DashboardLayout: React.FC<DashboardLayoutProps> = ({ 
+  league,
+  selectedYear,
+  availableYears,
+  onYearChange 
+}: DashboardLayoutProps) => {
   const { positions } = usePlayer();
   
   if (!league.league_id) {
