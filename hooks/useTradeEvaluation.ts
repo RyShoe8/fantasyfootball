@@ -39,7 +39,7 @@ interface UseTradeEvaluationReturn {
 }
 
 export function useTradeEvaluation(): UseTradeEvaluationReturn {
-  const { players, playerStats, loading } = usePlayer();
+  const { players, playerStats, isLoading } = usePlayer();
   const [error, setError] = React.useState<string | null>(null);
 
   const evaluateTrade = React.useMemo(
@@ -123,6 +123,6 @@ export function useTradeEvaluation(): UseTradeEvaluationReturn {
   return {
     evaluateTrade,
     error,
-    loading
+    loading: isLoading
   };
 } 
