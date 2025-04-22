@@ -6,8 +6,6 @@ import { useRoster } from '../../contexts/roster';
 import { usePlayer } from '../../contexts/player/PlayerContext';
 import { useDashboardData } from '../../hooks/useDashboardData';
 import Image from 'next/image';
-import { useAuth } from '../../contexts/auth/AuthContext';
-import { useLeague as useLeagueContext } from '../../contexts/league/LeagueContext';
 
 // Helper function to format status
 const formatStatus = (status: string) => {
