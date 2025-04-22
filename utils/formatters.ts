@@ -31,7 +31,7 @@ export const formatTeamName = (teamName: string | undefined, ownerName?: string)
   }
   
   // If the team name is just the owner's name, format it nicely
-  if (teamName.toLowerCase() === ownerName?.toLowerCase()) {
+  if (ownerName && teamName.toLowerCase() === ownerName.toLowerCase()) {
     return formatOwnerName(ownerName);
   }
   

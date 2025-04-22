@@ -10,6 +10,11 @@ export interface SleeperUser {
   username: string;
   display_name: string;
   avatar: string;
+  metadata?: {
+    team_name?: string;
+    [key: string]: string | undefined;
+  };
+  is_owner?: boolean;
 }
 
 // League Types
