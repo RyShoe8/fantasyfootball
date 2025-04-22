@@ -7,6 +7,7 @@ export const useDashboardData = (leagueId: string | undefined) => {
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const { setCurrentLeague, currentLeague } = useLeague();
+  const leagueLoadedRef = React.useRef(false);
 
   React.useEffect(() => {
     const fetchDashboardData = async () => {
@@ -22,11 +23,9 @@ export const useDashboardData = (leagueId: string | undefined) => {
 
         // Fetch league data
         await setCurrentLeague({ league_id: leagueId } as any);
-
-        // Wait for the league data to be loaded
-        if (!currentLeague) {
-          throw new Error('Failed to load league data');
-        }
+        
+        // Set a flag to indicate the league has been loaded
+        leagueLoadedRef.current = true;
 
         // Mock data for testing
         const mockData: DashboardData = {
@@ -82,7 +81,7 @@ export const useDashboardData = (leagueId: string | undefined) => {
               timestamp: new Date()
             }
           ],
-          leagueInfo: currentLeague,
+          leagueInfo: currentLeague || { league_id: leagueId } as any,
           seasonNumber: 2023,
           rosterBreakdown: {
             totalStarters: 9,
@@ -142,7 +141,7 @@ export const useDashboardData = (leagueId: string | undefined) => {
     };
 
     fetchDashboardData();
-  }, [leagueId, setCurrentLeague, currentLeague]);
+  }, [leagueId, setCurrentLeague]);
 
   return { data, isLoading, error };
 }; 
