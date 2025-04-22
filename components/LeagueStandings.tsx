@@ -9,12 +9,13 @@ import { formatTeamName, formatOwnerName } from '../utils/formatters';
 interface TeamStanding {
   teamId: string;
   teamName: string;
+  ownerName: string;
   wins: number;
   losses: number;
   pointsFor: number;
   pointsAgainst: number;
   rank: number;
-  teamImage?: string;
+  avatar?: string;
   streak?: string;
 }
 
@@ -46,12 +47,13 @@ const LeagueStandings: React.FC = () => {
         return {
           teamId: roster.roster_id,
           teamName,
+          ownerName,
           wins: roster.settings.wins,
           losses: roster.settings.losses,
           pointsFor: roster.settings.fpts,
           pointsAgainst: roster.settings.fpts_against,
-          rank: 0, // Assuming rank is not available in the SleeperRoster
-          teamImage: roster.metadata?.team_image,
+          rank: 0,
+          avatar: owner?.avatar,
           streak: calculateStreak(roster)
         };
       })
@@ -62,7 +64,8 @@ const LeagueStandings: React.FC = () => {
         }
         // Then by points for
         return b.pointsFor - a.pointsFor;
-      });
+      })
+      .map((team: TeamStanding, index: number) => ({ ...team, rank: index + 1 })); // Add ranks after sorting
   }, [currentLeague, rosters, users]);
 
   const calculateStreak = (roster: SleeperRoster): string => {
@@ -89,25 +92,49 @@ const LeagueStandings: React.FC = () => {
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th>Rank</th>
-              <th>Team</th>
-              <th>W</th>
-              <th>L</th>
-              <th>PF</th>
-              <th>PA</th>
-              <th>Streak</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rank</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Team</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Record</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">PF</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">PA</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Streak</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {standings.map((team: TeamStanding) => (
-              <tr key={team.teamId}>
-                <td>{team.rank}</td>
-                <td>{team.teamName}</td>
-                <td>{team.wins}</td>
-                <td>{team.losses}</td>
-                <td>{team.pointsFor.toFixed(2)}</td>
-                <td>{team.pointsAgainst.toFixed(2)}</td>
-                <td>{team.streak || '-'}</td>
+              <tr key={team.teamId} className="hover:bg-gray-50">
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  {team.rank}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="flex items-center">
+                    {team.avatar && (
+                      <div className="flex-shrink-0 h-8 w-8 mr-3">
+                        <img
+                          src={`https://sleepercdn.com/avatars/${team.avatar}`}
+                          alt={`${team.teamName} avatar`}
+                          className="h-8 w-8 rounded-full"
+                        />
+                      </div>
+                    )}
+                    <div>
+                      <div className="text-sm font-medium text-gray-900">{team.teamName}</div>
+                      <div className="text-sm text-gray-500">{team.ownerName}</div>
+                    </div>
+                  </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {team.wins}-{team.losses}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {team.pointsFor.toFixed(2)}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {team.pointsAgainst.toFixed(2)}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {team.streak || '-'}
+                </td>
               </tr>
             ))}
           </tbody>
