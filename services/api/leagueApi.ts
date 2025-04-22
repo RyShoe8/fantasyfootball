@@ -99,4 +99,20 @@ export class LeagueApi {
       throw new Error(ERROR_MESSAGES.NETWORK_ERROR);
     }
   }
+
+  /**
+   * Fetch leagues for a user
+   * @param userId - The user ID
+   * @returns Promise<SleeperLeague[]> - Array of leagues for the user
+   */
+  static async getUserLeagues(userId: string): Promise<SleeperLeague[]> {
+    debugLog('getUserLeagues', { userId });
+    try {
+      const response = await axios.get(`${SLEEPER_API_BASE}/user/${userId}/leagues/nfl`);
+      return response.data;
+    } catch (err) {
+      debugLog('getUserLeagues error', err);
+      throw toApiError(err);
+    }
+  }
 } 

@@ -25,6 +25,7 @@ import {
 } from '../../lib/db';
 import { LeagueApi, RosterApi } from '../../services/api';
 import { DraftApi } from '../../services/api';
+import { useAuth } from '../auth';
 
 // Debug flag - set to true to enable detailed logging
 const DEBUG = true;
@@ -72,6 +73,55 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
   const [selectedYear, setSelectedYearState] = React.useState<string>(new Date().getFullYear().toString());
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState<ApiError | null>(null);
+
+  // Get user from auth context
+  const { user } = useAuth();
+
+  // Fetch leagues when user changes
+  React.useEffect(() => {
+    const fetchLeagues = async () => {
+      if (!user) {
+        setLeagues([]);
+        return;
+      }
+
+      try {
+        debugLog('Fetching leagues for user:', user.user_id);
+        setIsLoading(true);
+        setError(null);
+
+        // Try to get cached league data first
+        const cachedLeagues = await getLeagueData(user.user_id);
+        if (cachedLeagues) {
+          debugLog('Found cached leagues:', cachedLeagues);
+          setLeagues(cachedLeagues);
+          return;
+        }
+
+        // If no cached data, fetch from API
+        const fetchedLeagues = await LeagueApi.getUserLeagues(user.user_id);
+        debugLog('Fetched leagues:', fetchedLeagues);
+
+        // Save each league individually
+        for (const league of fetchedLeagues) {
+          await saveLeagueData(league);
+        }
+        setLeagues(fetchedLeagues);
+
+        // If we have leagues but no current league selected, select the first one
+        if (fetchedLeagues.length > 0 && !currentLeague) {
+          setCurrentLeague(fetchedLeagues[0]);
+        }
+      } catch (err) {
+        debugLog('Error fetching leagues:', err);
+        setError(err instanceof Error ? err : new Error('Failed to fetch leagues'));
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchLeagues();
+  }, [user]);
 
   const fetchRosters = React.useCallback(async (leagueId: string) => {
     try {

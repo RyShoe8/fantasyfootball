@@ -19,28 +19,41 @@ const AuthContext = React.createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   debugLog('Initializing AuthProvider');
   
-  const [user, setUser] = React.useState<SleeperUser | null>(null);
+  const [user, setUserState] = React.useState<SleeperUser | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<Error | null>(null);
 
-  // Check for existing user session on mount
+  // Load user from localStorage on mount
   React.useEffect(() => {
-    debugLog('Checking for existing user session');
-    try {
-      if (typeof window !== 'undefined') {
-        const storedUser = localStorage.getItem('sleeperUser');
-        if (storedUser) {
-          const parsedUser = JSON.parse(storedUser);
-          debugLog('Found stored user:', parsedUser);
-          setUser(parsedUser);
-        }
+    const storedUser = localStorage.getItem('sleeperUser');
+    if (storedUser) {
+      try {
+        setUserState(JSON.parse(storedUser));
+      } catch (err) {
+        console.error('Error parsing stored user:', err);
+        localStorage.removeItem('sleeperUser');
       }
-    } catch (err) {
-      debugLog('Error checking stored user:', err);
-    } finally {
-      setIsLoading(false);
     }
+    setIsLoading(false);
   }, []);
+
+  // Save user to localStorage when it changes
+  React.useEffect(() => {
+    if (user) {
+      localStorage.setItem('sleeperUser', JSON.stringify(user));
+    } else {
+      localStorage.removeItem('sleeperUser');
+    }
+  }, [user]);
+
+  const setUser = (newUser: SleeperUser | null) => {
+    setUserState(newUser);
+  };
+
+  const logout = () => {
+    setUserState(null);
+    localStorage.removeItem('sleeperUser');
+  };
 
   const login = React.useCallback(async (username: string) => {
     debugLog('Login attempt for username:', username);
@@ -82,15 +95,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  }, []);
-
-  const logout = React.useCallback(() => {
-    debugLog('Logging out user');
-    setUser(null);
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('sleeperUser');
-    }
-    debugLog('Logout complete');
   }, []);
 
   const value = React.useMemo(() => ({
