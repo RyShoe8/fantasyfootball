@@ -110,7 +110,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
               )}
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">{league.name}</h1>
+              <h1 className="text-2xl font-bold text-gray-900">Fantasy OS</h1>
               <div className="flex items-center space-x-2 text-gray-600">
                 <span>{formatStatus(league.status)}</span>
               </div>
@@ -142,14 +142,6 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
           <div>
             <h2 className="text-lg font-semibold mb-4">League Info</h2>
             <div className="bg-gray-50 rounded-lg p-4">
-              <div className="mb-4">
-                <span className="text-sm font-medium text-gray-500">Season:</span>
-                <span className="ml-2 text-sm text-gray-900">{league.season}</span>
-              </div>
-              <div className="mb-4">
-                <span className="text-sm font-medium text-gray-500">Seasons:</span>
-                <span className="ml-2 text-sm text-gray-900">{dashboardData.seasonNumber || '1'}th Season</span>
-              </div>
               <div className="mb-4">
                 <span className="text-sm font-medium text-gray-500">Total Teams:</span>
                 <span className="ml-2 text-sm text-gray-900">

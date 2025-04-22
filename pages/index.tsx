@@ -81,7 +81,7 @@ const formatApiResponse = (data: any, type: string) => {
 
 const Home: React.FC = () => {
   const router = useRouter();
-  const { user, login, isLoading, error } = useAuth();
+  const { user, login, isLoading, error, isHydrated } = useAuth();
   const { currentLeague, leagues, setCurrentLeague } = useLeague();
   const [username, setUsername] = React.useState('');
   const [userLeagues, setUserLeagues] = React.useState<SleeperLeague[]>([]);
@@ -118,12 +118,13 @@ const Home: React.FC = () => {
     setSelectedYear(year);
   };
 
-  if (isLoading) {
+  // Show loading state while auth is initializing
+  if (isLoading || !isHydrated) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
+          <p className="mt-4 text-gray-600">Loading Fantasy OS...</p>
         </div>
       </div>
     );
@@ -133,7 +134,7 @@ const Home: React.FC = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
         <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
-          <h1 className="text-2xl font-bold text-center mb-6">Fantasy Football Stats</h1>
+          <h1 className="text-2xl font-bold text-center mb-6">Fantasy OS</h1>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">

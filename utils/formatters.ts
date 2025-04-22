@@ -25,9 +25,32 @@ export const formatPosition = (position: string): string => {
 };
 
 // Format team names for display
-export const formatTeamName = (teamName: string | undefined): string => {
-  if (!teamName) return 'Unknown Team';
-  return teamName.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+export const formatTeamName = (teamName: string | undefined, ownerName?: string): string => {
+  if (!teamName) {
+    return ownerName ? formatOwnerName(ownerName) : 'Unknown Team';
+  }
+  
+  // If the team name is just the owner's name, format it nicely
+  if (teamName.toLowerCase() === ownerName?.toLowerCase()) {
+    return formatOwnerName(ownerName);
+  }
+  
+  // Format the team name
+  return teamName
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, l => l.toUpperCase())
+    .replace(/\s+/g, ' ')
+    .trim();
+};
+
+// Format owner names for display
+export const formatOwnerName = (ownerName: string): string => {
+  if (!ownerName) return 'Unknown Owner';
+  return ownerName
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, l => l.toUpperCase())
+    .replace(/\s+/g, ' ')
+    .trim();
 };
 
 // Format season year for display

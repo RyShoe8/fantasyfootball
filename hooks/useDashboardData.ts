@@ -1,5 +1,6 @@
 import React from 'react';
 import { useLeague } from '../contexts/league';
+import { usePlayer } from '../contexts/player/PlayerContext';
 import { DashboardData, TeamStanding, PlayerStats } from '../types/dashboard';
 import { LeagueApi, RosterApi, DraftApi } from '../services/api';
 import { SleeperRoster, SleeperUser } from '../types/sleeper';
@@ -9,6 +10,7 @@ export const useDashboardData = (leagueId: string | undefined) => {
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const { setCurrentLeague, currentLeague, rosters, users, draftPicks } = useLeague();
+  const { players, playerStats } = usePlayer();
   const leagueLoadedRef = React.useRef(false);
 
   React.useEffect(() => {
@@ -52,6 +54,27 @@ export const useDashboardData = (leagueId: string | undefined) => {
         // Set a flag to indicate the league has been loaded
         leagueLoadedRef.current = true;
 
+        // Get the user's roster
+        const userRoster = rosters[0]; // For now, just use the first roster
+        
+        // Get starters data
+        const startersData = userRoster?.starters?.map((playerId: string) => {
+          const player = players[playerId];
+          const stats = playerStats[playerId];
+          
+          if (!player) return null;
+          
+          return {
+            playerId,
+            playerName: player.full_name,
+            name: player.full_name,
+            position: player.position,
+            points: stats?.pts_ppr || 0,
+            projectedPoints: stats?.projected_pts || 0,
+            playerImage: `https://sleepercdn.com/content/nfl/players/${playerId}.jpg`
+          };
+        }).filter(Boolean) || [];
+
         // Create dashboard data from real data
         const dashboardData: DashboardData = {
           standings: rosters.map((roster: SleeperRoster, index: number) => {
@@ -90,7 +113,7 @@ export const useDashboardData = (leagueId: string | undefined) => {
             startDate: new Date(), // Will be calculated based on week
             format: currentLeague?.settings.playoff_type === 0 ? 'Single Elimination' : 'Double Elimination'
           },
-          starters: [] // Will be populated by roster context
+          starters: startersData
         };
 
         setData(dashboardData);
@@ -102,7 +125,7 @@ export const useDashboardData = (leagueId: string | undefined) => {
     };
 
     fetchDashboardData();
-  }, [leagueId, setCurrentLeague, currentLeague, rosters, users, draftPicks]);
+  }, [leagueId, setCurrentLeague, currentLeague, rosters, users, draftPicks, players, playerStats]);
 
   return { data, isLoading, error };
 };
@@ -122,4 +145,4 @@ const calculatePositionBreakdown = (positions: string[]): Record<string, number>
     }
   });
   return breakdown;
-}; 
+};

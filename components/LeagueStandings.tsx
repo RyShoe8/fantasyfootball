@@ -1,20 +1,20 @@
 import React from 'react';
 import type { SleeperRoster, SleeperUser } from '../types/sleeper';
 import { useAuth } from '../contexts/auth';
-import { useLeague } from '../contexts/league';
+import { useLeague } from '../contexts/league/LeagueContext';
 import { usePlayer } from '../contexts/player';
 import { useRoster } from '../contexts/roster';
+import { formatTeamName, formatOwnerName } from '../utils/formatters';
 
 interface TeamStanding {
-  teamId: string;
-  ownerId: string;
   teamName: string;
+  ownerName: string;
   wins: number;
   losses: number;
-  ties: number;
-  totalPoints: number;
+  pointsFor: number;
   pointsAgainst: number;
   streak: string;
+  rosterId: string;
 }
 
 // Helper function to format status
@@ -31,35 +31,41 @@ const formatStatus = (status: string) => {
 };
 
 const LeagueStandings: React.FC = () => {
-  const { currentLeague } = useLeague();
-  const { rosters } = useRoster();
-  const { users } = useLeague();
+  const { currentLeague, rosters, users } = useLeague();
 
   const standings = React.useMemo(() => {
     if (!currentLeague || !rosters || !users) return [];
 
-    return rosters.map((roster: SleeperRoster) => {
-      const owner = users.find((user: SleeperUser) => user.user_id === roster.owner_id);
-      return {
-        teamId: roster.roster_id,
-        ownerId: roster.owner_id,
-        teamName: owner?.display_name || 'Unknown Owner',
-        wins: roster.settings.wins,
-        losses: roster.settings.losses,
-        ties: roster.settings.ties || 0,
-        totalPoints: roster.settings.fpts + (roster.settings.fpts_decimal || 0) / 100,
-        pointsAgainst: roster.settings.fpts_against + (roster.settings.fpts_against_decimal || 0) / 100,
-        streak: calculateStreak(roster.settings.wins, roster.settings.losses)
-      };
-    }).sort((a: TeamStanding, b: TeamStanding) => {
-      // First sort by wins
-      if (b.wins !== a.wins) return b.wins - a.wins;
-      // Then by total points
-      return b.totalPoints - a.totalPoints;
-    });
+    return rosters
+      .map((roster: SleeperRoster) => {
+        const owner = users.find((user: SleeperUser) => user.user_id === roster.owner_id);
+        const teamName = formatTeamName(roster.metadata?.team_name, owner?.display_name);
+        const ownerName = formatOwnerName(owner?.display_name);
+        
+        return {
+          teamName,
+          ownerName,
+          wins: roster.settings.wins,
+          losses: roster.settings.losses,
+          pointsFor: roster.settings.fpts,
+          pointsAgainst: roster.settings.fpts_against,
+          streak: calculateStreak(roster),
+          rosterId: roster.roster_id
+        };
+      })
+      .sort((a: TeamStanding, b: TeamStanding) => {
+        // First sort by wins
+        if (b.wins !== a.wins) {
+          return b.wins - a.wins;
+        }
+        // Then by points for
+        return b.pointsFor - a.pointsFor;
+      });
   }, [currentLeague, rosters, users]);
 
-  const calculateStreak = (wins: number, losses: number): string => {
+  const calculateStreak = (roster: SleeperRoster): string => {
+    const wins = roster.settings.wins;
+    const losses = roster.settings.losses;
     if (wins > losses) return `W${wins - losses}`;
     if (losses > wins) return `L${losses - wins}`;
     return 'T';
@@ -81,31 +87,25 @@ const LeagueStandings: React.FC = () => {
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rank</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Team</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Owner</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">W</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">L</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">T</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">PCT</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">PF</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">PA</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">STREAK</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Streak</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {standings.map((team: TeamStanding, index: number) => (
-              <tr key={team.teamId} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{index + 1}</td>
+            {standings.map((team: TeamStanding) => (
+              <tr key={team.rosterId}>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{team.teamName}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{team.wins}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{team.losses}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{team.ties}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {((team.wins + (team.ties * 0.5)) / (team.wins + team.losses + team.ties)).toFixed(3)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{team.totalPoints.toFixed(2)}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{team.pointsAgainst.toFixed(2)}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{team.streak}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{team.ownerName}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{team.wins}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{team.losses}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{team.pointsFor.toFixed(2)}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{team.pointsAgainst.toFixed(2)}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{team.streak}</td>
               </tr>
             ))}
           </tbody>
