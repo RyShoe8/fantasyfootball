@@ -23,10 +23,7 @@ import TeamOverview from '../components/TeamOverview';
 import LeagueStandings from '../components/LeagueStandings';
 import DebugSection from '../components/DebugSection';
 import { SleeperLeague } from '../types/sleeper';
-import axios from 'axios';
 import Link from 'next/link';
-import PlayerRankings from '../components/PlayerRankings';
-import { usePlayer } from '../contexts/player';
 import { useRoster } from '../contexts/roster';
 
 const SLEEPER_API_BASE = 'https://api.sleeper.app/v1';
@@ -99,8 +96,9 @@ const Home: React.FC = () => {
 
     setIsSubmitting(true);
     try {
-      const response = await axios.get(`https://api.sleeper.app/v1/user/${username}/leagues/nfl/2023`);
-      const leagues: SleeperLeague[] = response.data;
+      const response = await fetch(`${SLEEPER_API_BASE}/user/${username}/leagues/nfl/2023`);
+      const data = await response.json();
+      const leagues: SleeperLeague[] = data;
       setUserLeagues(leagues);
       await login(username);
     } catch (error) {
@@ -174,7 +172,15 @@ const Home: React.FC = () => {
           </div>
         ) : (
           <>
-            <LeagueInfo league={currentLeague} />
+            <LeagueInfo 
+              league={currentLeague} 
+              selectedYear={currentLeague.season}
+              availableYears={[currentLeague.season]}
+              onYearChange={(year) => {
+                // Handle year change if needed
+                console.log('Year changed:', year);
+              }}
+            />
             <TeamOverview />
             <LeagueStandings />
             <DebugSection />
