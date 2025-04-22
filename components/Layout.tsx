@@ -5,11 +5,6 @@ import Login from './auth/Login';
 import Spinner from './Spinner';
 import Link from 'next/link';
 import { SleeperLeague } from '../types/sleeper';
-import type { XMarkIcon as XIconType, Bars3Icon as MenuIconType } from '@heroicons/react/24/outline';
-import dynamic from 'next/dynamic';
-
-const XIcon = dynamic<typeof XIconType>(() => import('@heroicons/react/24/outline').then(mod => mod.XMarkIcon));
-const MenuIcon = dynamic<typeof MenuIconType>(() => import('@heroicons/react/24/outline').then(mod => mod.Bars3Icon));
 
 // Debug flag - set to true to enable detailed logging
 const DEBUG = true;
@@ -275,9 +270,13 @@ const Layout = React.memo(({ children }: LayoutProps) => {
               >
                 <span className="sr-only">Open main menu</span>
                 {isMobileMenuOpen ? (
-                  <XIcon className="block h-6 w-6" />
+                  <svg className="block h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
                 ) : (
-                  <MenuIcon className="block h-6 w-6" />
+                  <svg className="block h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                  </svg>
                 )}
               </button>
             </div>
