@@ -90,27 +90,61 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
         setIsLoading(true);
         setError(null);
 
-        // Try to get cached league data first
-        const cachedLeagues = await getLeagueData(user.user_id);
-        if (cachedLeagues) {
-          debugLog('Found cached leagues:', cachedLeagues);
-          setLeagues(cachedLeagues);
-          return;
+        // Try to get cached leagues from localStorage
+        const cachedLeaguesStr = localStorage.getItem('sleeperLeagues');
+        let cachedLeagues: SleeperLeague[] = [];
+        
+        if (cachedLeaguesStr) {
+          try {
+            cachedLeagues = JSON.parse(cachedLeaguesStr);
+            if (Array.isArray(cachedLeagues)) {
+              debugLog('Found cached leagues:', cachedLeagues);
+              setLeagues(cachedLeagues);
+              
+              // If we have cached leagues but no current league selected, select the lowest alphabetical one from current year
+              if (!currentLeague && cachedLeagues.length > 0) {
+                const currentYear = new Date().getFullYear().toString();
+                const currentYearLeagues = cachedLeagues.filter(league => league.season === currentYear);
+                if (currentYearLeagues.length > 0) {
+                  const lowestAlphabeticalLeague = currentYearLeagues.sort((a, b) => 
+                    a.name.localeCompare(b.name)
+                  )[0];
+                  setCurrentLeague(lowestAlphabeticalLeague);
+                  setSelectedYear(currentYear);
+                }
+              }
+              return;
+            }
+          } catch (err) {
+            debugLog('Error parsing cached leagues:', err);
+          }
         }
 
-        // If no cached data, fetch from API
+        // If no cached data or invalid cache, fetch from API
         const fetchedLeagues = await LeagueApi.getUserLeagues(user.user_id);
         debugLog('Fetched leagues:', fetchedLeagues);
 
-        // Save each league individually
+        // Save leagues to localStorage
+        localStorage.setItem('sleeperLeagues', JSON.stringify(fetchedLeagues));
+        
+        // Save each league individually to the database
         for (const league of fetchedLeagues) {
           await saveLeagueData(league);
         }
+        
         setLeagues(fetchedLeagues);
 
-        // If we have leagues but no current league selected, select the first one
+        // If we have leagues but no current league selected, select the lowest alphabetical one from current year
         if (fetchedLeagues.length > 0 && !currentLeague) {
-          setCurrentLeague(fetchedLeagues[0]);
+          const currentYear = new Date().getFullYear().toString();
+          const currentYearLeagues = fetchedLeagues.filter(league => league.season === currentYear);
+          if (currentYearLeagues.length > 0) {
+            const lowestAlphabeticalLeague = currentYearLeagues.sort((a, b) => 
+              a.name.localeCompare(b.name)
+            )[0];
+            setCurrentLeague(lowestAlphabeticalLeague);
+            setSelectedYear(currentYear);
+          }
         }
       } catch (err) {
         debugLog('Error fetching leagues:', err);
