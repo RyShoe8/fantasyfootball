@@ -74,15 +74,133 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
   const [selectedYear, setSelectedYearState] = React.useState<string>(new Date().getFullYear().toString());
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState<ApiError | null>(null);
+  const [isInitialized, setIsInitialized] = React.useState(false);
 
   // Get user from auth context
   const { user } = useAuth();
 
+  // Define fetch functions
+  const fetchRosters = React.useCallback(async (leagueId: string) => {
+    try {
+      debugLog('Fetching rosters for league:', leagueId);
+      setIsLoading(true);
+      setError(null);
+
+      // Try to get cached rosters from localStorage
+      const cachedRostersStr = localStorage.getItem(`sleeperRosters_${leagueId}`);
+      let cachedRosters: SleeperRoster[] = [];
+      
+      if (cachedRostersStr) {
+        try {
+          cachedRosters = JSON.parse(cachedRostersStr);
+          if (Array.isArray(cachedRosters)) {
+            debugLog('Found cached rosters:', cachedRosters);
+            setRosters(cachedRosters);
+            return;
+          }
+        } catch (err) {
+          debugLog('Error parsing cached rosters:', err);
+        }
+      }
+
+      // If no cached data or invalid cache, fetch from API
+      const fetchedRosters = await RosterApi.getRosters(leagueId);
+      debugLog('Fetched rosters:', fetchedRosters);
+      
+      // Save rosters to localStorage
+      localStorage.setItem(`sleeperRosters_${leagueId}`, JSON.stringify(fetchedRosters));
+      
+      setRosters(fetchedRosters);
+    } catch (err) {
+      debugLog('Error fetching rosters:', err);
+      setError(toApiError(err));
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const fetchUsers = React.useCallback(async (leagueId: string) => {
+    try {
+      debugLog('Fetching users for league:', leagueId);
+      setIsLoading(true);
+      setError(null);
+
+      // Try to get cached users from localStorage
+      const cachedUsersStr = localStorage.getItem(`sleeperUsers_${leagueId}`);
+      let cachedUsers: SleeperUser[] = [];
+      
+      if (cachedUsersStr) {
+        try {
+          cachedUsers = JSON.parse(cachedUsersStr);
+          if (Array.isArray(cachedUsers)) {
+            debugLog('Found cached users:', cachedUsers);
+            setUsers(cachedUsers);
+            return;
+          }
+        } catch (err) {
+          debugLog('Error parsing cached users:', err);
+        }
+      }
+
+      // If no cached data or invalid cache, fetch from API
+      const fetchedUsers = await LeagueApi.getLeagueUsers(leagueId);
+      debugLog('Fetched users:', fetchedUsers);
+      
+      // Save users to localStorage
+      localStorage.setItem(`sleeperUsers_${leagueId}`, JSON.stringify(fetchedUsers));
+      
+      setUsers(fetchedUsers);
+    } catch (err) {
+      debugLog('Error fetching users:', err);
+      setError(toApiError(err));
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const fetchDraftPicks = React.useCallback(async (leagueId: string) => {
+    try {
+      debugLog('Fetching draft picks for league:', leagueId);
+      setIsLoading(true);
+      setError(null);
+
+      // Try to get cached draft picks from localStorage
+      const cachedDraftPicksStr = localStorage.getItem(`sleeperDraftPicks_${leagueId}`);
+      let cachedDraftPicks: SleeperDraftPick[] = [];
+      
+      if (cachedDraftPicksStr) {
+        try {
+          cachedDraftPicks = JSON.parse(cachedDraftPicksStr);
+          if (Array.isArray(cachedDraftPicks)) {
+            debugLog('Found cached draft picks:', cachedDraftPicks);
+            setDraftPicks(cachedDraftPicks);
+            return;
+          }
+        } catch (err) {
+          debugLog('Error parsing cached draft picks:', err);
+        }
+      }
+
+      // If no cached data or invalid cache, fetch from API
+      const fetchedDraftPicks = await DraftApi.getDraftPicks(leagueId);
+      debugLog('Fetched draft picks:', fetchedDraftPicks);
+      
+      // Save draft picks to localStorage
+      localStorage.setItem(`sleeperDraftPicks_${leagueId}`, JSON.stringify(fetchedDraftPicks));
+      
+      setDraftPicks(fetchedDraftPicks);
+    } catch (err) {
+      debugLog('Error fetching draft picks:', err);
+      setError(toApiError(err));
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   // Fetch leagues when user changes
   React.useEffect(() => {
     const fetchLeagues = async () => {
-      if (!user) {
-        setLeagues([]);
+      if (!user || isInitialized) {
         return;
       }
 
@@ -101,19 +219,7 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
             if (Array.isArray(cachedLeagues)) {
               debugLog('Found cached leagues:', cachedLeagues);
               setLeagues(cachedLeagues);
-              
-              // If we have cached leagues but no current league selected, select the lowest alphabetical one from current year
-              if (!currentLeague && cachedLeagues.length > 0) {
-                const currentYear = new Date().getFullYear().toString();
-                const currentYearLeagues = cachedLeagues.filter(league => league.season === currentYear);
-                if (currentYearLeagues.length > 0) {
-                  const lowestAlphabeticalLeague = currentYearLeagues.sort((a, b) => 
-                    a.name.localeCompare(b.name)
-                  )[0];
-                  setCurrentLeague(lowestAlphabeticalLeague);
-                  setSelectedYear(currentYear);
-                }
-              }
+              setIsInitialized(true);
               return;
             }
           } catch (err) {
@@ -122,139 +228,48 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
         }
 
         // If no cached data or invalid cache, fetch from API
-        const currentYear = new Date().getFullYear().toString();
-        const fetchedLeagues = await LeagueApi.getUserLeagues(user.user_id, currentYear);
+        const fetchedLeagues = await LeagueApi.getUserLeagues(user.user_id);
         debugLog('Fetched leagues:', fetchedLeagues);
-
+        
         // Save leagues to localStorage
         localStorage.setItem('sleeperLeagues', JSON.stringify(fetchedLeagues));
         
-        // Save each league individually to the database
-        for (const league of fetchedLeagues) {
-          await saveLeagueData(league);
-        }
-        
         setLeagues(fetchedLeagues);
-
-        // If we have leagues but no current league selected, select the lowest alphabetical one from current year
-        if (fetchedLeagues.length > 0 && !currentLeague) {
-          const currentYearLeagues = fetchedLeagues.filter(league => league.season === currentYear);
-          if (currentYearLeagues.length > 0) {
-            const lowestAlphabeticalLeague = currentYearLeagues.sort((a, b) => 
-              a.name.localeCompare(b.name)
-            )[0];
-            setCurrentLeague(lowestAlphabeticalLeague);
-            setSelectedYear(currentYear);
-          }
-        }
+        setIsInitialized(true);
       } catch (err) {
         debugLog('Error fetching leagues:', err);
-        setError(err instanceof Error ? err : new Error('Failed to fetch leagues'));
+        setError(toApiError(err));
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchLeagues();
-  }, [user]);
+  }, [user, isInitialized]);
 
-  const fetchRosters = React.useCallback(async (leagueId: string) => {
-    try {
-      debugLog('Fetching rosters for league:', leagueId);
-      setIsLoading(true);
-      setError(null);
-      
-      const rosterData = await getRosterData(leagueId, selectedYear);
-      if (rosterData) {
-        debugLog('Found cached roster data:', rosterData);
-        setRosters(rosterData);
-        return;
-      }
-
-      const fetchedRosters = await RosterApi.getRosters(leagueId);
-      debugLog('Fetched rosters:', fetchedRosters);
-      
-      // Save each roster individually
-      for (const roster of fetchedRosters) {
-        await saveRosterData(roster);
-      }
-      setRosters(fetchedRosters);
-    } catch (err) {
-      debugLog('Error fetching rosters:', err);
-      setError(err instanceof Error ? err : new Error('Failed to fetch rosters'));
-    } finally {
-      setIsLoading(false);
+  // Fetch rosters when current league changes
+  React.useEffect(() => {
+    if (!currentLeague?.league_id) {
+      return;
     }
-  }, [selectedYear]);
+    fetchRosters(currentLeague.league_id);
+  }, [currentLeague?.league_id, fetchRosters]);
 
-  const fetchUsers = React.useCallback(async (leagueId: string) => {
-    try {
-      debugLog('Fetching users for league:', leagueId);
-      setIsLoading(true);
-      setError(null);
-      
-      // Try to get cached users from localStorage first
-      const cachedUsersStr = localStorage.getItem(`sleeperUsers_${leagueId}`);
-      if (cachedUsersStr) {
-        try {
-          const cachedUsers = JSON.parse(cachedUsersStr);
-          if (Array.isArray(cachedUsers)) {
-            debugLog('Found cached users:', cachedUsers);
-            setUsers(cachedUsers);
-            return;
-          }
-        } catch (err) {
-          debugLog('Error parsing cached users:', err);
-        }
-      }
-      
-      const fetchedUsers = await LeagueApi.getLeagueUsers(leagueId);
-      debugLog('Fetched users:', fetchedUsers);
-      
-      // Save users to localStorage
-      localStorage.setItem(`sleeperUsers_${leagueId}`, JSON.stringify(fetchedUsers));
-      
-      // Save each user individually
-      for (const user of fetchedUsers) {
-        await saveUserData(user);
-      }
-      setUsers(fetchedUsers);
-    } catch (err) {
-      debugLog('Error fetching users:', err);
-      setError(err instanceof Error ? err : new Error('Failed to fetch users'));
-    } finally {
-      setIsLoading(false);
+  // Fetch users when current league changes
+  React.useEffect(() => {
+    if (!currentLeague?.league_id) {
+      return;
     }
-  }, []);
+    fetchUsers(currentLeague.league_id);
+  }, [currentLeague?.league_id, fetchUsers]);
 
-  const fetchDraftPicks = React.useCallback(async (leagueId: string) => {
-    try {
-      debugLog('Fetching draft picks for league:', leagueId);
-      setIsLoading(true);
-      setError(null);
-      
-      const draftData = await getDraftPicks(leagueId, selectedYear);
-      if (draftData) {
-        debugLog('Found cached draft data:', draftData);
-        setDraftPicks(draftData);
-        return;
-      }
-
-      const fetchedDraftPicks = await DraftApi.getDraftPicks(leagueId);
-      debugLog('Fetched draft picks:', fetchedDraftPicks);
-      
-      // Save each draft pick individually
-      for (const draftPick of fetchedDraftPicks) {
-        await saveDraftPick(draftPick);
-      }
-      setDraftPicks(fetchedDraftPicks);
-    } catch (err) {
-      debugLog('Error fetching draft picks:', err);
-      setError(err instanceof Error ? err : new Error('Failed to fetch draft picks'));
-    } finally {
-      setIsLoading(false);
+  // Fetch draft picks when current league changes
+  React.useEffect(() => {
+    if (!currentLeague?.league_id) {
+      return;
     }
-  }, [selectedYear]);
+    fetchDraftPicks(currentLeague.league_id);
+  }, [currentLeague?.league_id, fetchDraftPicks]);
 
   const setCurrentLeague = React.useCallback(async (league: SleeperLeague | null) => {
     debugLog('Setting current league:', league);
@@ -380,20 +395,6 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
     // Convert to array and sort in descending order (newest first)
     return Array.from(seasons).sort((a, b) => b.localeCompare(a));
   }, [leagues]);
-
-  // Fetch users when current league changes
-  React.useEffect(() => {
-    if (currentLeague?.league_id) {
-      fetchUsers(currentLeague.league_id);
-    }
-  }, [currentLeague?.league_id, fetchUsers]);
-
-  // Fetch rosters when current league changes
-  React.useEffect(() => {
-    if (currentLeague?.league_id) {
-      fetchRosters(currentLeague.league_id);
-    }
-  }, [currentLeague?.league_id, fetchRosters]);
 
   const value = {
     leagues,
