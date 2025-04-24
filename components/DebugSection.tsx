@@ -44,6 +44,10 @@ export default function DebugSection() {
           url = `https://api.sleeper.app/v1/league/${currentLeague.league_id}`;
           break;
         case 'playerStats':
+          if (!selectedYear) {
+            setError('Please select a year first');
+            return;
+          }
           await fetchPlayerStats(selectedYear, selectedWeek);
           return;
         default:
