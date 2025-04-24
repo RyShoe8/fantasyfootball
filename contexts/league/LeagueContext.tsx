@@ -36,6 +36,14 @@ interface LeagueContextType {
   error: ApiError | null;
   setCurrentLeague: (league: SleeperLeague | null) => void;
   setSelectedYear: (year: string | null) => void;
+  setRosters: (rosters: SleeperRoster[]) => void;
+  setUsers: (users: SleeperUser[]) => void;
+  setDraftPicks: (draftPicks: SleeperDraftPick[]) => void;
+  setLeagues: (leagues: SleeperLeague[]) => void;
+  setIsLoading: (isLoading: boolean) => void;
+  setError: (error: ApiError | null) => void;
+  fetchLeaguesForYear: (year: string) => Promise<SleeperLeague[]>;
+  refreshLeagueData: () => Promise<void>;
 }
 
 const LeagueContext = React.createContext<LeagueContextType | undefined>(undefined);
