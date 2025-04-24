@@ -22,6 +22,8 @@ export interface SleeperLeague {
   league_id: string;
   name: string;
   season: string;
+  previous_league_id?: string;
+  previous_seasons?: number[];
   status: string;
   avatar?: string;
   settings: {
@@ -70,7 +72,6 @@ export interface SleeperLeague {
     allow_adding_players: number;
   };
   roster_positions: string[];
-  previous_league_id: string;
   bracket_id: string;
   total_rosters: number;
   metadata: {
