@@ -45,11 +45,21 @@ const LeagueStandings: React.FC = () => {
       .map((roster: SleeperRoster) => {
         const owner = users.find((user: SleeperUser) => user.user_id === roster.owner_id);
         console.log('LeagueStandings - Owner for roster:', roster.roster_id, owner);
-        console.log('LeagueStandings - Owner metadata:', owner?.metadata);
-        console.log('LeagueStandings - Roster metadata:', roster.metadata);
         
-        const teamName = owner?.metadata?.team_name || formatTeamName(roster.metadata?.team_name, owner?.display_name);
-        const ownerName = formatOwnerName(owner?.display_name || 'Unknown Owner');
+        // Try to get team name from multiple sources
+        let teamName = 'Unknown Team';
+        if (owner?.metadata?.team_name) {
+          teamName = owner.metadata.team_name;
+        } else if (roster.metadata?.team_name) {
+          teamName = roster.metadata.team_name;
+        } else if (owner?.display_name) {
+          teamName = owner.display_name;
+        } else if (owner?.username) {
+          teamName = owner.username;
+        }
+
+        // Get owner name
+        const ownerName = owner?.display_name || owner?.username || 'Unknown Owner';
         
         console.log('LeagueStandings - Final team name:', teamName);
         console.log('LeagueStandings - Final owner name:', ownerName);

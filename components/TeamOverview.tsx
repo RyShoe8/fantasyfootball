@@ -13,9 +13,21 @@ interface TeamOverviewProps {
 const TeamOverview: React.FC<TeamOverviewProps> = ({ rosterId }: TeamOverviewProps) => {
   const { currentLeague } = useLeague();
   const { rosters } = useRoster();
-  const { players, playerStats } = usePlayer();
+  const { players, playerStats, fetchPlayers, fetchPlayerStats } = usePlayer();
   const { users } = useLeague();
   const [selectedRosterId, setSelectedRosterId] = React.useState<string>(rosterId || '');
+
+  // Fetch players when component mounts
+  React.useEffect(() => {
+    fetchPlayers();
+  }, [fetchPlayers]);
+
+  // Fetch player stats when roster changes or week/year changes
+  React.useEffect(() => {
+    if (currentLeague?.season) {
+      fetchPlayerStats(currentLeague.season, currentLeague.settings.leg ? 1 : 0);
+    }
+  }, [currentLeague?.season, currentLeague?.settings.leg, fetchPlayerStats]);
 
   const roster = React.useMemo(() => {
     if (!rosters || !selectedRosterId) return null;
