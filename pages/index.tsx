@@ -177,7 +177,7 @@ const Home: React.FC = () => {
         ) : (
           <DashboardLayout 
             league={currentLeague}
-            selectedYear={selectedYear}
+            selectedYear={selectedYear || ''}
             availableYears={availableYears}
             onYearChange={setSelectedYear}
           />
