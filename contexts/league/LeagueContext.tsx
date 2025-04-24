@@ -93,7 +93,7 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
     if (league.previous_seasons) {
       league.previous_seasons.forEach((season: number) => years.add(season));
     }
-    setAvailableYears(Array.from(years).sort((a, b) => b - a));
+    setAvailableYears(Array.from(years).sort((a, b) => b - a).map(String));
   }, []);
 
   // Update available years when leagues change
