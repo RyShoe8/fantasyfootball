@@ -123,6 +123,7 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
       }
 
       // If no cached data or invalid cache, fetch from API
+      // Always pass the selectedYear to ensure we get the correct rosters
       const fetchedRosters = await RosterApi.getRosters(leagueId, selectedYear);
       debugLog('Fetched rosters:', fetchedRosters);
       
@@ -303,6 +304,7 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
     if (league) {
       setIsLoading(true);
       try {
+        // Explicitly pass the selectedYear to fetchRosters
         await Promise.all([
           fetchRosters(league.league_id),
           fetchUsers(league.league_id),
@@ -399,7 +401,19 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
         
         if (matchingLeague) {
           debugLog('Found matching league for new year:', matchingLeague);
-          await setCurrentLeague(matchingLeague);
+          // Update the current league with the new league ID
+          setCurrentLeagueState(matchingLeague);
+          
+          // Explicitly fetch rosters with the new year
+          await fetchRosters(matchingLeague.league_id);
+          
+          // Fetch users and draft picks
+          await Promise.all([
+            fetchUsers(matchingLeague.league_id),
+            fetchDraftPicks(matchingLeague.league_id)
+          ]);
+          
+          debugLog('League data loaded successfully for year:', year);
         } else {
           debugLog('No matching league found for new year');
           setError(new Error('No matching league found for selected year'));
@@ -411,7 +425,7 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
         setIsLoading(false);
       }
     }
-  }, [currentLeague, fetchLeaguesForYear, setCurrentLeague]);
+  }, [currentLeague, fetchLeaguesForYear, fetchRosters, fetchUsers, fetchDraftPicks]);
 
   // Function to fetch all available years for a league
   const fetchAvailableYearsForLeague = React.useCallback(async (leagueName: string, currentYear: string) => {
