@@ -233,7 +233,7 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
         }
 
         // If no cached data or invalid cache, fetch from API
-        const fetchedRosters = await RosterApi.getRosters(currentLeague.league_id, selectedYear);
+        const fetchedRosters = await RosterApi.getRosters(currentLeague.league_id, selectedYear || undefined);
         debugLog('Fetched rosters:', fetchedRosters);
         
         // Save rosters to localStorage with year
