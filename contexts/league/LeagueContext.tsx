@@ -98,6 +98,124 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
   // Get user from auth context
   const { user } = useAuth();
 
+  // Function to update available years based on leagues
+  const updateAvailableYears = React.useCallback(() => {
+    if (leagues.length > 0) {
+      const years = Array.from(new Set(leagues.map((league: SleeperLeague) => league.season)));
+      console.log('[LeagueContext] Setting available years from leagues:', years);
+      const sortedYears = [...years].sort((a, b) => String(b).localeCompare(String(a)));
+      setAvailableYears(sortedYears);
+    }
+  }, [leagues]);
+
+  // Update available years when leagues change
+  React.useEffect(() => {
+    updateAvailableYears();
+  }, [leagues, updateAvailableYears]);
+
+  // Fetch leagues when user changes
+  React.useEffect(() => {
+    const fetchInitialData = async () => {
+      if (!user || isInitialized) {
+        return;
+      }
+
+      try {
+        debugLog('Fetching initial data for user:', user.user_id);
+        setIsLoading(true);
+        setError(null);
+
+        // Try to get cached leagues from localStorage
+        const cachedLeaguesStr = localStorage.getItem('sleeperLeagues');
+        let cachedLeagues: SleeperLeague[] = [];
+        
+        if (cachedLeaguesStr) {
+          try {
+            cachedLeagues = JSON.parse(cachedLeaguesStr);
+            if (Array.isArray(cachedLeagues)) {
+              debugLog('Found cached leagues:', cachedLeagues);
+              setLeagues(cachedLeagues);
+              
+              // Set initial year based on cached leagues
+              if (cachedLeagues.length > 0) {
+                const years = Array.from(new Set(cachedLeagues.map((league: SleeperLeague) => league.season)));
+                const mostRecentYear = years.sort((a, b) => b.localeCompare(a))[0];
+                debugLog('Setting initial year from cache:', mostRecentYear);
+                setSelectedYear(mostRecentYear);
+              }
+              
+              setIsInitialized(true);
+              return;
+            }
+          } catch (err: unknown) {
+            debugLog('Error parsing cached leagues:', err);
+          }
+        }
+
+        // If no cached data or invalid cache, fetch from API
+        const currentYear = new Date().getFullYear().toString();
+        const fetchedLeagues = await LeagueApi.getUserLeagues(user.user_id, currentYear);
+        debugLog('Fetched leagues:', fetchedLeagues);
+        
+        // Save leagues to localStorage
+        localStorage.setItem('sleeperLeagues', JSON.stringify(fetchedLeagues));
+        
+        setLeagues(fetchedLeagues);
+        
+        // Set initial year based on fetched leagues
+        if (fetchedLeagues.length > 0) {
+          const years = Array.from(new Set(fetchedLeagues.map((league: SleeperLeague) => league.season)));
+          const mostRecentYear = years.sort((a, b) => b.localeCompare(a))[0];
+          debugLog('Setting initial year from API:', mostRecentYear);
+          setSelectedYear(mostRecentYear);
+        }
+        
+        setIsInitialized(true);
+      } catch (err: unknown) {
+        debugLog('Error fetching initial data:', err);
+        setError(toApiError(err));
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchInitialData();
+  }, [user, isInitialized]);
+
+  // Fetch leagues when year changes
+  React.useEffect(() => {
+    const fetchLeaguesForSelectedYear = async () => {
+      if (!user || !selectedYear) {
+        return;
+      }
+
+      try {
+        debugLog('Fetching leagues for selected year:', selectedYear);
+        setIsLoading(true);
+        setError(null);
+
+        const fetchedLeagues = await LeagueApi.getUserLeagues(user.user_id, selectedYear);
+        debugLog('Fetched leagues for year:', selectedYear, fetchedLeagues);
+
+        // Merge with existing leagues
+        const existingLeagues = leagues.filter((league: SleeperLeague) => league.season !== selectedYear);
+        const mergedLeagues = [...existingLeagues, ...fetchedLeagues];
+        
+        // Save to localStorage
+        localStorage.setItem('sleeperLeagues', JSON.stringify(mergedLeagues));
+        
+        setLeagues(mergedLeagues);
+      } catch (err: unknown) {
+        debugLog('Error fetching leagues for year:', err);
+        setError(toApiError(err));
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchLeaguesForSelectedYear();
+  }, [user, selectedYear]);
+
   // Define fetch functions
   const fetchRosters = React.useCallback(async (leagueId: string) => {
     try {
@@ -221,56 +339,6 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(false);
     }
   }, []);
-
-  // Fetch leagues when user changes
-  React.useEffect(() => {
-    const fetchLeagues = async () => {
-      if (!user || isInitialized) {
-        return;
-      }
-
-      try {
-        debugLog('Fetching leagues for user:', user.user_id);
-        setIsLoading(true);
-        setError(null);
-
-        // Try to get cached leagues from localStorage
-        const cachedLeaguesStr = localStorage.getItem('sleeperLeagues');
-        let cachedLeagues: SleeperLeague[] = [];
-        
-        if (cachedLeaguesStr) {
-          try {
-            cachedLeagues = JSON.parse(cachedLeaguesStr);
-            if (Array.isArray(cachedLeagues)) {
-              debugLog('Found cached leagues:', cachedLeagues);
-              setLeagues(cachedLeagues);
-              setIsInitialized(true);
-              return;
-            }
-          } catch (err) {
-            debugLog('Error parsing cached leagues:', err);
-          }
-        }
-
-        // If no cached data or invalid cache, fetch from API
-        const fetchedLeagues = await LeagueApi.getUserLeagues(user.user_id);
-        debugLog('Fetched leagues:', fetchedLeagues);
-        
-        // Save leagues to localStorage
-        localStorage.setItem('sleeperLeagues', JSON.stringify(fetchedLeagues));
-        
-        setLeagues(fetchedLeagues);
-        setIsInitialized(true);
-      } catch (err) {
-        debugLog('Error fetching leagues:', err);
-        setError(toApiError(err));
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchLeagues();
-  }, [user, isInitialized]);
 
   // Fetch rosters when current league changes
   React.useEffect(() => {
@@ -520,6 +588,16 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
 
     updateAvailableYears();
   }, [leagues, currentLeague, selectedYear, fetchAvailableYearsForLeague]);
+
+  // Helper function to get available years
+  const getAvailableYears = (): string[] => {
+    return availableYears;
+  };
+
+  // Helper function to handle errors
+  const handleError = (error: unknown): void => {
+    setError(toApiError(error));
+  };
 
   // Memoize the context value to prevent unnecessary re-renders
   const value = React.useMemo(() => ({
