@@ -486,7 +486,7 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
       debugLog('Successfully refreshed league data');
     } catch (err) {
       debugLog('Error refreshing league data:', err);
-      setError(err instanceof Error ? err.message : 'Failed to refresh league data');
+      setError(toApiError(err));
     } finally {
       setIsLoading(false);
     }
