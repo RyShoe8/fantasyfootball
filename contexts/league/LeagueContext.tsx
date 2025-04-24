@@ -53,6 +53,22 @@ const LeagueContext = React.createContext<LeagueContextType | undefined>(undefin
 export function LeagueProvider({ children }: { children: React.ReactNode }) {
   debugLog('Initializing LeagueProvider');
 
+  // Initialize state with default values
+  const [leagues, setLeaguesState] = React.useState<SleeperLeague[]>([]);
+  const [rosters, setRostersState] = React.useState<SleeperRoster[]>([]);
+  const [users, setUsersState] = React.useState<SleeperUser[]>([]);
+  const [draftPicks, setDraftPicksState] = React.useState<SleeperDraftPick[]>([]);
+  const [currentLeague, setCurrentLeagueState] = React.useState<SleeperLeague | null>(null);
+  const [selectedYear, setSelectedYearState] = React.useState<string | null>(null);
+  const [selectedWeek, setSelectedWeekState] = React.useState(1);
+  const [availableYears, setAvailableYears] = React.useState<string[]>([]);
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [error, setError] = React.useState<ApiError | null>(null);
+  const [isInitialized, setIsInitialized] = React.useState(false);
+
+  // Get user from auth context
+  const { user } = useAuth();
+
   // Memoize state setters to prevent unnecessary re-renders
   const setLeagues = React.useCallback((leagues: SleeperLeague[]) => {
     setLeaguesState(leagues);
@@ -70,21 +86,17 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
     setDraftPicksState(draftPicks);
   }, []);
 
-  // Initialize state with default values
-  const [leagues, setLeaguesState] = React.useState<SleeperLeague[]>([]);
-  const [rosters, setRostersState] = React.useState<SleeperRoster[]>([]);
-  const [users, setUsersState] = React.useState<SleeperUser[]>([]);
-  const [draftPicks, setDraftPicksState] = React.useState<SleeperDraftPick[]>([]);
-  const [currentLeague, setCurrentLeagueState] = React.useState<SleeperLeague | null>(null);
-  const [selectedYear, setSelectedYearState] = React.useState<string | null>(null);
-  const [selectedWeek, setSelectedWeekState] = React.useState(1);
-  const [availableYears, setAvailableYears] = React.useState<string[]>([]);
-  const [isLoading, setIsLoading] = React.useState(false);
-  const [error, setError] = React.useState<ApiError | null>(null);
-  const [isInitialized, setIsInitialized] = React.useState(false);
+  const setCurrentLeague = React.useCallback((league: SleeperLeague | null) => {
+    setCurrentLeagueState(league);
+  }, []);
 
-  // Get user from auth context
-  const { user } = useAuth();
+  const setSelectedYear = React.useCallback((year: string | null) => {
+    setSelectedYearState(year);
+  }, []);
+
+  const setSelectedWeek = React.useCallback((week: number) => {
+    setSelectedWeekState(week);
+  }, []);
 
   // Function to update available years based on leagues
   const updateAvailableYears = React.useCallback((league: SleeperLeague) => {
@@ -96,10 +108,12 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
     setAvailableYears(Array.from(years).sort((a, b) => b - a).map(String));
   }, []);
 
-  // Update available years when leagues change
+  // Update available years when current league changes
   React.useEffect(() => {
-    leagues.forEach(updateAvailableYears);
-  }, [leagues, updateAvailableYears]);
+    if (currentLeague) {
+      updateAvailableYears(currentLeague);
+    }
+  }, [currentLeague, updateAvailableYears]);
 
   // Fetch leagues when user changes
   React.useEffect(() => {
@@ -129,7 +143,7 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
                 const years = Array.from(new Set(cachedLeagues.map((league: SleeperLeague) => league.season)));
                 const mostRecentYear = years.sort((a, b) => b.localeCompare(a))[0];
                 debugLog('Setting initial year from cache:', mostRecentYear);
-                setSelectedYearState(mostRecentYear.toString());
+                setSelectedYear(mostRecentYear.toString());
               }
               
               setIsInitialized(true);
@@ -155,7 +169,7 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
           const years = Array.from(new Set(fetchedLeagues.map((league: SleeperLeague) => league.season)));
           const mostRecentYear = years.sort((a, b) => b.localeCompare(a))[0];
           debugLog('Setting initial year from API:', mostRecentYear);
-          setSelectedYearState(mostRecentYear.toString());
+          setSelectedYear(mostRecentYear.toString());
         }
         
         setIsInitialized(true);
@@ -168,7 +182,7 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
     };
 
     fetchInitialData();
-  }, [user, isInitialized]);
+  }, [user, isInitialized, setLeagues, setSelectedYear]);
 
   // Fetch leagues when year changes
   React.useEffect(() => {
@@ -443,14 +457,6 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
     }
   }, [leagues]);
 
-  const setCurrentLeague = React.useCallback((league: SleeperLeague | null) => {
-    debugLog('Setting current league:', league);
-    setCurrentLeagueState(league);
-    if (league) {
-      updateAvailableYears(league);
-    }
-  }, [updateAvailableYears]);
-
   const refreshLeagueData = React.useCallback(async () => {
     if (!currentLeague?.league_id) {
       debugLog('No current league selected, skipping refresh');
@@ -491,16 +497,6 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(false);
     }
   }, [currentLeague?.league_id]);
-
-  const setSelectedYear = React.useCallback((year: string | null) => {
-    debugLog('Setting selected year:', year);
-    setSelectedYearState(year);
-  }, []);
-
-  const setSelectedWeek = React.useCallback((week: number) => {
-    debugLog('Setting selected week:', week);
-    setSelectedWeekState(week);
-  }, []);
 
   const fetchLeaguesForYear = React.useCallback(async (year: string): Promise<SleeperLeague[]> => {
     if (!user) {
@@ -551,12 +547,12 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
       return fetchedLeagues;
     } catch (err) {
       debugLog('Error fetching leagues for year:', err);
-      setError(err instanceof Error ? err : new Error('Failed to fetch leagues'));
+      setError(toApiError(err));
       return [];
     } finally {
       setIsLoading(false);
     }
-  }, [user]);
+  }, [user, setError, setIsLoading]);
 
   // Function to fetch all available years for a league
   const fetchAvailableYearsForLeague = React.useCallback(async (leagueName: string, currentYear: string) => {
@@ -616,64 +612,21 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
     return sortedYears;
   }, [fetchLeaguesForYear]);
 
-  // Update available years when current league changes
-  React.useEffect(() => {
-    const updateAvailableYears = async () => {
-      if (currentLeague && selectedYear) {
-        try {
-          debugLog('Fetching available years for league:', currentLeague.name);
-          const years = await fetchAvailableYearsForLeague(currentLeague.name, selectedYear);
-          debugLog('Setting available years:', years);
-          setAvailableYears(years);
-        } catch (err) {
-          debugLog('Error fetching available years:', err);
-          setError(toApiError(err));
-        }
-      }
-    };
-
-    updateAvailableYears();
-  }, [currentLeague, selectedYear, fetchAvailableYearsForLeague]);
-
-  // Also update available years when leagues change
-  React.useEffect(() => {
-    const updateAvailableYears = async () => {
-      if (currentLeague && selectedYear && leagues.length > 0) {
-        try {
-          debugLog('Fetching available years for league:', currentLeague.name);
-          const years = await fetchAvailableYearsForLeague(currentLeague.name, selectedYear);
-          debugLog('Setting available years:', years);
-          setAvailableYears(years);
-        } catch (err) {
-          debugLog('Error fetching available years:', err);
-          setError(toApiError(err));
-        }
-      }
-    };
-
-    updateAvailableYears();
-  }, [leagues, currentLeague, selectedYear, fetchAvailableYearsForLeague]);
-
-  // Helper function to get available years
-  const getAvailableYears = (): string[] => {
-    return availableYears;
-  };
-
   // Helper function to handle errors
-  const handleError = (error: unknown): void => {
+  const handleError = React.useCallback((error: unknown): void => {
     setError(toApiError(error));
-  };
+  }, [setError]);
 
   // Memoize the context value to prevent unnecessary re-renders
   const value = React.useMemo(() => ({
+    currentLeague,
     leagues,
     rosters,
     users,
     draftPicks,
-    currentLeague,
+    availableYears,
     selectedYear,
     selectedWeek,
-    availableYears,
     isLoading,
     error,
     setCurrentLeague,
@@ -688,14 +641,14 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
     fetchLeaguesForYear,
     refreshLeagueData
   }), [
+    currentLeague,
     leagues,
     rosters,
     users,
     draftPicks,
-    currentLeague,
+    availableYears,
     selectedYear,
     selectedWeek,
-    availableYears,
     isLoading,
     error,
     setCurrentLeague,
@@ -705,6 +658,8 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
     setUsers,
     setDraftPicks,
     setLeagues,
+    setIsLoading,
+    setError,
     fetchLeaguesForYear,
     refreshLeagueData
   ]);
