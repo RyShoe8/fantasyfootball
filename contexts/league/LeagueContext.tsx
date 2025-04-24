@@ -32,10 +32,12 @@ interface LeagueContextType {
   draftPicks: SleeperDraftPick[];
   availableYears: string[];
   selectedYear: string | null;
+  selectedWeek: number;
   isLoading: boolean;
   error: ApiError | null;
   setCurrentLeague: (league: SleeperLeague | null) => void;
   setSelectedYear: (year: string | null) => void;
+  setSelectedWeek: (week: number) => void;
   setRosters: (rosters: SleeperRoster[]) => void;
   setUsers: (users: SleeperUser[]) => void;
   setDraftPicks: (draftPicks: SleeperDraftPick[]) => void;
@@ -75,6 +77,7 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
   const [draftPicks, setDraftPicksState] = React.useState<SleeperDraftPick[]>([]);
   const [currentLeague, setCurrentLeagueState] = React.useState<SleeperLeague | null>(null);
   const [selectedYear, setSelectedYearState] = React.useState<string | null>(null);
+  const [selectedWeek, setSelectedWeekState] = React.useState(1);
   const [availableYears, setAvailableYears] = React.useState<string[]>([]);
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState<ApiError | null>(null);
@@ -494,6 +497,11 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
     setSelectedYearState(year);
   }, []);
 
+  const setSelectedWeek = React.useCallback((week: number) => {
+    debugLog('Setting selected week:', week);
+    setSelectedWeekState(week);
+  }, []);
+
   const fetchLeaguesForYear = React.useCallback(async (year: string): Promise<SleeperLeague[]> => {
     if (!user) {
       return [];
@@ -664,11 +672,13 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
     draftPicks,
     currentLeague,
     selectedYear,
+    selectedWeek,
     availableYears,
     isLoading,
     error,
     setCurrentLeague,
     setSelectedYear,
+    setSelectedWeek,
     setRosters,
     setUsers,
     setDraftPicks,
@@ -684,11 +694,13 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
     draftPicks,
     currentLeague,
     selectedYear,
+    selectedWeek,
     availableYears,
     isLoading,
     error,
     setCurrentLeague,
     setSelectedYear,
+    setSelectedWeek,
     setRosters,
     setUsers,
     setDraftPicks,
@@ -700,6 +712,7 @@ export function LeagueProvider({ children }: { children: React.ReactNode }) {
   debugLog('LeagueContext state:', {
     currentLeague: currentLeague?.league_id,
     selectedYear,
+    selectedWeek,
     isLoading,
     error
   });
